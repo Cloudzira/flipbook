@@ -84,9 +84,18 @@
       background: rgba(99, 102, 241, 0.7);
     }
 
+    .thumb-item {
+      cursor: pointer !important;
+      user-select: none;
+    }
+
+    .thumb-item * {
+      pointer-events: none;
+    }
+
     .thumb-item.active {
       border-color: #6366f1 !important;
-      background: rgba(99, 102, 241, 0.2) !important;
+      background: rgba(99, 102, 241, 0.25) !important;
       box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
     }
 
@@ -108,16 +117,16 @@
       margin: 0 auto;
     }
 
-    /* Sidebar Mobile & Landscape Overlay */
-    @media (max-width: 768px), (max-height: 500px) {
+    /* Penanganan Khusus Sidebar Landscape & Mobile */
+    @media (max-width: 768px), (max-height: 550px) {
       #thumbnail-sidebar {
-        position: absolute;
+        position: absolute !important;
         left: 0;
         top: 0;
         bottom: 0;
-        z-index: 40;
-        background: rgba(15, 23, 42, 0.98);
-        box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+        z-index: 50 !important;
+        background: rgba(15, 23, 42, 0.96) !important;
+        box-shadow: 6px 0 24px rgba(0,0,0,0.7);
       }
     }
   </style>
@@ -181,7 +190,10 @@
         
         <!-- Sidebar Thumbnails -->
         <aside id="thumbnail-sidebar" class="hidden md:flex w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex-col space-y-3 flex-shrink-0 transition-all duration-300">
-          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1">Daftar Halaman</div>
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1 flex items-center justify-between">
+            <span>Daftar Halaman</span>
+            <button onclick="toggleThumbnailSidebar()" class="md:hidden text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
           <div id="thumbnail-container" class="grid grid-cols-2 gap-2.5"></div>
         </aside>
 
@@ -354,6 +366,22 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       loadCatalogFromSupabase();
+
+      // DELEGASI EVENT TERPUSAT UNTUK KLIK THUMBNAIL (Memastikan Klik Bebas Bug Landscape)
+      const thumbContainer = document.getElementById('thumbnail-container');
+      thumbContainer.addEventListener('click', (e) => {
+        const item = e.target.closest('.thumb-item');
+        if (item && item.dataset.page) {
+          const pageNum = parseInt(item.dataset.page, 10);
+          jumpToPage(pageNum);
+
+          if (window.innerWidth < 768 || window.innerHeight < 550) {
+            const sidebar = document.getElementById('thumbnail-sidebar');
+            sidebar.classList.add('hidden');
+            sidebar.classList.remove('flex');
+          }
+        }
+      });
     });
 
     /* KATALOG & NAVIGATION */
@@ -528,30 +556,22 @@
           pageDiv.appendChild(canvas);
           container.appendChild(pageDiv);
 
-          // Pembuatan Item Thumbnail yang Aman dari Bug Click
+          // Render Item Thumbnail (Menggunakan Dataset Data-Page)
           const thumbDiv = document.createElement('div');
-          thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl cursor-pointer border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
+          thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
           thumbDiv.id = `thumb-page-${pageNum}`;
+          thumbDiv.dataset.page = pageNum;
           
           const thumbCanvas = document.createElement('canvas');
           thumbCanvas.id = `thumb-canvas-${pageNum}`;
-          thumbCanvas.className = "rounded-lg w-full h-auto bg-white shadow min-h-[50px] pointer-events-none";
+          thumbCanvas.className = "rounded-lg w-full h-auto bg-white shadow min-h-[50px]";
 
           const label = document.createElement('span');
-          label.className = "text-[10px] text-slate-300 font-semibold mt-1 pointer-events-none";
+          label.className = "text-[10px] text-slate-300 font-semibold mt-1";
           label.innerText = pageNum;
 
           thumbDiv.appendChild(thumbCanvas);
           thumbDiv.appendChild(label);
-
-          const targetPageNum = pageNum;
-          thumbDiv.addEventListener('click', () => {
-            jumpToPage(targetPageNum);
-            if (window.innerWidth < 768 || window.innerHeight < 500) {
-              document.getElementById('thumbnail-sidebar').classList.add('hidden');
-            }
-          });
-
           thumbContainer.appendChild(thumbDiv);
         }
 
