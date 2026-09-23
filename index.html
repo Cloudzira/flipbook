@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlipbuKu Studio</title>
+  <title>FlipbuKu</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -81,21 +81,18 @@
       background: rgba(99, 102, 241, 0.7);
     }
 
-    /* Active Thumbnail styling */
     .thumb-item.active {
       border-color: #6366f1 !important;
       background: rgba(99, 102, 241, 0.2) !important;
       box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
     }
 
-    /* Canvas styling agar tetap terukur proporsional */
     .page-canvas-wrapper canvas {
       width: 100% !important;
       height: 100% !important;
       object-fit: contain;
     }
 
-    /* Responsive Flipbook Container */
     #flipbook-wrapper {
       display: flex;
       align-items: center;
@@ -111,14 +108,14 @@
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
 
-  <!-- NAVBAR -->
+  <!-- NAVBAR UTAMA -->
   <nav class="glass-panel sticky top-0 z-40 px-6 py-2.5 flex items-center justify-between border-b border-white/10 flex-shrink-0">
     <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('catalog')">
       <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
         <i class="fa-solid fa-book-open text-white text-sm"></i>
       </div>
       <span class="text-base font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-300">
-        Flipbook Studio
+        FlipbuKu
       </span>
     </div>
 
@@ -153,31 +150,10 @@
       <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-12"></div>
     </section>
 
-    <!-- VIEW 2: FLIPBOOK READER -->
+    <!-- VIEW 2: FLIPBOOK READER (MAKSIMAL & TAMPILAN LUAS) -->
     <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950/90">
-      
-      <!-- Top Bar Controls -->
-      <div class="w-full flex items-center justify-between glass-panel px-4 py-2 flex-shrink-0 z-20 border-b border-white/10">
-        <div class="flex items-center space-x-2">
-          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-card">
-            <i class="fa-solid fa-arrow-left"></i> Kembali
-          </button>
-          <button onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-card border-indigo-500/30">
-            <i class="fa-solid fa-border-all"></i> <span id="toggle-thumb-text">Sembunyikan Thumbnail</span>
-          </button>
-        </div>
 
-        <h2 id="reader-title" class="font-semibold text-sm text-indigo-200 truncate max-w-xs sm:max-w-md">Memuat Buku...</h2>
-
-        <div class="flex items-center space-x-1">
-          <button onclick="zoomFlipbook(0.15)" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-          <button onclick="zoomFlipbook(-0.15)" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-          <button onclick="resetZoom()" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Reset Zoom"><i class="fa-solid fa-rotate-left"></i></button>
-          <button onclick="toggleFullscreen()" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
-        </div>
-      </div>
-
-      <!-- Reader Body -->
+      <!-- Reader Body (Lebih Luas karena Top Bar Dihapus) -->
       <div class="flex-grow flex w-full h-full overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
@@ -201,13 +177,45 @@
         </div>
       </div>
 
-      <!-- Bottom Control Bar -->
-      <div class="w-full flex items-center justify-center space-x-4 glass-panel py-2 px-4 flex-shrink-0 z-20 border-t border-white/10">
-        <button onclick="pageFlipInstance?.flipPrev()" class="px-3 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg"><i class="fa-solid fa-chevron-left"></i> Prev</button>
-        <span class="text-xs font-medium text-slate-300">
-          Halaman <input type="number" id="page-num-input" value="1" min="1" class="w-10 text-center glass-input rounded px-1 py-0.5 text-xs inline-block" onchange="jumpToPage(this.value)"> dari <span id="page-count">0</span>
-        </span>
-        <button onclick="pageFlipInstance?.flipNext()" class="px-3 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">Next <i class="fa-solid fa-chevron-right"></i></button>
+      <!-- COMBINED BOTTOM CONTROL BAR (Menggabungkan Seluruh Navigasi & Kontrol) -->
+      <div class="w-full glass-panel py-2 px-3 sm:px-6 flex-shrink-0 z-20 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+        
+        <!-- Sisi Kiri: Navigasi Kembali & Toggle Sidebar -->
+        <div class="flex items-center space-x-1.5 sm:space-x-2">
+          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card" title="Kembali ke Katalog">
+            <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Kembali</span>
+          </button>
+          <button onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card border-indigo-500/30">
+            <i class="fa-solid fa-border-all"></i> <span id="toggle-thumb-text" class="hidden md:inline">Sembunyikan Thumbnail</span>
+          </button>
+        </div>
+
+        <!-- Tengah: Navigasi Halaman & Judul Buku -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <button onclick="pageFlipInstance?.flipPrev()" class="px-2.5 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
+            <i class="fa-solid fa-chevron-left"></i> <span class="hidden sm:inline">Prev</span>
+          </button>
+          
+          <div class="flex flex-col items-center">
+            <span id="reader-title" class="font-semibold text-[11px] sm:text-xs text-indigo-200 truncate max-w-[120px] sm:max-w-xs leading-tight">Memuat...</span>
+            <span class="text-[10px] sm:text-xs font-medium text-slate-300">
+              Hal <input type="number" id="page-num-input" value="1" min="1" class="w-8 sm:w-10 text-center glass-input rounded px-0.5 py-0.2 text-[10px] sm:text-xs inline-block font-semibold" onchange="jumpToPage(this.value)"> / <span id="page-count">0</span>
+            </span>
+          </div>
+
+          <button onclick="pageFlipInstance?.flipNext()" class="px-2.5 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
+            <span class="hidden sm:inline">Next</span> <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <!-- Sisi Kanan: Zoom & Fullscreen -->
+        <div class="flex items-center space-x-1">
+          <button onclick="zoomFlipbook(0.15)" class="p-1.5 sm:p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+          <button onclick="zoomFlipbook(-0.15)" class="p-1.5 sm:p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+          <button onclick="resetZoom()" class="p-1.5 sm:p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Reset Zoom"><i class="fa-solid fa-rotate-left"></i></button>
+          <button onclick="toggleFullscreen()" class="p-1.5 sm:p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+        </div>
+
       </div>
 
     </section>
@@ -420,7 +428,7 @@
       }
     }
 
-    /* FLIPBOOK ENGINE (OPTIMIZED: LAZY LOAD, AUTO-ASPECT RATIO, & ASYNC THUMBNAIL) */
+    /* FLIPBOOK ENGINE */
     async function openReader(book) {
       switchView('reader');
       document.getElementById('reader-title').innerText = book.title;
@@ -446,19 +454,18 @@
         const totalPages = pdfDocInstance.numPages;
         document.getElementById('page-count').innerText = totalPages;
 
-        // 1. Ambil Dimensi & Aspek Rasio Asli Halaman Pertama
+        // Ambil Dimensi & Aspek Rasio Asli Halaman Pertama
         const firstPage = await pdfDocInstance.getPage(1);
         const originalViewport = firstPage.getViewport({ scale: 1.0 });
         const aspectRatio = originalViewport.width / originalViewport.height;
 
-        // 2. Kalkulasi Dimensi Sesuai Viewport
+        // Kalkulasi Dimensi Sesuai Area Viewport Reader
         const viewportContainer = document.getElementById('reader-viewport');
-        const targetHeight = Math.min(Math.max(400, viewportContainer.clientHeight - 40), 850);
+        const targetHeight = Math.min(Math.max(400, viewportContainer.clientHeight - 20), 880);
         const targetWidth = Math.round(targetHeight * aspectRatio);
 
-        // 3. Buat Container Halaman & Thumbnail Dulu (Ringan & Cepat)
+        // Buat Container Halaman & Thumbnail
         for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-          // Flipbook Page Wrapper
           const pageDiv = document.createElement('div');
           pageDiv.className = 'page-canvas-wrapper bg-white shadow-2xl relative overflow-hidden flex items-center justify-center';
           pageDiv.dataset.pageNum = pageNum;
@@ -468,7 +475,6 @@
           pageDiv.appendChild(canvas);
           container.appendChild(pageDiv);
 
-          // Thumbnail Wrapper
           const thumbDiv = document.createElement('div');
           thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl cursor-pointer border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
           thumbDiv.id = `thumb-page-${pageNum}`;
@@ -483,15 +489,13 @@
           thumbContainer.appendChild(thumbDiv);
         }
 
-        // Tampilkan Flipbook Wrapper
         document.getElementById('loading-spinner').classList.add('hidden');
         document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
-        // 4. Inisialisasi StPageFlip Berdasarkan Rasio Proporsional
         pageFlipInstance = new St.PageFlip(container, {
           width: targetWidth,
           height: targetHeight,
-          size: "fixed", // Mencegah distorsi/gepeng
+          size: "fixed",
           maxShadowOpacity: 0.5,
           showCover: true,
           mobileScrollSupport: false
@@ -500,7 +504,6 @@
         const pageElements = container.querySelectorAll('.page-canvas-wrapper');
         pageFlipInstance.loadFromHTML(pageElements);
 
-        // Helper: Lazy Render Halaman Utama On-Demand
         async function renderPageIfNeeded(pageNum) {
           if (pageNum < 1 || pageNum > totalPages || renderedPages.has(pageNum)) return;
           renderedPages.add(pageNum);
@@ -517,7 +520,6 @@
           await page.render({ canvasContext: context, viewport: viewport }).promise;
         }
 
-        // Helper: Render Thumbnail Bertahap (Background)
         async function renderThumbnails() {
           for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
             const page = await pdfDocInstance.getPage(pageNum);
@@ -533,24 +535,19 @@
           }
         }
 
-        // Render Halaman Pertama & Kedua Secara Instan
         await renderPageIfNeeded(1);
         await renderPageIfNeeded(2);
 
-        // Jalankan Render Thumbnail di Latar Belakang
         renderThumbnails();
 
-        // Listener Event Flip Halaman
         pageFlipInstance.on('flip', (e) => {
           const activePage = e.data + 1;
           document.getElementById('page-num-input').value = activePage;
           
-          // Lazy render halaman sekitar
           renderPageIfNeeded(activePage);
           renderPageIfNeeded(activePage + 1);
           renderPageIfNeeded(activePage - 1);
 
-          // Highlight Thumbnail Aktif
           document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('active'));
           const activeThumb = document.getElementById(`thumb-page-${activePage}`);
           if (activeThumb) {
@@ -570,10 +567,10 @@
       const btnText = document.getElementById('toggle-thumb-text');
       if (sidebar.classList.contains('hidden')) {
         sidebar.classList.remove('hidden');
-        btnText.innerText = "Sembunyikan Thumbnail";
+        if (btnText) btnText.innerText = "Sembunyikan Thumbnail";
       } else {
         sidebar.classList.add('hidden');
-        btnText.innerText = "Tampilkan Thumbnail";
+        if (btnText) btnText.innerText = "Tampilkan Thumbnail";
       }
     }
 
