@@ -96,7 +96,6 @@
       user-select: none;
       -webkit-tap-highlight-color: transparent;
       position: relative;
-      z-index: 60;
     }
 
     .thumb-item.active {
@@ -121,10 +120,9 @@
       max-height: 100%;
     }
 
-    /* Penanganan Responsif Layout Reader & Sidebar */
+    /* Modifikasi Penanganan Responsif Layout Reader & Sidebar */
     #thumbnail-sidebar {
       z-index: 50 !important;
-      position: relative;
     }
 
     @media (max-width: 768px), (max-height: 600px) {
@@ -136,7 +134,7 @@
         height: 100% !important;
         background: rgba(15, 23, 42, 0.98) !important;
         box-shadow: 8px 0 24px rgba(0, 0, 0, 0.8);
-        width: 180px !important;
+        width: 200px !important;
       }
     }
   </style>
@@ -370,6 +368,7 @@
     let currentZoom = 1;
     let currentUser = null;
     let resizeTimer = null;
+    let currentPageNumber = 1;
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
       currentUser = session?.user || null;
@@ -379,28 +378,29 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadCatalogFromSupabase();
 
-      // AUTO RE-CALCULATE LAYOUT SAAT ROTASI LAYAR ATAU RESIZE HP/LAPTOP
+      // Fix Event Delegation Thumbnail (Berfungsi di Landscape & Mobile)
+      const thumbContainer = document.getElementById('thumbnail-container');
+      thumbContainer.addEventListener('click', (e) => {
+        const item = e.target.closest('.thumb-item');
+        if (item && item.dataset.page) {
+          const pageNum = parseInt(item.dataset.page, 10);
+          jumpToPage(pageNum);
+          if (window.innerWidth <= 768 || window.innerHeight <= 600) {
+            toggleThumbnailSidebar();
+          }
+        }
+      });
+
+      // Handling Responsive Orientation Change & Screen Resize
       window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
           if (pdfDocInstance && document.getElementById('view-reader').classList.contains('flex')) {
             initFlipbookInstance();
           }
-        }, 250);
+        }, 200);
       });
     });
-
-    // FUNGSI KLIK THUMBNAIL (Bisa Dipanggil Langsung Via Inline Event)
-    function onThumbnailClick(pageNum) {
-      jumpToPage(pageNum);
-      
-      // Otomatis Sembunyikan Sidebar Thumbnail Jika di Mobile / Landscape HP
-      if (window.innerWidth <= 768 || window.innerHeight <= 600) {
-        const sidebar = document.getElementById('thumbnail-sidebar');
-        sidebar.classList.add('hidden');
-        sidebar.classList.remove('flex');
-      }
-    }
 
     /* KATALOG & NAVIGATION */
     async function loadCatalogFromSupabase() {
@@ -530,6 +530,7 @@
     /* FLIPBOOK ENGINE */
     async function openReader(book) {
       currentBook = book;
+      currentPageNumber = 1;
       switchView('reader');
       document.getElementById('loading-spinner').classList.remove('hidden');
       document.getElementById('flipbook-wrapper').classList.add('hidden');
@@ -563,11 +564,11 @@
           pageDiv.appendChild(canvas);
           container.appendChild(pageDiv);
 
-          // Element Thumbnail dengan Event Onclick Terpisah
+          // Element Thumbnail dengan Dataset Page
           const thumbDiv = document.createElement('div');
           thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
           thumbDiv.id = `thumb-page-${pageNum}`;
-          thumbDiv.setAttribute('onclick', `onThumbnailClick(${pageNum})`);
+          thumbDiv.dataset.page = pageNum;
           
           const thumbCanvas = document.createElement('canvas');
           thumbCanvas.id = `thumb-canvas-${pageNum}`;
@@ -588,7 +589,7 @@
         document.getElementById('loading-spinner').classList.add('hidden');
         document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
-        initFlipbookInstance();
+        await initFlipbookInstance();
         renderThumbnails();
 
       } catch (err) {
@@ -601,7 +602,6 @@
       if (!pdfDocInstance) return;
 
       const container = document.getElementById('flipbook');
-      const totalPages = pdfDocInstance.numPages;
       const firstPage = await pdfDocInstance.getPage(1);
       const originalViewport = firstPage.getViewport({ scale: 1.0 });
       const aspectRatio = originalViewport.width / originalViewport.height;
@@ -611,27 +611,25 @@
       const isMobile = window.innerWidth <= 768;
 
       let availWidth = viewportContainer.clientWidth || window.innerWidth;
-      let availHeight = viewportContainer.clientHeight || window.innerHeight - 80;
+      let availHeight = viewportContainer.clientHeight || (window.innerHeight - 80);
 
-      // Kalkulasi Dimensi Buku yang Pas di Screen HP maupun Laptop
+      // Kalkulasi Dimensi Responsif Pas Layar
       let targetHeight = Math.max(250, availHeight - 30);
       let targetWidth = Math.round(targetHeight * aspectRatio);
 
       if (isPortrait || isMobile) {
-        if (targetWidth * 2 > availWidth) {
-          targetWidth = Math.round(availWidth * 0.85);
+        if (targetWidth > availWidth * 0.9) {
+          targetWidth = Math.round(availWidth * 0.9);
           targetHeight = Math.round(targetWidth / aspectRatio);
         }
       } else {
-        if (targetWidth * 2 > availWidth) {
-          targetWidth = Math.round((availWidth * 0.9) / 2);
+        if (targetWidth * 2 > availWidth * 0.9) {
+          targetWidth = Math.round((availWidth * 0.85) / 2);
           targetHeight = Math.round(targetWidth / aspectRatio);
         }
       }
 
-      let activePage = 1;
       if (pageFlipInstance) {
-        activePage = pageFlipInstance.getCurrentPageIndex() + 1;
         try { pageFlipInstance.destroy(); } catch(e){}
       }
 
@@ -647,28 +645,32 @@
         showCover: true,
         usePortrait: isPortrait || isMobile,
         mobileScrollSupport: false,
-        flippingTime: 200,
+        flippingTime: 250,
         disableFlipAnimation: false
       });
 
       const pageElements = container.querySelectorAll('.page-canvas-wrapper');
       pageFlipInstance.loadFromHTML(pageElements);
 
-      if (activePage > 1) {
-        pageFlipInstance.turnToPage(activePage - 1);
+      // Render Halaman Terdekat Sebelum Berpindah
+      await renderPageIfNeeded(currentPageNumber);
+      await renderPageIfNeeded(currentPageNumber + 1);
+
+      if (currentPageNumber > 1) {
+        pageFlipInstance.turnToPage(currentPageNumber - 1);
       }
 
       pageFlipInstance.on('flip', (e) => {
-        const currentPage = e.data + 1;
-        document.getElementById('page-num-input').value = currentPage;
+        currentPageNumber = e.data + 1;
+        document.getElementById('page-num-input').value = currentPageNumber;
         
-        renderPageIfNeeded(currentPage);
-        renderPageIfNeeded(currentPage + 1);
-        renderPageIfNeeded(currentPage + 2);
-        renderPageIfNeeded(currentPage - 1);
+        renderPageIfNeeded(currentPageNumber);
+        renderPageIfNeeded(currentPageNumber + 1);
+        renderPageIfNeeded(currentPageNumber + 2);
+        renderPageIfNeeded(currentPageNumber - 1);
 
         document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('active'));
-        const activeThumb = document.getElementById(`thumb-page-${currentPage}`);
+        const activeThumb = document.getElementById(`thumb-page-${currentPageNumber}`);
         if (activeThumb) {
           activeThumb.classList.add('active');
           activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -733,8 +735,10 @@
 
     function jumpToPage(val) {
       const target = parseInt(val, 10);
-      if (pageFlipInstance && !isNaN(target) && target > 0) {
-        pageFlipInstance.flip(target - 1);
+      if (pageFlipInstance && !isNaN(target) && target > 0 && target <= (pdfDocInstance?.numPages || 0)) {
+        renderPageIfNeeded(target).then(() => {
+          pageFlipInstance.flip(target - 1);
+        });
       }
     }
 
