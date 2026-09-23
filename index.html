@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>FlipbuKu</title>
+  <title>FlipbuKu - Responsive Digital Library</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -77,8 +77,8 @@
     }
 
     ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
     }
     ::-webkit-scrollbar-track {
       background: rgba(15, 23, 42, 0.6);
@@ -96,6 +96,11 @@
       user-select: none;
       -webkit-tap-highlight-color: transparent;
       position: relative;
+      z-index: 10;
+    }
+
+    .thumb-item * {
+      pointer-events: none !important;
     }
 
     .thumb-item.active {
@@ -104,37 +109,53 @@
       box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
     }
 
+    .page-canvas-wrapper {
+      background-color: #ffffff;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .page-canvas-wrapper canvas {
       width: 100% !important;
       height: 100% !important;
       object-fit: contain;
     }
 
-    #flipbook-wrapper {
+    #flipbook-container {
       display: flex;
       align-items: center;
       justify-content: center;
       margin: auto;
       transform-origin: center center;
-      max-width: 100%;
-      max-height: 100%;
     }
 
-    /* Modifikasi Penanganan Responsif Layout Reader & Sidebar */
+    /* Penanganan Layout Sidebar & Responsive Breakpoint */
     #thumbnail-sidebar {
-      z-index: 50 !important;
+      z-index: 60 !important;
+      transition: transform 0.25s ease-in-out;
     }
 
-    @media (max-width: 768px), (max-height: 600px) {
+    @media (max-width: 768px), (max-height: 500px) {
       #thumbnail-sidebar {
-        position: absolute !important;
-        top: 0;
+        position: fixed !important;
+        top: 48px;
         left: 0;
-        bottom: 0;
-        height: 100% !important;
-        background: rgba(15, 23, 42, 0.98) !important;
-        box-shadow: 8px 0 24px rgba(0, 0, 0, 0.8);
-        width: 200px !important;
+        bottom: 48px;
+        height: calc(100% - 96px) !important;
+        background: rgba(15, 23, 42, 0.96) !important;
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
+        width: 190px !important;
+      }
+      
+      #thumbnail-sidebar.mobile-hidden {
+        transform: translateX(-100%);
+      }
+      
+      #thumbnail-sidebar.mobile-visible {
+        transform: translateX(0);
       }
     }
   </style>
@@ -142,7 +163,7 @@
 <body class="flex flex-col h-screen overflow-hidden">
 
   <!-- NAVBAR UTAMA -->
-  <nav class="glass-panel sticky top-0 z-40 px-4 sm:px-6 py-2 flex items-center justify-between border-b border-white/10 flex-shrink-0">
+  <nav class="glass-panel sticky top-0 z-50 px-4 sm:px-6 py-2 flex items-center justify-between border-b border-white/10 flex-shrink-0">
     <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('catalog')">
       <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
         <i class="fa-solid fa-book-open text-white text-sm"></i>
@@ -184,21 +205,20 @@
         <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-6"></div>
       </div>
 
-      <!-- FOOTER -->
       <footer class="text-center py-4 border-t border-white/10 text-xs text-slate-400 mt-auto">
         Kurniapedia | 2026
       </footer>
     </section>
 
     <!-- VIEW 2: FLIPBOOK READER -->
-    <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950/90 overflow-hidden">
+    <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950 overflow-hidden">
 
       <!-- Reader Body -->
       <div class="flex-grow flex w-full h-full overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
-        <aside id="thumbnail-sidebar" class="hidden md:flex w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex-col space-y-3 flex-shrink-0">
-          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1 flex items-center justify-between">
+        <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex flex-col space-y-3 flex-shrink-0 mobile-hidden md:flex">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1 flex items-center justify-between sticky top-0 bg-slate-900/90 py-1 z-20 backdrop-blur-sm">
             <span>Daftar Halaman</span>
             <button onclick="toggleThumbnailSidebar()" class="md:hidden text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
           </div>
@@ -206,22 +226,22 @@
         </aside>
 
         <!-- Main Viewport Reader -->
-        <div id="reader-viewport" class="flex-grow h-full overflow-hidden p-2 sm:p-4 bg-slate-950/60 flex items-center justify-center relative">
+        <div id="reader-viewport" class="flex-grow h-full overflow-hidden p-2 sm:p-4 bg-slate-950/80 flex items-center justify-center relative">
           
           <div id="loading-spinner" class="flex flex-col items-center space-y-3 my-auto">
             <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500"></i>
             <span class="text-sm text-slate-400">Memproses Halaman PDF...</span>
           </div>
 
-          <div id="flipbook-wrapper" class="hidden transform transition-transform duration-150 my-auto">
-            <div id="flipbook"></div>
+          <div id="flipbook-wrapper" class="hidden transform transition-transform duration-150 my-auto flex items-center justify-center w-full h-full">
+            <div id="flipbook-container"></div>
           </div>
 
         </div>
       </div>
 
       <!-- BOTTOM CONTROL BAR -->
-      <div class="w-full glass-panel py-2 px-3 sm:px-6 flex-shrink-0 z-30 border-t border-white/10 flex items-center justify-between gap-2">
+      <div class="w-full glass-panel py-2 px-3 sm:px-6 flex-shrink-0 z-40 border-t border-white/10 flex items-center justify-between gap-2">
         
         <!-- Sisi Kiri -->
         <div class="flex items-center space-x-1.5 sm:space-x-2">
@@ -229,7 +249,7 @@
             <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Kembali</span>
           </button>
           <button onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card border-indigo-500/30">
-            <i class="fa-solid fa-border-all"></i> <span id="toggle-thumb-text" class="hidden md:inline">Thumbnail</span>
+            <i class="fa-solid fa-border-all"></i> <span class="hidden sm:inline">Thumbnail</span>
           </button>
         </div>
 
@@ -241,7 +261,7 @@
           
           <div class="flex items-center">
             <span class="text-[10px] sm:text-xs font-medium text-slate-300">
-              Hal <input type="number" id="page-num-input" value="1" min="1" class="w-8 sm:w-10 text-center glass-input rounded px-0.5 py-0.5 text-[10px] sm:text-xs inline-block font-semibold" onchange="jumpToPage(this.value)"> / <span id="page-count">0</span>
+              Hal <input type="number" id="page-num-input" value="1" min="1" class="w-9 text-center glass-input rounded px-0.5 py-0.5 text-[10px] sm:text-xs inline-block font-semibold" onchange="jumpToPage(this.value)"> / <span id="page-count">0</span>
             </span>
           </div>
 
@@ -353,7 +373,7 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC -->
+  <!-- JAVASCRIPT ENGINE -->
   <script>
     const SUPABASE_URL = 'https://prsgmirandndqomvwzxv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByc2dtaXJhbmRuZHFvbXZ3enh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMTE0MTEsImV4cCI6MjEwNTY4NzQxMX0.ox5Bt7Wc7yFDqzbWOLhSmCySEcJa2Ui2UljlVW2OpKA';
@@ -368,7 +388,7 @@
     let currentZoom = 1;
     let currentUser = null;
     let resizeTimer = null;
-    let currentPageNumber = 1;
+    let currentPageIndex = 1;
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
       currentUser = session?.user || null;
@@ -378,29 +398,35 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadCatalogFromSupabase();
 
-      // Fix Event Delegation Thumbnail (Berfungsi di Landscape & Mobile)
+      // Fix Event Delegation Thumbnail (Mouse & Touch Screen)
       const thumbContainer = document.getElementById('thumbnail-container');
       thumbContainer.addEventListener('click', (e) => {
         const item = e.target.closest('.thumb-item');
-        if (item && item.dataset.page) {
-          const pageNum = parseInt(item.dataset.page, 10);
-          jumpToPage(pageNum);
-          if (window.innerWidth <= 768 || window.innerHeight <= 600) {
-            toggleThumbnailSidebar();
+        if (item && item.getAttribute('data-page')) {
+          const targetPage = parseInt(item.getAttribute('data-page'), 10);
+          jumpToPage(targetPage);
+          
+          if (window.innerWidth <= 768 || window.innerHeight <= 500) {
+            closeMobileSidebar();
           }
         }
       });
 
-      // Handling Responsive Orientation Change & Screen Resize
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          if (pdfDocInstance && document.getElementById('view-reader').classList.contains('flex')) {
-            initFlipbookInstance();
-          }
-        }, 200);
+      // Handling Auto Re-layout & Orientation Change
+      window.addEventListener('resize', handleResizeOrOrientation);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(handleResizeOrOrientation, 300);
       });
     });
+
+    function handleResizeOrOrientation() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(async () => {
+        if (pdfDocInstance && document.getElementById('view-reader').classList.contains('flex')) {
+          await rebuildFlipbookDOM();
+        }
+      }, 250);
+    }
 
     /* KATALOG & NAVIGATION */
     async function loadCatalogFromSupabase() {
@@ -530,67 +556,23 @@
     /* FLIPBOOK ENGINE */
     async function openReader(book) {
       currentBook = book;
-      currentPageNumber = 1;
+      currentPageIndex = 1;
       switchView('reader');
       document.getElementById('loading-spinner').classList.remove('hidden');
       document.getElementById('flipbook-wrapper').classList.add('hidden');
 
-      const container = document.getElementById('flipbook');
-      const thumbContainer = document.getElementById('thumbnail-container');
-      container.innerHTML = '';
-      thumbContainer.innerHTML = '';
-      renderedPages.clear();
-      resetZoom();
-
-      if (pageFlipInstance) {
-        try { pageFlipInstance.destroy(); } catch(e){}
-        pageFlipInstance = null;
-      }
-
       try {
         const loadingTask = pdfjsLib.getDocument(book.pdf_url);
         pdfDocInstance = await loadingTask.promise;
-        const totalPages = pdfDocInstance.numPages;
-        document.getElementById('page-count').innerText = totalPages;
+        document.getElementById('page-count').innerText = pdfDocInstance.numPages;
 
-        for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-          // Element Canvas Halaman
-          const pageDiv = document.createElement('div');
-          pageDiv.className = 'page-canvas-wrapper bg-white shadow-2xl relative overflow-hidden flex items-center justify-center';
-          pageDiv.dataset.pageNum = pageNum;
-
-          const canvas = document.createElement('canvas');
-          canvas.id = `page-canvas-${pageNum}`;
-          pageDiv.appendChild(canvas);
-          container.appendChild(pageDiv);
-
-          // Element Thumbnail dengan Dataset Page
-          const thumbDiv = document.createElement('div');
-          thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
-          thumbDiv.id = `thumb-page-${pageNum}`;
-          thumbDiv.dataset.page = pageNum;
-          
-          const thumbCanvas = document.createElement('canvas');
-          thumbCanvas.id = `thumb-canvas-${pageNum}`;
-          thumbCanvas.className = "rounded-lg w-full h-auto bg-white shadow min-h-[45px] pointer-events-none";
-
-          const label = document.createElement('span');
-          label.className = "text-[10px] text-slate-300 font-semibold mt-1 pointer-events-none";
-          label.innerText = pageNum;
-
-          thumbDiv.appendChild(thumbCanvas);
-          thumbDiv.appendChild(label);
-          thumbContainer.appendChild(thumbDiv);
-        }
-
-        await renderPageIfNeeded(1);
-        await renderPageIfNeeded(2);
+        await generateThumbnailsList();
+        await rebuildFlipbookDOM();
 
         document.getElementById('loading-spinner').classList.add('hidden');
         document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
-        await initFlipbookInstance();
-        renderThumbnails();
+        renderThumbnailsContent();
 
       } catch (err) {
         alert("Gagal memuat dokumen PDF: " + err.message);
@@ -598,23 +580,68 @@
       }
     }
 
-    async function initFlipbookInstance() {
+    async function generateThumbnailsList() {
+      const thumbContainer = document.getElementById('thumbnail-container');
+      thumbContainer.innerHTML = '';
+
+      for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
+        const thumbDiv = document.createElement('div');
+        thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
+        thumbDiv.id = `thumb-page-${pageNum}`;
+        thumbDiv.setAttribute('data-page', pageNum);
+        
+        const thumbCanvas = document.createElement('canvas');
+        thumbCanvas.id = `thumb-canvas-${pageNum}`;
+        thumbCanvas.className = "rounded-lg w-full h-auto bg-white shadow min-h-[50px]";
+
+        const label = document.createElement('span');
+        label.className = "text-[10px] text-slate-300 font-semibold mt-1";
+        label.innerText = pageNum;
+
+        thumbDiv.appendChild(thumbCanvas);
+        thumbDiv.appendChild(label);
+        thumbContainer.appendChild(thumbDiv);
+      }
+    }
+
+    async function rebuildFlipbookDOM() {
       if (!pdfDocInstance) return;
 
-      const container = document.getElementById('flipbook');
+      const flipContainer = document.getElementById('flipbook-container');
+      
+      if (pageFlipInstance) {
+        try { pageFlipInstance.destroy(); } catch(e){}
+        pageFlipInstance = null;
+      }
+
+      flipContainer.innerHTML = '';
+      renderedPages.clear();
+
+      const totalPages = pdfDocInstance.numPages;
+
+      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'page-canvas-wrapper';
+        pageDiv.setAttribute('data-page-num', pageNum);
+
+        const canvas = document.createElement('canvas');
+        canvas.id = `page-canvas-${pageNum}`;
+        pageDiv.appendChild(canvas);
+        flipContainer.appendChild(pageDiv);
+      }
+
       const firstPage = await pdfDocInstance.getPage(1);
       const originalViewport = firstPage.getViewport({ scale: 1.0 });
       const aspectRatio = originalViewport.width / originalViewport.height;
 
       const viewportContainer = document.getElementById('reader-viewport');
       const isPortrait = window.innerWidth < window.innerHeight;
-      const isMobile = window.innerWidth <= 768;
+      const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
 
-      let availWidth = viewportContainer.clientWidth || window.innerWidth;
+      let availWidth = viewportContainer.clientWidth || (window.innerWidth - 30);
       let availHeight = viewportContainer.clientHeight || (window.innerHeight - 80);
 
-      // Kalkulasi Dimensi Responsif Pas Layar
-      let targetHeight = Math.max(250, availHeight - 30);
+      let targetHeight = Math.max(220, availHeight - 20);
       let targetWidth = Math.round(targetHeight * aspectRatio);
 
       if (isPortrait || isMobile) {
@@ -623,17 +650,13 @@
           targetHeight = Math.round(targetWidth / aspectRatio);
         }
       } else {
-        if (targetWidth * 2 > availWidth * 0.9) {
-          targetWidth = Math.round((availWidth * 0.85) / 2);
+        if (targetWidth * 2 > availWidth * 0.95) {
+          targetWidth = Math.round((availWidth * 0.9) / 2);
           targetHeight = Math.round(targetWidth / aspectRatio);
         }
       }
 
-      if (pageFlipInstance) {
-        try { pageFlipInstance.destroy(); } catch(e){}
-      }
-
-      pageFlipInstance = new St.PageFlip(container, {
+      pageFlipInstance = new St.PageFlip(flipContainer, {
         width: targetWidth,
         height: targetHeight,
         size: "fixed",
@@ -641,36 +664,35 @@
         maxWidth: 1000,
         minHeight: 200,
         maxHeight: 1200,
-        maxShadowOpacity: 0.1,
+        maxShadowOpacity: 0.15,
         showCover: true,
         usePortrait: isPortrait || isMobile,
         mobileScrollSupport: false,
-        flippingTime: 250,
+        flippingTime: 300,
         disableFlipAnimation: false
       });
 
-      const pageElements = container.querySelectorAll('.page-canvas-wrapper');
+      const pageElements = flipContainer.querySelectorAll('.page-canvas-wrapper');
       pageFlipInstance.loadFromHTML(pageElements);
 
-      // Render Halaman Terdekat Sebelum Berpindah
-      await renderPageIfNeeded(currentPageNumber);
-      await renderPageIfNeeded(currentPageNumber + 1);
+      await renderPageIfNeeded(currentPageIndex);
+      await renderPageIfNeeded(currentPageIndex + 1);
 
-      if (currentPageNumber > 1) {
-        pageFlipInstance.turnToPage(currentPageNumber - 1);
+      if (currentPageIndex > 1) {
+        pageFlipInstance.turnToPage(currentPageIndex - 1);
       }
 
       pageFlipInstance.on('flip', (e) => {
-        currentPageNumber = e.data + 1;
-        document.getElementById('page-num-input').value = currentPageNumber;
+        currentPageIndex = e.data + 1;
+        document.getElementById('page-num-input').value = currentPageIndex;
         
-        renderPageIfNeeded(currentPageNumber);
-        renderPageIfNeeded(currentPageNumber + 1);
-        renderPageIfNeeded(currentPageNumber + 2);
-        renderPageIfNeeded(currentPageNumber - 1);
+        renderPageIfNeeded(currentPageIndex);
+        renderPageIfNeeded(currentPageIndex + 1);
+        renderPageIfNeeded(currentPageIndex + 2);
+        renderPageIfNeeded(currentPageIndex - 1);
 
         document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('active'));
-        const activeThumb = document.getElementById(`thumb-page-${currentPageNumber}`);
+        const activeThumb = document.getElementById(`thumb-page-${currentPageIndex}`);
         if (activeThumb) {
           activeThumb.classList.add('active');
           activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -694,7 +716,7 @@
       await page.render({ canvasContext: context, viewport: viewport }).promise;
     }
 
-    async function renderThumbnails() {
+    async function renderThumbnailsContent() {
       if (!pdfDocInstance) return;
       for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
         const page = await pdfDocInstance.getPage(pageNum);
@@ -712,13 +734,27 @@
 
     function toggleThumbnailSidebar() {
       const sidebar = document.getElementById('thumbnail-sidebar');
-      if (sidebar.classList.contains('hidden')) {
-        sidebar.classList.remove('hidden');
-        sidebar.classList.add('flex');
+      if (window.innerWidth <= 768 || window.innerHeight <= 500) {
+        if (sidebar.classList.contains('mobile-visible')) {
+          closeMobileSidebar();
+        } else {
+          openMobileSidebar();
+        }
       } else {
-        sidebar.classList.add('hidden');
-        sidebar.classList.remove('flex');
+        sidebar.classList.toggle('hidden');
       }
+    }
+
+    function openMobileSidebar() {
+      const sidebar = document.getElementById('thumbnail-sidebar');
+      sidebar.classList.remove('mobile-hidden');
+      sidebar.classList.add('mobile-visible');
+    }
+
+    function closeMobileSidebar() {
+      const sidebar = document.getElementById('thumbnail-sidebar');
+      sidebar.classList.remove('mobile-visible');
+      sidebar.classList.add('mobile-hidden');
     }
 
     function zoomFlipbook(amount) {
@@ -733,12 +769,12 @@
       wrapper.style.transform = `scale(1)`;
     }
 
-    function jumpToPage(val) {
+    async function jumpToPage(val) {
       const target = parseInt(val, 10);
       if (pageFlipInstance && !isNaN(target) && target > 0 && target <= (pdfDocInstance?.numPages || 0)) {
-        renderPageIfNeeded(target).then(() => {
-          pageFlipInstance.flip(target - 1);
-        });
+        await renderPageIfNeeded(target);
+        await renderPageIfNeeded(target + 1);
+        pageFlipInstance.flip(target - 1);
       }
     }
 
