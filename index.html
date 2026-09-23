@@ -8,7 +8,6 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" href="https://scontent.cdninstagram.com/v/t51.82787-19/809209232_18105150251625834_952652532206371015_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_cat=101&ccb=7-5&_nc_sid=f7ccc5&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=V5_LNznfN04Q7kNvwEAVMF8&_nc_oc=AdrzuvglYixrfB53uz7ety_lfWjjwGsoMbyTzNCWdsgOYa5CsbN3ICGcvjpuYwtNj-c&_nc_zt=24&_nc_ht=scontent.cdninstagram.com&_nc_gid=lmbkLuooWdOmSAVEUw1euQ&_nc_ss=7ba8c&oh=00_AQKtymHa9QQw-30SNi3uAk0yEFm75y3Uvy81WLJjqyRoig&oe=6AB9064A">
-  <link rel="icon" href="/faviconfb.png">
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -33,11 +32,13 @@
       font-family: 'Inter', sans-serif;
       background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #020617);
       color: #f8fafc;
-      min-height: 100vh;
+      height: 100vh;
+      height: 100dvh; /* Responsif browser mobile */
+      overflow: hidden;
     }
 
     .glass-panel {
-      background: rgba(30, 41, 59, 0.85);
+      background: rgba(30, 41, 59, 0.9);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -109,7 +110,7 @@
       margin: 0 auto;
     }
 
-    /* Modifikasi Sidebar Mobile Overlay */
+    /* Penyesuaian Overlay Mobile Thumbnail Sidebar */
     @media (max-width: 768px) {
       #thumbnail-sidebar {
         position: absolute;
@@ -117,7 +118,9 @@
         top: 0;
         bottom: 0;
         z-index: 30;
-        background: rgba(15, 23, 42, 0.95);
+        width: 13rem;
+        background: rgba(15, 23, 42, 0.98);
+        box-shadow: 4px 0 15px rgba(0,0,0,0.5);
       }
     }
   </style>
@@ -146,7 +149,7 @@
   </nav>
 
   <!-- MAIN CONTENT CONTAINER -->
-  <main class="flex-grow overflow-hidden relative flex flex-col">
+  <main class="flex-grow overflow-hidden relative flex flex-col min-h-0">
 
     <!-- VIEW 1: KATALOG UTAMA -->
     <section id="view-catalog" class="p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto h-full flex flex-col justify-between">
@@ -174,18 +177,21 @@
     </section>
 
     <!-- VIEW 2: FLIPBOOK READER -->
-    <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950/90">
+    <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950 overflow-hidden">
 
-      <!-- Reader Body -->
-      <div class="flex-grow flex w-full h-full overflow-hidden relative">
+      <!-- Reader Body Container -->
+      <div class="flex-grow flex w-full h-full overflow-hidden relative min-h-0">
         
         <!-- Sidebar Thumbnails -->
-        <aside id="thumbnail-sidebar" class="hidden md:flex w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex-col space-y-3 flex-shrink-0 transition-all duration-300">
-          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1">Daftar Halaman</div>
+        <aside id="thumbnail-sidebar" class="hidden w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex-col space-y-3 flex-shrink-0">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1 flex justify-between items-center">
+            <span>Daftar Halaman</span>
+            <button onclick="toggleThumbnailSidebar()" class="md:hidden text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
           <div id="thumbnail-container" class="grid grid-cols-2 gap-2.5"></div>
         </aside>
 
-        <!-- Main Viewport Reader (Atur Overflow Auto untuk Scroll) -->
+        <!-- Main Viewport Reader (Scroll/Panning) -->
         <div id="reader-viewport" class="flex-grow h-full overflow-auto p-2 sm:p-4 bg-slate-950/60 flex items-center justify-center relative">
           
           <div id="loading-spinner" class="flex flex-col items-center space-y-3 my-auto">
@@ -200,32 +206,32 @@
         </div>
       </div>
 
-      <!-- COMBINED BOTTOM CONTROL BAR -->
-      <div class="w-full glass-panel py-2 px-3 sm:px-6 flex-shrink-0 z-20 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+      <!-- BOTTOM CONTROL BAR (Selalu Tampak di Layar HP & Desktop) -->
+      <div class="w-full glass-panel py-2 px-2 sm:px-6 flex-shrink-0 z-40 border-t border-white/10 flex items-center justify-between gap-1 sm:gap-2">
         
         <!-- Sisi Kiri: Navigasi Kembali & Toggle Sidebar -->
-        <div class="flex items-center space-x-1.5 sm:space-x-2">
-          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card" title="Kembali ke Katalog">
+        <div class="flex items-center space-x-1 sm:space-x-2">
+          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 px-2 py-1.5 rounded-lg glass-card" title="Kembali ke Katalog">
             <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Kembali</span>
           </button>
-          <button onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card border-indigo-500/30">
-            <i class="fa-solid fa-border-all"></i> <span id="toggle-thumb-text" class="hidden md:inline">Thumbnail</span>
+          <button onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-2 py-1.5 rounded-lg glass-card border-indigo-500/30">
+            <i class="fa-solid fa-border-all"></i> <span class="text-[11px] sm:text-xs">Thumbnail</span>
           </button>
         </div>
 
         <!-- Tengah: Navigasi Halaman -->
-        <div class="flex items-center space-x-2 sm:space-x-3">
-          <button onclick="pageFlipInstance?.flipPrev()" class="px-2.5 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
+        <div class="flex items-center space-x-1 sm:space-x-3">
+          <button onclick="pageFlipInstance?.flipPrev('instant')" class="px-2 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
             <i class="fa-solid fa-chevron-left"></i> <span class="hidden sm:inline">Prev</span>
           </button>
           
           <div class="flex items-center">
             <span class="text-[10px] sm:text-xs font-medium text-slate-300">
-              Hal <input type="number" id="page-num-input" value="1" min="1" class="w-8 sm:w-10 text-center glass-input rounded px-0.5 py-0.2 text-[10px] sm:text-xs inline-block font-semibold" onchange="jumpToPage(this.value)"> / <span id="page-count">0</span>
+              <input type="number" id="page-num-input" value="1" min="1" class="w-8 sm:w-10 text-center glass-input rounded px-0.5 py-0.5 text-[10px] sm:text-xs inline-block font-semibold" onchange="jumpToPage(this.value)"> / <span id="page-count">0</span>
             </span>
           </div>
 
-          <button onclick="pageFlipInstance?.flipNext()" class="px-2.5 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
+          <button onclick="pageFlipInstance?.flipNext('instant')" class="px-2 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
             <span class="hidden sm:inline">Next</span> <i class="fa-solid fa-chevron-right"></i>
           </button>
         </div>
@@ -411,7 +417,6 @@
         `;
         grid.appendChild(card);
 
-        // Generasi Sampul Halaman Pertama secara Otomatis
         loadBookCover(book.pdf_url, book.id);
       });
     }
@@ -514,7 +519,7 @@
         const isMobile = window.innerWidth < 768;
         const viewportContainer = document.getElementById('reader-viewport');
         const targetHeight = isMobile 
-          ? Math.min(Math.max(300, viewportContainer.clientHeight - 40), 550) 
+          ? Math.min(Math.max(280, viewportContainer.clientHeight - 30), 500) 
           : Math.min(Math.max(380, viewportContainer.clientHeight - 30), 850);
         const targetWidth = Math.round(targetHeight * aspectRatio);
 
@@ -550,7 +555,7 @@
           const canvas = document.getElementById(`page-canvas-${pageNum}`);
           if (!canvas) return;
 
-          const viewport = page.getViewport({ scale: 2.0 });
+          const viewport = page.getViewport({ scale: 1.8 });
           const context = canvas.getContext('2d');
           canvas.height = viewport.height;
           canvas.width = viewport.width;
@@ -588,9 +593,10 @@
             maxWidth: 1000,
             minHeight: 250,
             maxHeight: 1200,
-            maxShadowOpacity: 0.5,
+            maxShadowOpacity: 0.1,
             showCover: true,
             usePortrait: isMobile,
+            flippingTime: 1, // Durasi perpindahan diatur instan (1ms) agar cepat
             mobileScrollSupport: false
           });
 
@@ -623,6 +629,7 @@
       }
     }
 
+    /* Memperbaiki fungsi toggle sidebar thumbnail pada HP dan Desktop */
     function toggleThumbnailSidebar() {
       const sidebar = document.getElementById('thumbnail-sidebar');
       if (sidebar.classList.contains('hidden')) {
@@ -648,7 +655,7 @@
 
     function jumpToPage(val) {
       if (pageFlipInstance && val > 0) {
-        pageFlipInstance.flip(parseInt(val) - 1);
+        pageFlipInstance.flip(parseInt(val) - 1, 'instant');
       }
     }
 
@@ -764,7 +771,8 @@
 
       } catch (err) {
         alert("Gagal Mengunggah: " + err.message);
-      } finally {
+      } font-medium
+      finally {
         btn.disabled = false;
         btn.innerText = "Simpan & Unggah";
       }
