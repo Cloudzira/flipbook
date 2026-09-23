@@ -3,417 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlipbuKu Studio</title>
+  <title>Flipbook Studio</title>
 
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- PDF.js CDN -->
+  <!-- PDF.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  </script>
-
-  <!-- StPageFlip CDN -->
+  <!-- St.PageFlip Library -->
   <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
 
-  <!-- Supabase JS Client v2 -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Google Fonts (Inter) -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #020617);
-      color: #f8fafc;
-      min-height: 100vh;
-    }
-
-    .glass-panel {
-      background: rgba(30, 41, 59, 0.75);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    }
-
+    /* Styling Kustom */
     .glass-card {
-      background: rgba(255, 255, 255, 0.04);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: all 0.2s ease;
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
     }
-
-    .glass-card:hover {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(99, 102, 241, 0.4);
-    }
-
-    .glass-input {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #f8fafc;
-    }
-
-    .glass-input:focus {
-      border-color: #6366f1;
-      outline: none;
-      box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
-    }
-
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(99, 102, 241, 0.4);
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(99, 102, 241, 0.7);
-    }
-
-    /* Active Thumbnail styling */
     .thumb-item.active {
-      border-color: #6366f1 !important;
-      background: rgba(99, 102, 241, 0.2) !important;
-      box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+      border-color: #6366f1;
+      background: rgba(99, 102, 241, 0.2);
     }
-
-    /* Responsive Flipbook Container */
-    #flipbook-wrapper {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-    }
-    
-    .stpageflip-container {
-      margin: 0 auto;
+    /* Mencegah kanvas melenceng saat rendering */
+    .page-canvas-wrapper canvas {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain;
     }
   </style>
 </head>
-<body class="flex flex-col h-screen overflow-hidden">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans overflow-hidden">
 
-  <!-- NAVBAR -->
-  <nav class="glass-panel sticky top-0 z-40 px-6 py-2.5 flex items-center justify-between border-b border-white/10 flex-shrink-0">
-    <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('catalog')">
-      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-        <i class="fa-solid fa-book-open text-white text-sm"></i>
-      </div>
-      <span class="text-base font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-300">
-        Flipbook Studio
-      </span>
-    </div>
-
-    <div class="flex items-center space-x-3">
-      <button onclick="switchView('catalog')" class="px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-white/10 transition flex items-center gap-2">
-        <i class="fa-solid fa-border-all"></i> Katalog
+  <!-- Header Navigation -->
+  <header class="h-14 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between px-4 z-20">
+    <div class="flex items-center gap-3">
+      <button onclick="backToCatalog()" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-medium transition">
+        ← Kembali
       </button>
-      <button id="nav-admin-btn" onclick="openAdminModalOrView()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600/80 hover:bg-indigo-500 text-white transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
-        <i class="fa-solid fa-user-shield"></i> <span id="admin-btn-text">Admin Panel</span>
+      <button onclick="toggleThumbnails()" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-medium transition">
+        <span id="thumb-btn-text">Sembunyikan Thumbnail</span>
       </button>
     </div>
-  </nav>
 
-  <!-- MAIN CONTENT CONTAINER -->
-  <main class="flex-grow overflow-hidden relative flex flex-col">
+    <div class="text-sm font-semibold tracking-wide text-slate-200" id="reader-title">
+      Buku 1
+    </div>
 
-    <!-- VIEW 1: KATALOG UTAMA -->
-    <section id="view-catalog" class="p-6 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto h-full">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-4 rounded-2xl">
-        <div class="relative flex-grow max-w-md">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <input type="text" id="search-input" oninput="filterCatalog()" placeholder="Cari judul atau deskripsi..." class="w-full pl-10 pr-4 py-2 rounded-xl glass-input text-sm">
-        </div>
-        <div class="flex items-center space-x-2">
-          <label class="text-xs text-slate-400 font-medium">Kategori:</label>
-          <select id="category-filter" onchange="filterCatalog()" class="glass-input rounded-xl px-3 py-2 text-sm bg-slate-900">
-            <option value="ALL">Semua Kategori</option>
-          </select>
-        </div>
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-slate-400">Halaman:</span>
+      <input type="number" id="page-num-input" value="1" min="1" class="w-12 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-center text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+      <span class="text-xs text-slate-400">/ <span id="page-count">0</span></span>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="flex-1 flex relative overflow-hidden">
+    
+    <!-- Sidebar Thumbnail -->
+    <aside id="thumbnail-sidebar" class="w-48 bg-slate-800/50 border-r border-slate-700/50 p-3 flex flex-col gap-3 overflow-y-auto z-10 transition-all duration-300">
+      <div id="thumbnail-container" class="flex flex-col gap-3">
+        <!-- Thumbnail akan digenerate otomatis -->
       </div>
+    </aside>
 
-      <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-12"></div>
-    </section>
-
-    <!-- VIEW 2: FLIPBOOK READER (MAKSIMAL SPACE + PREVIEW THUMBNAIL) -->
-    <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950/90">
+    <!-- Flipbook Workspace -->
+    <section id="reader-viewport" class="flex-1 flex items-center justify-center p-4 relative bg-slate-950/50">
       
-      <!-- Top Bar Controls -->
-      <div class="w-full flex items-center justify-between glass-panel px-4 py-2 flex-shrink-0 z-20 border-b border-white/10">
-        <div class="flex items-center space-x-2">
-          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-card">
-            <i class="fa-solid fa-arrow-left"></i> Kembali
-          </button>
-          <button onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-card border-indigo-500/30">
-            <i class="fa-solid fa-border-all"></i> <span id="toggle-thumb-text">Sembunyikan Thumbnail</span>
-          </button>
-        </div>
-
-        <h2 id="reader-title" class="font-semibold text-sm text-indigo-200 truncate max-w-xs sm:max-w-md">Memuat Buku...</h2>
-
-        <div class="flex items-center space-x-1">
-          <button onclick="zoomFlipbook(0.15)" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-          <button onclick="zoomFlipbook(-0.15)" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-          <button onclick="resetZoom()" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Reset Zoom"><i class="fa-solid fa-rotate-left"></i></button>
-          <button onclick="toggleFullscreen()" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
-        </div>
+      <!-- Loading Spinner -->
+      <div id="loading-spinner" class="flex flex-col items-center gap-3">
+        <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-xs text-slate-400 font-medium">Memuat dokumen...</p>
       </div>
 
-      <!-- Reader Body -->
-      <div class="flex-grow flex w-full h-full overflow-hidden relative">
-        
-        <!-- Sidebar Thumbnails -->
-        <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex flex-col space-y-3 flex-shrink-0 transition-all duration-300 z-10">
-          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1">Daftar Halaman</div>
-          <div id="thumbnail-container" class="grid grid-cols-2 gap-2.5"></div>
-        </aside>
-
-        <!-- Main Viewport Reader -->
-        <div id="reader-viewport" class="flex-grow h-full flex items-center justify-center relative overflow-hidden p-2 sm:p-4 bg-slate-950/60">
-          
-          <div id="loading-spinner" class="flex flex-col items-center space-y-3">
-            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500"></i>
-            <span class="text-sm text-slate-400">Memproses Halaman PDF...</span>
-          </div>
-
-          <div id="flipbook-wrapper" class="hidden transform transition-transform duration-150">
-            <div id="flipbook"></div>
-          </div>
-
+      <!-- Container Flipbook -->
+      <div id="flipbook-wrapper" class="hidden flex items-center justify-center">
+        <div id="flipbook" class="shadow-2xl">
+          <!-- Halaman Canvas akan dimasukkan di sini oleh JS -->
         </div>
-      </div>
-
-      <!-- Bottom Control Bar -->
-      <div class="w-full flex items-center justify-center space-x-4 glass-panel py-2 px-4 flex-shrink-0 z-20 border-t border-white/10">
-        <button onclick="pageFlipInstance?.flipPrev()" class="px-3 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg"><i class="fa-solid fa-chevron-left"></i> Prev</button>
-        <span class="text-xs font-medium text-slate-300">
-          Halaman <input type="number" id="page-num-input" value="1" min="1" class="w-10 text-center glass-input rounded px-1 py-0.5 text-xs inline-block" onchange="jumpToPage(this.value)"> dari <span id="page-count">0</span>
-        </span>
-        <button onclick="pageFlipInstance?.flipNext()" class="px-3 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">Next <i class="fa-solid fa-chevron-right"></i></button>
       </div>
 
     </section>
-
-    <!-- VIEW 3: HALAMAN ADMIN -->
-    <section id="view-admin" class="hidden p-6 max-w-7xl w-full mx-auto space-y-8 overflow-y-auto h-full">
-      <div class="flex items-center justify-between border-b border-white/10 pb-4">
-        <div>
-          <h1 class="text-2xl font-bold text-white">Dashboard Admin</h1>
-          <p class="text-xs text-slate-400">Kelola koleksi dan unggah dokumen flipbook baru</p>
-        </div>
-        <button onclick="logoutAdmin()" class="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm font-medium border border-red-500/30 transition">
-          <i class="fa-solid fa-right-from-bracket"></i> Keluar
-        </button>
-      </div>
-
-      <div class="glass-panel p-6 rounded-2xl space-y-4">
-        <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2">
-          <i class="fa-solid fa-cloud-arrow-up"></i> Unggah Flipbook Baru
-        </h3>
-        <form id="upload-form" onsubmit="handleUpload(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs text-slate-300 mb-1 font-medium">Judul Buku *</label>
-            <input type="text" id="upload-title" required placeholder="Contoh: Majalah Digital Edisi 01" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm">
-          </div>
-          <div>
-            <label class="block text-xs text-slate-300 mb-1 font-medium">Kategori *</label>
-            <input type="text" id="upload-category" required placeholder="Contoh: Majalah, Buku, Katalog" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm">
-          </div>
-          <div class="md:col-span-2">
-            <label class="block text-xs text-slate-300 mb-1 font-medium">Deskripsi Singkat</label>
-            <textarea id="upload-desc" rows="2" placeholder="Tulis deskripsi singkat..." class="w-full glass-input rounded-xl px-4 py-2.5 text-sm"></textarea>
-          </div>
-          <div class="md:col-span-2">
-            <label class="block text-xs text-slate-300 mb-1 font-medium">File Dokumen PDF *</label>
-            <input type="file" id="upload-file" accept="application/pdf" required class="w-full glass-input rounded-xl px-4 py-2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
-          </div>
-          <div class="md:col-span-2 flex justify-end">
-            <button type="submit" id="btn-submit-upload" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium text-sm shadow-lg shadow-indigo-500/25 transition">
-              Simpan & Unggah
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <div class="glass-panel p-6 rounded-2xl space-y-4 pb-12">
-        <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2">
-          <i class="fa-solid fa-list-check"></i> Daftar Koleksi Flipbook
-        </h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-300">
-            <thead class="bg-slate-900/60 text-xs uppercase text-slate-400 border-b border-white/10">
-              <tr>
-                <th class="p-3">Judul</th>
-                <th class="p-3">Kategori</th>
-                <th class="p-3">Tanggal</th>
-                <th class="p-3 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="admin-table-body"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
   </main>
 
-  <!-- MODAL LOGIN ADMIN -->
-  <div id="login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
-    <div class="glass-panel p-8 rounded-2xl w-full max-w-md relative border border-white/20 shadow-2xl space-y-6">
-      <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-      <div class="text-center">
-        <div class="w-12 h-12 bg-indigo-600/30 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl border border-indigo-500/30">
-          <i class="fa-solid fa-lock"></i>
-        </div>
-        <h3 class="text-xl font-bold text-white">Login Admin</h3>
-        <p class="text-xs text-slate-400 mt-1">Masuk untuk mengelola koleksi flipbook</p>
-      </div>
-
-      <form onsubmit="handleLogin(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs text-slate-300 mb-1">Email Admin</label>
-          <input type="email" id="login-email" required class="w-full glass-input rounded-xl px-4 py-2.5 text-sm" placeholder="admin@domain.com">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-300 mb-1">Password</label>
-          <input type="password" id="login-password" required class="w-full glass-input rounded-xl px-4 py-2.5 text-sm" placeholder="••••••••">
-        </div>
-        <button type="submit" id="btn-login" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm shadow-lg shadow-indigo-600/30 transition">
-          Masuk Dashboard
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- JAVASCRIPT LOGIC -->
   <script>
-    const SUPABASE_URL = 'https://prsgmirandndqomvwzxv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByc2dtaXJhbmRuZHFvbXZ3enh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMTE0MTEsImV4cCI6MjEwNTY4NzQxMX0.ox5Bt7Wc7yFDqzbWOLhSmCySEcJa2Ui2UljlVW2OpKA';
+    // Inisialisasi Worker PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    let catalogData = [];
     let pageFlipInstance = null;
-    let currentZoom = 1;
-    let currentUser = null;
+    let pdfDocInstance = null;
+    let renderedPages = new Set();
 
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      currentUser = session?.user || null;
-      updateAdminNavUI();
+    // Data Contoh Buku
+    const sampleBook = {
+      title: "Al-Qur'an Digital",
+      // Gantilah URL di bawah ini dengan URL PDF Anda sendiri
+      pdf_url: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf" 
+    };
+
+    // Jalankan Otomatis saat Halaman Di-load
+    window.addEventListener('DOMContentLoaded', () => {
+      openReader(sampleBook);
     });
 
-    document.addEventListener("DOMContentLoaded", () => {
-      loadCatalogFromSupabase();
-    });
-
-    /* KATALOG & NAVIGATION */
-    async function loadCatalogFromSupabase() {
-      const grid = document.getElementById('catalog-grid');
-      grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-500"></i><p class="mt-2 text-sm">Mengambil koleksi flipbook...</p></div>`;
-
-      const { data, error } = await supabaseClient
-        .from('flipbooks')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-400 text-sm">Gagal memuat data: ${error.message}</div>`;
-        return;
-      }
-
-      catalogData = data || [];
-      populateCategoryDropdown();
-      renderCatalogGrid(catalogData);
-    }
-
-    function renderCatalogGrid(items) {
-      const grid = document.getElementById('catalog-grid');
-      grid.innerHTML = '';
-
-      if (items.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500 text-sm">Tidak ada flipbook ditemukan.</div>`;
-        return;
-      }
-
-      items.forEach(book => {
-        const card = document.createElement('div');
-        card.className = 'glass-card rounded-2xl overflow-hidden flex flex-col justify-between cursor-pointer group';
-        card.onclick = () => openReader(book);
-
-        card.innerHTML = `
-          <div class="h-48 bg-slate-900/80 flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
-            <i class="fa-solid fa-file-pdf text-6xl text-indigo-400/50 group-hover:text-indigo-400 transition-colors"></i>
-            <span class="absolute top-3 left-3 text-[10px] uppercase tracking-wider bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded-full font-semibold">${book.category || 'Umum'}</span>
-          </div>
-          <div class="p-4 flex-grow flex flex-col justify-between space-y-2">
-            <div>
-              <h3 class="font-bold text-white text-base group-hover:text-indigo-300 transition-colors line-clamp-1">${book.title}</h3>
-              <p class="text-xs text-slate-400 line-clamp-2 mt-1">${book.description || 'Tidak ada deskripsi.'}</p>
-            </div>
-            <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-indigo-400 font-medium">
-              <span>Buka Flipbook</span>
-              <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition-transform"></i>
-            </div>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-    }
-
-    function populateCategoryDropdown() {
-      const select = document.getElementById('category-filter');
-      const categories = ['ALL', ...new Set(catalogData.map(b => b.category).filter(Boolean))];
-      select.innerHTML = categories.map(c => `<option value="${c}">${c === 'ALL' ? 'Semua Kategori' : c}</option>`).join('');
-    }
-
-    function filterCatalog() {
-      const query = document.getElementById('search-input').value.toLowerCase();
-      const category = document.getElementById('category-filter').value;
-
-      const filtered = catalogData.filter(book => {
-        const matchQuery = book.title.toLowerCase().includes(query) || (book.description && book.description.toLowerCase().includes(query));
-        const matchCategory = category === 'ALL' || book.category === category;
-        return matchQuery && matchCategory;
-      });
-
-      renderCatalogGrid(filtered);
-    }
-
-    function switchView(viewName) {
-      document.getElementById('view-catalog').classList.add('hidden');
-      document.getElementById('view-reader').classList.add('hidden');
-      document.getElementById('view-admin').classList.add('hidden');
-
-      if (viewName === 'catalog') {
-        document.getElementById('view-catalog').classList.remove('hidden');
-      } else if (viewName === 'reader') {
-        document.getElementById('view-reader').classList.remove('hidden');
-        document.getElementById('view-reader').classList.add('flex');
-      } else if (viewName === 'admin') {
-        if (!currentUser) {
-          openAdminModal();
-          document.getElementById('view-catalog').classList.remove('hidden');
-          return;
-        }
-        document.getElementById('view-admin').classList.remove('hidden');
-        renderAdminTable();
-      }
-    }
-
-    /* FLIPBOOK ENGINE & THUMBNAILS FIXED */
     async function openReader(book) {
-      switchView('reader');
       document.getElementById('reader-title').innerText = book.title;
       document.getElementById('loading-spinner').classList.remove('hidden');
       document.getElementById('flipbook-wrapper').classList.add('hidden');
@@ -422,90 +112,124 @@
       const thumbContainer = document.getElementById('thumbnail-container');
       container.innerHTML = '';
       thumbContainer.innerHTML = '';
+      renderedPages.clear();
 
       if (pageFlipInstance) {
-        try { 
-          pageFlipInstance.destroy(); 
-          pageFlipInstance = null;
-        } catch(e){}
+        try { pageFlipInstance.destroy(); pageFlipInstance = null; } catch(e){}
       }
 
       try {
+        // 1. Load PDF Document
         const loadingTask = pdfjsLib.getDocument(book.pdf_url);
-        const pdf = await loadingTask.promise;
-        document.getElementById('page-count').innerText = pdf.numPages;
+        pdfDocInstance = await loadingTask.promise;
+        const totalPages = pdfDocInstance.numPages;
+        document.getElementById('page-count').innerText = totalPages;
 
-        // 1. Render Setiap Halaman PDF ke DOM Utama + Buat Frame Thumbnail
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-          
-          // Render Utama untuk Flipbook Engine (resolusi tinggi)
-          const viewport = page.getViewport({ scale: 1.5 });
+        // 2. Ambil Dimensi Asli dari Halaman Pertama (Proporsional)
+        const firstPage = await pdfDocInstance.getPage(1);
+        const originalViewport = firstPage.getViewport({ scale: 1.0 });
+        const aspectRatio = originalViewport.width / originalViewport.height;
+
+        // 3. Kalkulasi Ukuran Ideal Sesuai Layar
+        const viewportContainer = document.getElementById('reader-viewport');
+        const targetHeight = Math.min(Math.max(400, viewportContainer.clientHeight - 60), 850);
+        const targetWidth = Math.round(targetHeight * aspectRatio);
+
+        // 4. Generate Struktur HTML Canvas Halaman & Thumbnail
+        for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+          // Flipbook Page Wrapper
           const pageDiv = document.createElement('div');
-          pageDiv.className = 'page-canvas-wrapper bg-white shadow-2xl';
-
+          pageDiv.className = 'page-canvas-wrapper bg-white shadow-md relative overflow-hidden flex items-center justify-center';
+          pageDiv.dataset.pageNum = pageNum;
+          
           const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-
-          await page.render({ canvasContext: context, viewport: viewport }).promise;
+          canvas.id = `page-canvas-${pageNum}`;
           pageDiv.appendChild(canvas);
           container.appendChild(pageDiv);
 
-          // 2. Render Canvas Terpisah untuk Thumbnail (resolusi disesuaikan)
-          const thumbViewport = page.getViewport({ scale: 0.25 });
+          // Thumbnail Wrapper
           const thumbDiv = document.createElement('div');
-          thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl cursor-pointer border border-white/10 hover:border-indigo-400 transition flex flex-col items-center ${pageNum === 1 ? 'active' : ''}`;
+          thumbDiv.className = `thumb-item glass-card p-1.5 rounded-lg cursor-pointer border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
           thumbDiv.id = `thumb-page-${pageNum}`;
           thumbDiv.onclick = () => jumpToPage(pageNum);
 
           const thumbCanvas = document.createElement('canvas');
-          const thumbContext = thumbCanvas.getContext('2d');
-          thumbCanvas.height = thumbViewport.height;
-          thumbCanvas.width = thumbViewport.width;
-          thumbCanvas.className = "rounded-lg w-full h-auto bg-white shadow";
-
-          await page.render({ canvasContext: thumbContext, viewport: thumbViewport }).promise;
+          thumbCanvas.id = `thumb-canvas-${pageNum}`;
+          thumbCanvas.className = "rounded w-full h-auto bg-white shadow min-h-[50px]";
 
           thumbDiv.appendChild(thumbCanvas);
           thumbDiv.innerHTML += `<span class="text-[10px] text-slate-300 font-semibold mt-1">${pageNum}</span>`;
           thumbContainer.appendChild(thumbDiv);
         }
 
-        // Tampilkan Container Utama
+        // Tampilkan Flipbook
         document.getElementById('loading-spinner').classList.add('hidden');
         document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
-        // 3. Kalkulasi Ukuran Maksimal Mengikuti Layar Viewport (Full Space)
-        const viewportContainer = document.getElementById('reader-viewport');
-        const availableHeight = Math.max(400, viewportContainer.clientHeight - 32);
-        const availableWidth = Math.max(300, Math.floor((viewportContainer.clientWidth - 40) / 2));
-
-        // Inisialisasi StPageFlip
+        // 5. Inisialisasi St.PageFlip
         pageFlipInstance = new St.PageFlip(container, {
-          width: availableWidth,
-          height: availableHeight,
-          size: "stretch",
-          minWidth: 260,
-          maxWidth: 900,
-          minHeight: 380,
-          maxHeight: 1200,
+          width: targetWidth,
+          height: targetHeight,
+          size: "fixed", // Mencegah distorsi/gepeng
           maxShadowOpacity: 0.5,
           showCover: true,
           mobileScrollSupport: false
         });
 
         const pageElements = container.querySelectorAll('.page-canvas-wrapper');
-        if (pageElements.length > 0) {
-          pageFlipInstance.loadFromHTML(pageElements);
+        pageFlipInstance.loadFromHTML(pageElements);
+
+        // Render Halaman Utama Secara Lazy (On-Demand)
+        async function renderPageIfNeeded(pageNum) {
+          if (pageNum < 1 || pageNum > totalPages || renderedPages.has(pageNum)) return;
+          renderedPages.add(pageNum);
+
+          const page = await pdfDocInstance.getPage(pageNum);
+          const canvas = document.getElementById(`page-canvas-${pageNum}`);
+          if (!canvas) return;
+
+          const viewport = page.getViewport({ scale: 1.5 });
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
         }
 
+        // Render Thumbnail Bertahap (Background Process)
+        async function renderThumbnails() {
+          for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+            const page = await pdfDocInstance.getPage(pageNum);
+            const thumbCanvas = document.getElementById(`thumb-canvas-${pageNum}`);
+            if (!thumbCanvas) continue;
+
+            const thumbViewport = page.getViewport({ scale: 0.25 });
+            const thumbContext = thumbCanvas.getContext('2d');
+            thumbCanvas.height = thumbViewport.height;
+            thumbCanvas.width = thumbViewport.width;
+
+            await page.render({ canvasContext: thumbContext, viewport: thumbViewport }).promise;
+          }
+        }
+
+        // Render Halaman Awal (Halaman 1 & 2 saja agar instan)
+        await renderPageIfNeeded(1);
+        await renderPageIfNeeded(2);
+        
+        // Mulai render thumbnail di background
+        renderThumbnails();
+
+        // Listener Event 'Flip'
         pageFlipInstance.on('flip', (e) => {
           const activePage = e.data + 1;
           document.getElementById('page-num-input').value = activePage;
-          
-          // Update Active Highlight Thumbnail
+
+          // Render halaman aktif dan halaman sebelahnya
+          renderPageIfNeeded(activePage);
+          renderPageIfNeeded(activePage + 1);
+          renderPageIfNeeded(activePage - 1);
+
+          // Update Status Thumbnail Active
           document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('active'));
           const activeThumb = document.getElementById(`thumb-page-${activePage}`);
           if (activeThumb) {
@@ -515,195 +239,33 @@
         });
 
       } catch (err) {
-        alert("Gagal memuat dokumen PDF: " + err.message);
-        switchView('catalog');
+        alert("Gagal memuat PDF: " + err.message);
+        console.error(err);
       }
     }
 
-    function toggleThumbnailSidebar() {
+    // Navigasi Loncat ke Halaman
+    function jumpToPage(pageNum) {
+      if (pageFlipInstance) {
+        pageFlipInstance.flip(pageNum - 1);
+      }
+    }
+
+    // Toggle Tampilkan/Sembunyikan Sidebar Thumbnail
+    function toggleThumbnails() {
       const sidebar = document.getElementById('thumbnail-sidebar');
-      const btnText = document.getElementById('toggle-thumb-text');
+      const btnText = document.getElementById('thumb-btn-text');
       if (sidebar.classList.contains('hidden')) {
         sidebar.classList.remove('hidden');
-        btnText.innerText = "Sembunyikan Thumbnail";
+        btnText.innerText = 'Sembunyikan Thumbnail';
       } else {
         sidebar.classList.add('hidden');
-        btnText.innerText = "Tampilkan Thumbnail";
+        btnText.innerText = 'Tampilkan Thumbnail';
       }
     }
 
-    function zoomFlipbook(amount) {
-      currentZoom = Math.min(Math.max(0.6, currentZoom + amount), 2.2);
-      document.getElementById('flipbook-wrapper').style.transform = `scale(${currentZoom})`;
-    }
-
-    function resetZoom() {
-      currentZoom = 1;
-      document.getElementById('flipbook-wrapper').style.transform = `scale(1)`;
-    }
-
-    function jumpToPage(val) {
-      if (pageFlipInstance && val > 0) {
-        pageFlipInstance.flip(parseInt(val) - 1);
-      }
-    }
-
-    function toggleFullscreen() {
-      const elem = document.getElementById('view-reader');
-      if (!document.fullscreenElement) {
-        elem.requestFullscreen().catch(err => alert(err.message));
-      } else {
-        document.exitFullscreen();
-      }
-    }
-
-    /* AUTHENTICATION & ADMIN */
-    function openAdminModalOrView() {
-      if (currentUser) {
-        switchView('admin');
-      } else {
-        openAdminModal();
-      }
-    }
-
-    function openAdminModal() {
-      document.getElementById('login-modal').classList.remove('hidden');
-    }
-
-    function closeAdminModal() {
-      document.getElementById('login-modal').classList.add('hidden');
-    }
-
-    function updateAdminNavUI() {
-      const btnText = document.getElementById('admin-btn-text');
-      if (currentUser) {
-        btnText.innerText = "Dashboard Admin";
-      } else {
-        btnText.innerText = "Admin Panel";
-      }
-    }
-
-    async function handleLogin(e) {
-      e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      const btn = document.getElementById('btn-login');
-
-      btn.disabled = true;
-      btn.innerText = "Memproses...";
-
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-      btn.disabled = false;
-      btn.innerText = "Masuk Dashboard";
-
-      if (error) {
-        alert("Login Gagal: " + error.message);
-      } else {
-        closeAdminModal();
-        switchView('admin');
-      }
-    }
-
-    async function logoutAdmin() {
-      await supabaseClient.auth.signOut();
-      switchView('catalog');
-    }
-
-    /* UPLOAD & MANAGEMEN DATA */
-    async function handleUpload(e) {
-      e.preventDefault();
-
-      if (!currentUser) {
-        alert("Anda harus login sebagai Admin untuk mengunggah!");
-        return;
-      }
-
-      const title = document.getElementById('upload-title').value;
-      const category = document.getElementById('upload-category').value;
-      const desc = document.getElementById('upload-desc').value;
-      const fileInput = document.getElementById('upload-file');
-      const file = fileInput.files[0];
-
-      if (!file) return;
-
-      const btn = document.getElementById('btn-submit-upload');
-      btn.disabled = true;
-      btn.innerText = "Mengunggah Ke Supabase...";
-
-      try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-        const { data: storageData, error: storageError } = await supabaseClient.storage
-          .from('pdf-files')
-          .upload(fileName, file, { contentType: 'application/pdf' });
-
-        if (storageError) throw storageError;
-
-        const { data: urlData } = supabaseClient.storage
-          .from('pdf-files')
-          .getPublicUrl(fileName);
-
-        const pdfUrl = urlData.publicUrl;
-
-        const { error: dbError } = await supabaseClient
-          .from('flipbooks')
-          .insert([{ title, category, description: desc, pdf_url: pdfUrl }]);
-
-        if (dbError) throw dbError;
-
-        alert("Flipbook Berhasil Diunggah!");
-        document.getElementById('upload-form').reset();
-        await loadCatalogFromSupabase();
-        renderAdminTable();
-
-      } catch (err) {
-        alert("Gagal Mengunggah: " + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Simpan & Unggah";
-      }
-    }
-
-    function renderAdminTable() {
-      const tbody = document.getElementById('admin-table-body');
-      tbody.innerHTML = '';
-
-      if (catalogData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Belum ada data flipbook.</td></tr>`;
-        return;
-      }
-
-      catalogData.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.className = 'border-b border-white/5 hover:bg-white/5';
-        tr.innerHTML = `
-          <td class="p-3 font-medium text-white">${item.title}</td>
-          <td class="p-3"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${item.category}</span></td>
-          <td class="p-3 text-xs text-slate-400">${new Date(item.created_at).toLocaleDateString('id-ID')}</td>
-          <td class="p-3 text-right">
-            <button onclick="deleteFlipbook('${item.id}')" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash"></i> Hapus</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    async function deleteFlipbook(id) {
-      if (!confirm("Apakah Anda yakin ingin menghapus flipbook ini?")) return;
-
-      const { error } = await supabaseClient
-        .from('flipbooks')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        alert("Gagal menghapus: " + error.message);
-      } else {
-        await loadCatalogFromSupabase();
-        renderAdminTable();
-      }
+    function backToCatalog() {
+      alert("Aksi tombol kembali ke katalog.");
     }
   </script>
 </body>
