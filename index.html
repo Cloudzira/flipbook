@@ -108,15 +108,16 @@
       margin: 0 auto;
     }
 
-    /* Sidebar Mobile Overlay */
-    @media (max-width: 768px) {
+    /* Sidebar Mobile & Landscape Overlay */
+    @media (max-width: 768px), (max-height: 500px) {
       #thumbnail-sidebar {
         position: absolute;
         left: 0;
         top: 0;
         bottom: 0;
-        z-index: 30;
-        background: rgba(15, 23, 42, 0.95);
+        z-index: 40;
+        background: rgba(15, 23, 42, 0.98);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.5);
       }
     }
   </style>
@@ -510,11 +511,11 @@
         const originalViewport = firstPage.getViewport({ scale: 1.0 });
         const aspectRatio = originalViewport.width / originalViewport.height;
 
-        const isMobile = window.innerWidth < 768;
+        const isPortraitMobile = window.innerWidth < window.innerHeight && window.innerWidth < 768;
         const viewportContainer = document.getElementById('reader-viewport');
-        const targetHeight = isMobile 
-          ? Math.min(Math.max(280, viewportContainer.clientHeight - 20), 500) 
-          : Math.min(Math.max(380, viewportContainer.clientHeight - 30), 850);
+        const availableHeight = viewportContainer.clientHeight || window.innerHeight - 100;
+        
+        const targetHeight = Math.max(220, Math.min(availableHeight - 20, 850));
         const targetWidth = Math.round(targetHeight * aspectRatio);
 
         for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
@@ -527,17 +528,30 @@
           pageDiv.appendChild(canvas);
           container.appendChild(pageDiv);
 
+          // Pembuatan Item Thumbnail yang Aman dari Bug Click
           const thumbDiv = document.createElement('div');
           thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl cursor-pointer border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
           thumbDiv.id = `thumb-page-${pageNum}`;
-          thumbDiv.onclick = () => jumpToPage(pageNum);
-
+          
           const thumbCanvas = document.createElement('canvas');
           thumbCanvas.id = `thumb-canvas-${pageNum}`;
-          thumbCanvas.className = "rounded-lg w-full h-auto bg-white shadow min-h-[50px]";
+          thumbCanvas.className = "rounded-lg w-full h-auto bg-white shadow min-h-[50px] pointer-events-none";
+
+          const label = document.createElement('span');
+          label.className = "text-[10px] text-slate-300 font-semibold mt-1 pointer-events-none";
+          label.innerText = pageNum;
 
           thumbDiv.appendChild(thumbCanvas);
-          thumbDiv.innerHTML += `<span class="text-[10px] text-slate-300 font-semibold mt-1">${pageNum}</span>`;
+          thumbDiv.appendChild(label);
+
+          const targetPageNum = pageNum;
+          thumbDiv.addEventListener('click', () => {
+            jumpToPage(targetPageNum);
+            if (window.innerWidth < 768 || window.innerHeight < 500) {
+              document.getElementById('thumbnail-sidebar').classList.add('hidden');
+            }
+          });
+
           thumbContainer.appendChild(thumbDiv);
         }
 
@@ -583,13 +597,13 @@
             width: targetWidth,
             height: targetHeight,
             size: "fixed",
-            minWidth: 180,
+            minWidth: 150,
             maxWidth: 1000,
-            minHeight: 250,
+            minHeight: 200,
             maxHeight: 1200,
             maxShadowOpacity: 0.1,
             showCover: true,
-            usePortrait: isMobile,
+            usePortrait: isPortraitMobile,
             mobileScrollSupport: false,
             flippingTime: 150,
             disableFlipAnimation: true
