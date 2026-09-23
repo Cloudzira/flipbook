@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlipbuKu</title>
+  <title>FlipbuKu Studio</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -17,7 +17,7 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   </script>
 
-  <!-- StPageFlip CDN (Flipbook Animation) -->
+  <!-- StPageFlip CDN -->
   <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
 
   <!-- Supabase JS Client v2 -->
@@ -34,9 +34,8 @@
       min-height: 100vh;
     }
 
-    /* Glassmorphism Styling */
     .glass-panel {
-      background: rgba(30, 41, 59, 0.55);
+      background: rgba(30, 41, 59, 0.65);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -68,10 +67,9 @@
       box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
     }
 
-    /* Scrollbar Aesthetics */
     ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 6px;
+      height: 6px;
     }
     ::-webkit-scrollbar-track {
       background: rgba(15, 23, 42, 0.6);
@@ -84,40 +82,41 @@
       background: rgba(99, 102, 241, 0.7);
     }
 
-    /* Flipbook Container */
-    #flipbook-wrapper {
-      perspective: 2000px;
+    /* Thumbnail highlight active */
+    .thumb-item.active {
+      border-color: #6366f1;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
     }
   </style>
 </head>
-<body class="flex flex-col min-h-screen">
+<body class="flex flex-col h-screen overflow-hidden">
 
-  <!-- ================= NAVBAR ================= -->
-  <nav class="glass-panel sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-white/10">
+  <!-- NAVBAR -->
+  <nav class="glass-panel sticky top-0 z-40 px-6 py-3 flex items-center justify-between border-b border-white/10 flex-shrink-0">
     <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('catalog')">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-        <i class="fa-solid fa-book-open text-white text-lg"></i>
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+        <i class="fa-solid fa-book-open text-white text-base"></i>
       </div>
-      <span class="text-xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-300">
+      <span class="text-lg font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-300">
         Flipbook Studio
       </span>
     </div>
 
-    <div class="flex items-center space-x-4">
-      <button onclick="switchView('catalog')" class="px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition flex items-center gap-2">
+    <div class="flex items-center space-x-3">
+      <button onclick="switchView('catalog')" class="px-3.5 py-1.5 rounded-lg text-xs font-medium hover:bg-white/10 transition flex items-center gap-2">
         <i class="fa-solid fa-border-all"></i> Katalog
       </button>
-      <button id="nav-admin-btn" onclick="openAdminModalOrView()" class="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600/80 hover:bg-indigo-500 text-white transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+      <button id="nav-admin-btn" onclick="openAdminModalOrView()" class="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-600/80 hover:bg-indigo-500 text-white transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
         <i class="fa-solid fa-user-shield"></i> <span id="admin-btn-text">Admin Panel</span>
       </button>
     </div>
   </nav>
 
-  <!-- ================= MAIN CONTENT ================= -->
-  <main class="flex-grow p-6 max-w-7xl w-full mx-auto">
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-grow overflow-hidden relative flex flex-col">
 
-    <!-- VIEW 1: KATALOG UTAMA (PUBLIC) -->
-    <section id="view-catalog" class="space-y-6">
+    <!-- VIEW 1: KATALOG UTAMA -->
+    <section id="view-catalog" class="p-6 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto h-full">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-4 rounded-2xl">
         <div class="relative flex-grow max-w-md">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -131,52 +130,70 @@
         </div>
       </div>
 
-      <!-- Grid Flipbook -->
-      <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <!-- Skeleton Loading / Content Cards will be rendered here -->
-      </div>
+      <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-12"></div>
     </section>
 
+    <!-- VIEW 2: FLIPBOOK READER (SPACE MAKSIMAL + THUMBNAIL) -->
+    <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950/80">
+      
+      <!-- Top Control Bar -->
+      <div class="w-full flex items-center justify-between glass-panel px-4 py-2 flex-shrink-0 z-20 border-b border-white/10">
+        <div class="flex items-center space-x-3">
+          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-card">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
+          </button>
+          <button onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-card border-indigo-500/30">
+            <i class="fa-solid fa-border-all"></i> <span id="toggle-thumb-text">Sembunyikan Thumbnail</span>
+          </button>
+        </div>
 
-    <!-- VIEW 2: FLIPBOOK READER (READER MODE) -->
-    <section id="view-reader" class="hidden flex-col items-center space-y-4">
-      <div class="w-full flex items-center justify-between glass-panel px-6 py-3 rounded-xl">
-        <button onclick="switchView('catalog')" class="text-sm font-medium text-slate-300 hover:text-white flex items-center gap-2">
-          <i class="fa-solid fa-arrow-left"></i> Kembali ke Katalog
-        </button>
-        <h2 id="reader-title" class="font-semibold text-lg text-indigo-300 truncate max-w-md">Memuat Buku...</h2>
-        <div class="flex items-center space-x-2">
-          <button onclick="zoomFlipbook(0.2)" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-          <button onclick="zoomFlipbook(-0.2)" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-          <button onclick="resetZoom()" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300" title="Reset Zoom"><i class="fa-solid fa-rotate-left"></i></button>
-          <button onclick="toggleFullscreen()" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+        <h2 id="reader-title" class="font-semibold text-sm text-indigo-200 truncate max-w-xs sm:max-w-md">Memuat Buku...</h2>
+
+        <div class="flex items-center space-x-1.5">
+          <button onclick="zoomFlipbook(0.15)" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+          <button onclick="zoomFlipbook(-0.15)" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+          <button onclick="resetZoom()" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Reset Zoom"><i class="fa-solid fa-rotate-left"></i></button>
+          <button onclick="toggleFullscreen()" class="p-2 rounded-lg glass-card hover:bg-white/10 text-slate-300 text-xs" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
         </div>
       </div>
 
-      <!-- Container Flipbook -->
-      <div id="reader-viewport" class="w-full min-h-[600px] flex items-center justify-center relative overflow-hidden glass-panel rounded-2xl p-4">
-        <div id="loading-spinner" class="flex flex-col items-center space-y-3">
-          <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500"></i>
-          <span class="text-sm text-slate-400">Merapikan halaman PDF...</span>
-        </div>
-        <div id="flipbook-wrapper" class="hidden transform transition-transform duration-200">
-          <div id="flipbook"></div>
+      <!-- Reader Body (Thumbnail Panel + Viewport) -->
+      <div class="flex-grow flex w-full h-full overflow-hidden relative">
+        
+        <!-- Sidebar Thumbnails -->
+        <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex flex-col space-y-3 flex-shrink-0 transition-all duration-300 z-10">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1">Halaman Buku</div>
+          <div id="thumbnail-container" class="grid grid-cols-2 gap-2"></div>
+        </aside>
+
+        <!-- Flipbook Viewport Container (Di-maksimalkan) -->
+        <div id="reader-viewport" class="flex-grow h-full flex items-center justify-center relative overflow-hidden p-2 sm:p-6">
+          
+          <div id="loading-spinner" class="flex flex-col items-center space-y-3">
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500"></i>
+            <span class="text-sm text-slate-400">Menyiapkan halaman PDF...</span>
+          </div>
+
+          <div id="flipbook-wrapper" class="hidden transform transition-transform duration-150 flex items-center justify-center">
+            <div id="flipbook"></div>
+          </div>
+
         </div>
       </div>
 
-      <!-- Navigation Bar Below Reader -->
-      <div class="flex items-center space-x-4 glass-panel px-6 py-2.5 rounded-full">
-        <button onclick="pageFlipInstance?.flipPrev()" class="p-2 text-indigo-400 hover:text-white"><i class="fa-solid fa-chevron-left text-lg"></i></button>
-        <span class="text-sm font-medium text-slate-300">
-          Halaman <input type="number" id="page-num-input" value="1" min="1" class="w-12 text-center glass-input rounded px-1 py-0.5 text-xs inline-block" onchange="jumpToPage(this.value)"> dari <span id="page-count">0</span>
+      <!-- Bottom Navigation Bar -->
+      <div class="w-full flex items-center justify-center space-x-4 glass-panel py-2 px-4 flex-shrink-0 z-20 border-t border-white/10">
+        <button onclick="pageFlipInstance?.flipPrev()" class="px-3 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+        <span class="text-xs font-medium text-slate-300">
+          Halaman <input type="number" id="page-num-input" value="1" min="1" class="w-10 text-center glass-input rounded px-1 py-0.5 text-xs inline-block" onchange="jumpToPage(this.value)"> dari <span id="page-count">0</span>
         </span>
-        <button onclick="pageFlipInstance?.flipNext()" class="p-2 text-indigo-400 hover:text-white"><i class="fa-solid fa-chevron-right text-lg"></i></button>
+        <button onclick="pageFlipInstance?.flipNext()" class="px-3 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">Next <i class="fa-solid fa-chevron-right"></i></button>
       </div>
+
     </section>
 
-
-    <!-- VIEW 3: HALAMAN ADMIN (MANAGEMENT DASHBOARD) -->
-    <section id="view-admin" class="hidden space-y-8">
+    <!-- VIEW 3: HALAMAN ADMIN -->
+    <section id="view-admin" class="hidden p-6 max-w-7xl w-full mx-auto space-y-8 overflow-y-auto h-full">
       <div class="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
           <h1 class="text-2xl font-bold text-white">Dashboard Admin</h1>
@@ -187,7 +204,6 @@
         </button>
       </div>
 
-      <!-- Form Upload -->
       <div class="glass-panel p-6 rounded-2xl space-y-4">
         <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2">
           <i class="fa-solid fa-cloud-arrow-up"></i> Unggah Flipbook Baru
@@ -217,8 +233,7 @@
         </form>
       </div>
 
-      <!-- Tabel Kelola Koleksi -->
-      <div class="glass-panel p-6 rounded-2xl space-y-4">
+      <div class="glass-panel p-6 rounded-2xl space-y-4 pb-12">
         <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2">
           <i class="fa-solid fa-list-check"></i> Daftar Koleksi Flipbook
         </h3>
@@ -232,9 +247,7 @@
                 <th class="p-3 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody id="admin-table-body">
-              <!-- Content rendered via JS -->
-            </tbody>
+            <tbody id="admin-table-body"></tbody>
           </table>
         </div>
       </div>
@@ -242,7 +255,7 @@
 
   </main>
 
-  <!-- ================= MODAL LOGIN ADMIN ================= -->
+  <!-- MODAL LOGIN ADMIN -->
   <div id="login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
     <div class="glass-panel p-8 rounded-2xl w-full max-w-md relative border border-white/20 shadow-2xl space-y-6">
       <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -270,24 +283,18 @@
     </div>
   </div>
 
-  <!-- ================= JAVASCRIPT APP CODE ================= -->
+  <!-- JAVASCRIPT LOGIC -->
   <script>
-    /* =====================================================================
-       1. KONFIGURASI SUPABASE (ISIKAN CREDENTIALS SUPABASE ANDA DI SINI)
-       ===================================================================== */
     const SUPABASE_URL = 'https://prsgmirandndqomvwzxv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByc2dtaXJhbmRuZHFvbXZ3enh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMTE0MTEsImV4cCI6MjEwNTY4NzQxMX0.ox5Bt7Wc7yFDqzbWOLhSmCySEcJa2Ui2UljlVW2OpKA';
 
-    // Inisialisasi Supabase Client
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    /* State Aplikasi */
     let catalogData = [];
     let pageFlipInstance = null;
     let currentZoom = 1;
     let currentUser = null;
 
-    // Listen status autentikasi user
     supabaseClient.auth.onAuthStateChange((event, session) => {
       currentUser = session?.user || null;
       updateAdminNavUI();
@@ -297,9 +304,7 @@
       loadCatalogFromSupabase();
     });
 
-    /* =====================================================================
-       2. KATALOG & NAVIGATION
-       ===================================================================== */
+    /* KATALOG & NAVIGATION */
     async function loadCatalogFromSupabase() {
       const grid = document.getElementById('catalog-grid');
       grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-500"></i><p class="mt-2 text-sm">Mengambil koleksi flipbook...</p></div>`;
@@ -381,6 +386,7 @@
         document.getElementById('view-catalog').classList.remove('hidden');
       } else if (viewName === 'reader') {
         document.getElementById('view-reader').classList.remove('hidden');
+        document.getElementById('view-reader').classList.add('flex');
       } else if (viewName === 'admin') {
         if (!currentUser) {
           openAdminModal();
@@ -392,9 +398,7 @@
       }
     }
 
-    /* =====================================================================
-       3. FLIPBOOK ENGINE (PDF.js + StPageFlip)
-       ===================================================================== */
+    /* FLIPBOOK ENGINE + THUMBNAILS */
     async function openReader(book) {
       switchView('reader');
       document.getElementById('reader-title').innerText = book.title;
@@ -402,10 +406,15 @@
       document.getElementById('flipbook-wrapper').classList.add('hidden');
 
       const container = document.getElementById('flipbook');
+      const thumbContainer = document.getElementById('thumbnail-container');
       container.innerHTML = '';
+      thumbContainer.innerHTML = '';
 
       if (pageFlipInstance) {
-        try { pageFlipInstance.destroy(); } catch(e){}
+        try { 
+          pageFlipInstance.destroy(); 
+          pageFlipInstance = null;
+        } catch(e){}
       }
 
       try {
@@ -413,13 +422,14 @@
         const pdf = await loadingTask.promise;
         document.getElementById('page-count').innerText = pdf.numPages;
 
-        // Render Canvas Pages
+        // Render Halaman
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({ scale: 1.2 });
+          const viewport = page.getViewport({ scale: 1.5 });
 
+          // Wrapper Page Flipbook
           const pageDiv = document.createElement('div');
-          pageDiv.className = 'page-canvas-wrapper bg-white shadow-xl';
+          pageDiv.className = 'page-canvas-wrapper bg-white shadow-2xl';
 
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
@@ -429,29 +439,65 @@
           await page.render({ canvasContext: context, viewport: viewport }).promise;
           pageDiv.appendChild(canvas);
           container.appendChild(pageDiv);
+
+          // Thumbnail Item Generation
+          const thumbDiv = document.createElement('div');
+          thumbDiv.className = `thumb-item glass-card p-1 rounded-lg cursor-pointer border border-white/10 hover:border-indigo-400 transition flex flex-col items-center ${pageNum === 1 ? 'active' : ''}`;
+          thumbDiv.id = `thumb-page-${pageNum}`;
+          thumbDiv.onclick = () => jumpToPage(pageNum);
+
+          const thumbCanvas = document.createElement('canvas');
+          const thumbContext = thumbCanvas.getContext('2d');
+          const thumbViewport = page.getViewport({ scale: 0.2 });
+          thumbCanvas.height = thumbViewport.height;
+          thumbCanvas.width = thumbViewport.width;
+          thumbCanvas.className = "rounded w-full h-auto";
+
+          await page.render({ canvasContext: thumbContext, viewport: thumbViewport }).promise;
+
+          thumbDiv.appendChild(thumbCanvas);
+          thumbDiv.innerHTML += `<span class="text-[10px] text-slate-300 font-semibold mt-1">${pageNum}</span>`;
+          thumbContainer.appendChild(thumbDiv);
         }
 
+        // Tampilkan Flipbook Container sebelum inisialisasi StPageFlip
         document.getElementById('loading-spinner').classList.add('hidden');
         document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
-        // Init PageFlip
+        // Hitung Ukuran Maksimalkan Space Viewport
+        const viewportContainer = document.getElementById('reader-viewport');
+        const containerWidth = Math.min(viewportContainer.clientWidth - 40, 1100);
+        const containerHeight = Math.min(viewportContainer.clientHeight - 20, 800);
+
         pageFlipInstance = new St.PageFlip(container, {
-          width: 450,
-          height: 600,
+          width: Math.floor(containerWidth / 2),
+          height: containerHeight,
           size: "stretch",
-          minWidth: 300,
-          maxWidth: 600,
-          minHeight: 400,
-          maxHeight: 800,
+          minWidth: 280,
+          maxWidth: 700,
+          minHeight: 380,
+          maxHeight: 1000,
           maxShadowOpacity: 0.5,
           showCover: true,
           mobileScrollSupport: false
         });
 
-        pageFlipInstance.loadFromHTML(document.querySelectorAll('.page-canvas-wrapper'));
+        const pageElements = container.querySelectorAll('.page-canvas-wrapper');
+        if (pageElements.length > 0) {
+          pageFlipInstance.loadFromHTML(pageElements);
+        }
 
         pageFlipInstance.on('flip', (e) => {
-          document.getElementById('page-num-input').value = e.data + 1;
+          const activePage = e.data + 1;
+          document.getElementById('page-num-input').value = activePage;
+          
+          // Highlight Active Thumbnail
+          document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('active'));
+          const activeThumb = document.getElementById(`thumb-page-${activePage}`);
+          if (activeThumb) {
+            activeThumb.classList.add('active');
+            activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
         });
 
       } catch (err) {
@@ -460,8 +506,20 @@
       }
     }
 
+    function toggleThumbnailSidebar() {
+      const sidebar = document.getElementById('thumbnail-sidebar');
+      const btnText = document.getElementById('toggle-thumb-text');
+      if (sidebar.classList.contains('hidden')) {
+        sidebar.classList.remove('hidden');
+        btnText.innerText = "Sembunyikan Thumbnail";
+      } else {
+        sidebar.classList.add('hidden');
+        btnText.innerText = "Tampilkan Thumbnail";
+      }
+    }
+
     function zoomFlipbook(amount) {
-      currentZoom = Math.min(Math.max(0.6, currentZoom + amount), 2.0);
+      currentZoom = Math.min(Math.max(0.6, currentZoom + amount), 2.2);
       document.getElementById('flipbook-wrapper').style.transform = `scale(${currentZoom})`;
     }
 
@@ -485,9 +543,7 @@
       }
     }
 
-    /* =====================================================================
-       4. AUTHENTICATION & ADMIN PANEL
-       ===================================================================== */
+    /* AUTHENTICATION & ADMIN */
     function openAdminModalOrView() {
       if (currentUser) {
         switchView('admin');
@@ -540,9 +596,7 @@
       switchView('catalog');
     }
 
-    /* =====================================================================
-       5. UPLOAD & MANAGEMEN DATA
-       ===================================================================== */
+    /* UPLOAD & MANAGEMEN DATA */
     async function handleUpload(e) {
       e.preventDefault();
 
@@ -567,21 +621,18 @@
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        // 1. Upload file ke Supabase Storage 'pdf-files'
         const { data: storageData, error: storageError } = await supabaseClient.storage
           .from('pdf-files')
           .upload(fileName, file, { contentType: 'application/pdf' });
 
         if (storageError) throw storageError;
 
-        // 2. Ambil Public URL File
         const { data: urlData } = supabaseClient.storage
           .from('pdf-files')
           .getPublicUrl(fileName);
 
         const pdfUrl = urlData.publicUrl;
 
-        // 3. Simpan Metadata ke Database Table 'flipbooks'
         const { error: dbError } = await supabaseClient
           .from('flipbooks')
           .insert([{ title, category, description: desc, pdf_url: pdfUrl }]);
