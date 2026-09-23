@@ -33,12 +33,12 @@
       background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #020617);
       color: #f8fafc;
       height: 100vh;
-      height: 100dvh; /* Responsif browser mobile */
+      height: 100dvh;
       overflow: hidden;
     }
 
     .glass-panel {
-      background: rgba(30, 41, 59, 0.9);
+      background: rgba(30, 41, 59, 0.85);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -100,8 +100,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: max-content;
-      min-height: max-content;
       margin: auto;
       transform-origin: center center;
     }
@@ -110,7 +108,7 @@
       margin: 0 auto;
     }
 
-    /* Penyesuaian Overlay Mobile Thumbnail Sidebar */
+    /* Sidebar Mobile Overlay */
     @media (max-width: 768px) {
       #thumbnail-sidebar {
         position: absolute;
@@ -118,9 +116,7 @@
         top: 0;
         bottom: 0;
         z-index: 30;
-        width: 13rem;
-        background: rgba(15, 23, 42, 0.98);
-        box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        background: rgba(15, 23, 42, 0.95);
       }
     }
   </style>
@@ -149,7 +145,7 @@
   </nav>
 
   <!-- MAIN CONTENT CONTAINER -->
-  <main class="flex-grow overflow-hidden relative flex flex-col min-h-0">
+  <main class="flex-grow overflow-hidden relative flex flex-col h-full">
 
     <!-- VIEW 1: KATALOG UTAMA -->
     <section id="view-catalog" class="p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto h-full flex flex-col justify-between">
@@ -177,21 +173,18 @@
     </section>
 
     <!-- VIEW 2: FLIPBOOK READER -->
-    <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950 overflow-hidden">
+    <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950/90 overflow-hidden">
 
-      <!-- Reader Body Container -->
-      <div class="flex-grow flex w-full h-full overflow-hidden relative min-h-0">
+      <!-- Reader Body -->
+      <div class="flex-grow flex w-full h-full overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
-        <aside id="thumbnail-sidebar" class="hidden w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex-col space-y-3 flex-shrink-0">
-          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1 flex justify-between items-center">
-            <span>Daftar Halaman</span>
-            <button onclick="toggleThumbnailSidebar()" class="md:hidden text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-          </div>
+        <aside id="thumbnail-sidebar" class="hidden md:flex w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex-col space-y-3 flex-shrink-0 transition-all duration-300">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 px-1">Daftar Halaman</div>
           <div id="thumbnail-container" class="grid grid-cols-2 gap-2.5"></div>
         </aside>
 
-        <!-- Main Viewport Reader (Scroll/Panning) -->
+        <!-- Main Viewport Reader -->
         <div id="reader-viewport" class="flex-grow h-full overflow-auto p-2 sm:p-4 bg-slate-950/60 flex items-center justify-center relative">
           
           <div id="loading-spinner" class="flex flex-col items-center space-y-3 my-auto">
@@ -206,32 +199,32 @@
         </div>
       </div>
 
-      <!-- BOTTOM CONTROL BAR (Selalu Tampak di Layar HP & Desktop) -->
-      <div class="w-full glass-panel py-2 px-2 sm:px-6 flex-shrink-0 z-40 border-t border-white/10 flex items-center justify-between gap-1 sm:gap-2">
+      <!-- COMBINED BOTTOM CONTROL BAR -->
+      <div class="w-full glass-panel py-2 px-3 sm:px-6 flex-shrink-0 z-30 border-t border-white/10 flex items-center justify-between gap-2">
         
         <!-- Sisi Kiri: Navigasi Kembali & Toggle Sidebar -->
-        <div class="flex items-center space-x-1 sm:space-x-2">
-          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 px-2 py-1.5 rounded-lg glass-card" title="Kembali ke Katalog">
+        <div class="flex items-center space-x-1.5 sm:space-x-2">
+          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card" title="Kembali ke Katalog">
             <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Kembali</span>
           </button>
-          <button onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-2 py-1.5 rounded-lg glass-card border-indigo-500/30">
-            <i class="fa-solid fa-border-all"></i> <span class="text-[11px] sm:text-xs">Thumbnail</span>
+          <button onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card border-indigo-500/30">
+            <i class="fa-solid fa-border-all"></i> <span id="toggle-thumb-text" class="hidden md:inline">Thumbnail</span>
           </button>
         </div>
 
         <!-- Tengah: Navigasi Halaman -->
-        <div class="flex items-center space-x-1 sm:space-x-3">
-          <button onclick="pageFlipInstance?.flipPrev('instant')" class="px-2 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
+        <div class="flex items-center space-x-1.5 sm:space-x-3">
+          <button onclick="pageFlipInstance?.flipPrev()" class="px-2 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
             <i class="fa-solid fa-chevron-left"></i> <span class="hidden sm:inline">Prev</span>
           </button>
           
           <div class="flex items-center">
             <span class="text-[10px] sm:text-xs font-medium text-slate-300">
-              <input type="number" id="page-num-input" value="1" min="1" class="w-8 sm:w-10 text-center glass-input rounded px-0.5 py-0.5 text-[10px] sm:text-xs inline-block font-semibold" onchange="jumpToPage(this.value)"> / <span id="page-count">0</span>
+              Hal <input type="number" id="page-num-input" value="1" min="1" class="w-7 sm:w-10 text-center glass-input rounded px-0.5 py-0.5 text-[10px] sm:text-xs inline-block font-semibold" onchange="jumpToPage(this.value)"> / <span id="page-count">0</span>
             </span>
           </div>
 
-          <button onclick="pageFlipInstance?.flipNext('instant')" class="px-2 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
+          <button onclick="pageFlipInstance?.flipNext()" class="px-2 py-1 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
             <span class="hidden sm:inline">Next</span> <i class="fa-solid fa-chevron-right"></i>
           </button>
         </div>
@@ -468,6 +461,7 @@
     function switchView(viewName) {
       document.getElementById('view-catalog').classList.add('hidden');
       document.getElementById('view-reader').classList.add('hidden');
+      document.getElementById('view-reader').classList.remove('flex');
       document.getElementById('view-admin').classList.add('hidden');
 
       if (viewName === 'catalog') {
@@ -519,7 +513,7 @@
         const isMobile = window.innerWidth < 768;
         const viewportContainer = document.getElementById('reader-viewport');
         const targetHeight = isMobile 
-          ? Math.min(Math.max(280, viewportContainer.clientHeight - 30), 500) 
+          ? Math.min(Math.max(280, viewportContainer.clientHeight - 20), 500) 
           : Math.min(Math.max(380, viewportContainer.clientHeight - 30), 850);
         const targetWidth = Math.round(targetHeight * aspectRatio);
 
@@ -555,7 +549,7 @@
           const canvas = document.getElementById(`page-canvas-${pageNum}`);
           if (!canvas) return;
 
-          const viewport = page.getViewport({ scale: 1.8 });
+          const viewport = page.getViewport({ scale: 2.0 });
           const context = canvas.getContext('2d');
           canvas.height = viewport.height;
           canvas.width = viewport.width;
@@ -596,8 +590,9 @@
             maxShadowOpacity: 0.1,
             showCover: true,
             usePortrait: isMobile,
-            flippingTime: 1, // Durasi perpindahan diatur instan (1ms) agar cepat
-            mobileScrollSupport: false
+            mobileScrollSupport: false,
+            flippingTime: 150,
+            disableFlipAnimation: true
           });
 
           const pageElements = container.querySelectorAll('.page-canvas-wrapper');
@@ -629,7 +624,6 @@
       }
     }
 
-    /* Memperbaiki fungsi toggle sidebar thumbnail pada HP dan Desktop */
     function toggleThumbnailSidebar() {
       const sidebar = document.getElementById('thumbnail-sidebar');
       if (sidebar.classList.contains('hidden')) {
@@ -654,8 +648,9 @@
     }
 
     function jumpToPage(val) {
-      if (pageFlipInstance && val > 0) {
-        pageFlipInstance.flip(parseInt(val) - 1, 'instant');
+      const target = parseInt(val, 10);
+      if (pageFlipInstance && !isNaN(target) && target > 0) {
+        pageFlipInstance.flip(target - 1);
       }
     }
 
@@ -771,8 +766,7 @@
 
       } catch (err) {
         alert("Gagal Mengunggah: " + err.message);
-      } font-medium
-      finally {
+      } finally {
         btn.disabled = false;
         btn.innerText = "Simpan & Unggah";
       }
