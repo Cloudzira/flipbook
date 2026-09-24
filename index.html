@@ -154,11 +154,14 @@
     #reader-viewport {
       overflow: hidden;
       min-height: 0;
+      flex: 1 1 auto;
     }
 
     #flipbook-wrapper {
       overflow: hidden;
       transform-origin: center center;
+      min-height: 0;
+      max-height: 100%;
     }
 
     @media (max-width: 768px), (max-height: 500px) {
@@ -236,10 +239,10 @@
     </section>
 
     <!-- VIEW 2: FLIPBOOK READER -->
-    <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950 overflow-hidden">
+    <section id="view-reader" class="hidden flex-col min-h-0 h-full w-full relative bg-slate-950 overflow-hidden">
 
       <!-- Reader Body -->
-      <div class="flex-grow min-h-0 flex w-full overflow-hidden relative">
+      <div class="flex-1 min-h-0 flex w-full overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
         <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex flex-col space-y-3 flex-shrink-0 mobile-hidden md:flex">
@@ -251,14 +254,14 @@
         </aside>
 
         <!-- Main Viewport Reader -->
-        <div id="reader-viewport" class="flex-grow h-full overflow-hidden p-2 sm:p-6 bg-slate-950/80 flex items-center justify-center relative">
+        <div id="reader-viewport" class="flex-1 min-h-0 overflow-hidden p-2 sm:p-6 bg-slate-950/80 flex items-center justify-center relative">
           
           <div id="loading-spinner" class="flex flex-col items-center space-y-3 my-auto">
             <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500"></i>
             <span class="text-sm text-slate-400">Memproses Halaman PDF...</span>
           </div>
 
-          <div id="flipbook-wrapper" class="hidden transform transition-transform duration-150 my-auto flex items-center justify-center w-full h-full relative">
+          <div id="flipbook-wrapper" class="hidden transform transition-transform duration-150 my-auto flex items-center justify-center w-full max-h-full relative">
             <div id="flipbook-container"></div>
           </div>
 
