@@ -168,6 +168,14 @@
       cursor: grabbing;
     }
 
+    #reader-viewport.is-zoomed #flipbook-wrapper {
+      max-width: none;
+      max-height: none;
+      align-items: flex-start;
+      justify-content: flex-start;
+      transform-origin: top left;
+    }
+
     #view-reader {
       height: 100%;
     }
@@ -884,9 +892,21 @@
       currentZoom = Math.min(Math.max(0.6, currentZoom + amount), 2.5);
       const wrapper = document.getElementById('flipbook-wrapper');
       const viewport = document.getElementById('reader-viewport');
-      wrapper.style.transform = 'none';
-      wrapper.style.zoom = currentZoom;
+      const flipbook = document.getElementById('flipbook-container');
+
+      wrapper.style.transform = currentZoom > 1 ? `scale(${currentZoom})` : 'none';
       viewport.classList.toggle('is-zoomed', currentZoom > 1);
+
+      if (currentZoom > 1 && flipbook) {
+        const baseWidth = flipbook.offsetWidth;
+        const baseHeight = flipbook.offsetHeight;
+        wrapper.style.width = `${Math.max(viewport.clientWidth, baseWidth * currentZoom)}px`;
+        wrapper.style.height = `${Math.max(viewport.clientHeight, baseHeight * currentZoom)}px`;
+      } else {
+        wrapper.style.width = '';
+        wrapper.style.height = '';
+      }
+
       if (currentZoom <= 1) {
         viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
       }
@@ -897,7 +917,8 @@
       const wrapper = document.getElementById('flipbook-wrapper');
       const viewport = document.getElementById('reader-viewport');
       wrapper.style.transform = 'none';
-      wrapper.style.zoom = 1;
+      wrapper.style.width = '';
+      wrapper.style.height = '';
       viewport.classList.remove('is-zoomed', 'is-dragging');
       viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
     }
