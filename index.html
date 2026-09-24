@@ -91,16 +91,19 @@
       background: rgba(99, 102, 241, 0.7);
     }
 
+    /* Kunci Z-Index Sidebar agar tidak terhalang layer flipbook */
+    #thumbnail-sidebar {
+      z-index: 999 !important;
+      position: relative !important;
+      pointer-events: auto !important;
+    }
+
     .thumb-item {
       cursor: pointer !important;
       user-select: none;
-      -webkit-tap-highlight-color: transparent;
+      pointer-events: auto !important;
       position: relative;
-      z-index: 50 !important;
-    }
-
-    .thumb-item * {
-      pointer-events: none !important;
+      z-index: 1000 !important;
     }
 
     .thumb-item.active {
@@ -125,13 +128,13 @@
       object-fit: contain;
     }
 
-    /* Penataan layout agar flipbook terkunci di tengah */
+    /* Kunci posisi wrapper flipbook agar berada tepat di tengah layar */
     #reader-viewport {
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      overflow: hidden !important;
       position: relative !important;
+      overflow: hidden !important;
     }
 
     #flipbook-wrapper {
@@ -140,7 +143,6 @@
       justify-content: center !important;
       width: 100% !important;
       height: 100% !important;
-      margin: auto !important;
       position: relative !important;
     }
 
@@ -150,18 +152,14 @@
       justify-content: center !important;
       margin: auto !important;
       box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-      position: relative !important;
     }
 
-    /* Memastikan StPageFlip internal elemen diisi dengan flex centering */
+    /* Menetralkan pemposisian absolut bawaan StPageFlip */
     .stpageflip-container, .stpageflip-wrapper {
       margin: auto !important;
-    }
-
-    #thumbnail-sidebar {
-      z-index: 40 !important;
-      position: relative;
-      transition: transform 0.25s ease-in-out;
+      position: relative !important;
+      top: 0 !important;
+      left: 0 !important;
     }
 
     @media (max-width: 768px) {
@@ -583,6 +581,7 @@
         document.getElementById('loading-spinner').classList.add('hidden');
         document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
+        // Render thumbnail berurutan secara asinkron
         renderThumbnailsSequentially();
 
       } catch (err) {
@@ -601,7 +600,10 @@
         thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
         thumbDiv.id = `thumb-page-${pageNum}`;
         
-        thumbDiv.setAttribute('onclick', `handleThumbClick(${pageNum})`);
+        // Pemicu Klik Langsung pada elemen thumbnail
+        thumbDiv.onclick = function() {
+          handleThumbClick(pageNum);
+        };
         
         const thumbCanvas = document.createElement('canvas');
         thumbCanvas.id = `thumb-canvas-${pageNum}`;
@@ -667,7 +669,7 @@
       let targetHeight = Math.max(200, availHeight - 40);
       let targetWidth = Math.round(targetHeight * aspectRatio);
 
-      // Koreksi Kalkulasi Lebar 1 Halaman agar Mode 2-Halaman Tidak Melebihi Viewport
+      // Batasi ukuran per halaman agar tidak tumpah ke luar kanan
       if (isPortrait || isMobile) {
         if (targetWidth > availWidth * 0.9) {
           targetWidth = Math.round(availWidth * 0.9);
@@ -683,7 +685,7 @@
       pageFlipInstance = new St.PageFlip(flipContainer, {
         width: targetWidth,
         height: targetHeight,
-        size: "fixed",
+        size: "stretch",
         minWidth: 150,
         maxWidth: 1000,
         minHeight: 200,
@@ -740,6 +742,7 @@
       await page.render({ canvasContext: context, viewport: viewport }).promise;
     }
 
+    // Render thumbnail berurutan (Sequential Render Fix untuk Canvas Blank)
     async function renderThumbnailsSequentially() {
       if (!pdfDocInstance) return;
       for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
@@ -753,6 +756,7 @@
           thumbCanvas.height = thumbViewport.height;
           thumbCanvas.width = thumbViewport.width;
 
+          // Tunggu sampai halaman selesai dirender sebelum lanjut ke halaman berikutnya
           await page.render({ canvasContext: thumbContext, viewport: thumbViewport }).promise;
         } catch (err) {
           console.warn("Gagal render thumbnail:", pageNum, err);
