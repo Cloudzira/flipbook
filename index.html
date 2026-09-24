@@ -120,8 +120,11 @@
     }
 
     .page-canvas-wrapper canvas {
-      width: 100% !important;
-      height: 100% !important;
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
       object-fit: contain;
     }
 
@@ -143,6 +146,17 @@
     #reader-viewport,
     #flipbook-wrapper {
       min-width: 0;
+      min-height: 0;
+    }
+
+    #view-reader {
+      height: calc(100vh - 48px) !important;
+      min-height: 0;
+    }
+
+    .reader-body {
+      height: calc(100vh - 96px) !important;
+      flex: 0 0 calc(100vh - 96px);
       min-height: 0;
     }
 
@@ -233,7 +247,7 @@
     <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950 overflow-hidden">
 
       <!-- Reader Body -->
-      <div class="flex-grow min-h-0 flex w-full h-[calc(100%-48px)] overflow-hidden relative">
+      <div class="reader-body flex-grow min-h-0 flex w-full overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
         <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex flex-col space-y-3 flex-shrink-0 mobile-hidden md:flex">
@@ -605,10 +619,11 @@
         document.getElementById('page-count').innerText = pdfDocInstance.numPages;
 
         await generateThumbnailsList();
+        document.getElementById('flipbook-wrapper').classList.remove('hidden');
+        await new Promise(requestAnimationFrame);
         await rebuildFlipbookDOM();
 
         document.getElementById('loading-spinner').classList.add('hidden');
-        document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
         renderThumbnailsSequentially();
 
