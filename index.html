@@ -307,7 +307,7 @@
 
         <!-- Tengah: Navigasi Halaman -->
         <div class="flex items-center space-x-1.5 sm:space-x-3">
-          <button onclick="pageFlipInstance?.flipPrev()" class="px-2.5 py-1.5 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
+          <button onclick="flipPreviousPage()" class="px-2.5 py-1.5 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
             <i class="fa-solid fa-chevron-left"></i> <span class="hidden sm:inline">Prev</span>
           </button>
           
@@ -317,7 +317,7 @@
             </span>
           </div>
 
-          <button onclick="pageFlipInstance?.flipNext()" class="px-2.5 py-1.5 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
+          <button onclick="flipNextPage()" class="px-2.5 py-1.5 text-indigo-400 hover:text-white flex items-center gap-1 text-xs glass-card rounded-lg">
             <span class="hidden sm:inline">Next</span> <i class="fa-solid fa-chevron-right"></i>
           </button>
         </div>
@@ -359,6 +359,13 @@
             <label class="block text-xs text-slate-300 mb-1 font-medium">Kategori *</label>
             <input type="text" id="upload-category" required placeholder="Contoh: Majalah, Buku, Katalog" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm">
           </div>
+          <div>
+            <label class="block text-xs text-slate-300 mb-1 font-medium">Arah Baca *</label>
+            <select id="upload-reading-direction" class="w-full glass-input rounded-xl px-3 py-2.5 text-sm bg-slate-900">
+              <option value="ltr">Kiri ke kanan (buku umum)</option>
+              <option value="rtl">Kanan ke kiri (Al-Qur'an)</option>
+            </select>
+          </div>
           <div class="md:col-span-2">
             <label class="block text-xs text-slate-300 mb-1 font-medium">Deskripsi Singkat</label>
             <textarea id="upload-desc" rows="2" placeholder="Tulis deskripsi singkat..." class="w-full glass-input rounded-xl px-4 py-2.5 text-sm"></textarea>
@@ -385,6 +392,7 @@
               <tr>
                 <th class="p-3">Judul</th>
                 <th class="p-3">Kategori</th>
+                <th class="p-3">Arah Baca</th>
                 <th class="p-3">Deskripsi</th>
                 <th class="p-3 text-right">Aksi</th>
               </tr>
@@ -675,7 +683,7 @@
 
     /* FLIPBOOK ENGINE */
     async function openReader(book) {
-      currentBook = book;
+      currentBook = { ...book, reading_direction: book.reading_direction === 'rtl' ? 'rtl' : 'ltr' };
       currentPageIndex = 1;
       switchView('reader');
       document.getElementById('loading-spinner').classList.remove('hidden');
@@ -685,6 +693,8 @@
         const loadingTask = pdfjsLib.getDocument(book.pdf_url);
         pdfDocInstance = await loadingTask.promise;
         document.getElementById('page-count').innerText = pdfDocInstance.numPages;
+        currentPageIndex = currentBook.reading_direction === 'rtl' ? pdfDocInstance.numPages : 1;
+        document.getElementById('page-num-input').value = currentPageIndex;
 
         await generateThumbnailsList();
         await rebuildFlipbookDOM();
@@ -707,7 +717,7 @@
 
       for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
         const thumbDiv = document.createElement('div');
-        thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
+        thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === currentPageIndex ? 'active' : ''}`;
         thumbDiv.id = `thumb-page-${pageNum}`;
         thumbDiv.setAttribute('data-page', pageNum);
         
@@ -746,6 +756,7 @@
       renderedPages.clear();
 
       const totalPages = pdfDocInstance.numPages;
+      const isRtl = currentBook?.reading_direction === 'rtl';
 
       for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
         const pageDiv = document.createElement('div');
@@ -802,18 +813,20 @@
         disableFlipAnimation: false
       });
 
-      const pageElements = flipContainer.querySelectorAll('.page-canvas-wrapper');
-      pageFlipInstance.loadFromHTML(pageElements);
+      const pageElements = Array.from(flipContainer.querySelectorAll('.page-canvas-wrapper'));
+      pageFlipInstance.loadFromHTML(isRtl ? pageElements.reverse() : pageElements);
 
       await renderPageIfNeeded(currentPageIndex);
       await renderPageIfNeeded(currentPageIndex + 1);
 
-      if (currentPageIndex > 1) {
+      if (isRtl) {
+        pageFlipInstance.turnToPage(totalPages - currentPageIndex);
+      } else if (currentPageIndex > 1) {
         pageFlipInstance.turnToPage(currentPageIndex - 1);
       }
 
       pageFlipInstance.on('flip', (e) => {
-        currentPageIndex = e.data + 1;
+        currentPageIndex = isRtl ? totalPages - e.data : e.data + 1;
         document.getElementById('page-num-input').value = currentPageIndex;
         
         renderPageIfNeeded(currentPageIndex);
@@ -933,8 +946,25 @@
       if (pageFlipInstance && !isNaN(target) && target > 0 && target <= (pdfDocInstance?.numPages || 0)) {
         await renderPageIfNeeded(target);
         await renderPageIfNeeded(target + 1);
-        pageFlipInstance.flip(target - 1);
+        const displayPage = currentBook?.reading_direction === 'rtl'
+          ? pdfDocInstance.numPages - target
+          : target - 1;
+        pageFlipInstance.turnToPage(displayPage);
       }
+    }
+
+    function flipPreviousPage() {
+      if (!pageFlipInstance) return;
+      currentBook?.reading_direction === 'rtl'
+        ? pageFlipInstance.flipNext()
+        : pageFlipInstance.flipPrev();
+    }
+
+    function flipNextPage() {
+      if (!pageFlipInstance) return;
+      currentBook?.reading_direction === 'rtl'
+        ? pageFlipInstance.flipPrev()
+        : pageFlipInstance.flipNext();
     }
 
     function toggleFullscreen() {
@@ -1010,6 +1040,7 @@
 
       const title = document.getElementById('upload-title').value;
       const category = document.getElementById('upload-category').value;
+      const readingDirection = document.getElementById('upload-reading-direction').value;
       const desc = document.getElementById('upload-desc').value;
       const fileInput = document.getElementById('upload-file');
       const file = fileInput.files[0];
@@ -1038,7 +1069,7 @@
 
         const { error: dbError } = await supabaseClient
           .from('flipbooks')
-          .insert([{ title, category, description: desc, pdf_url: pdfUrl }]);
+          .insert([{ title, category, description: desc, pdf_url: pdfUrl, reading_direction: readingDirection }]);
 
         if (dbError) throw dbError;
 
@@ -1060,7 +1091,7 @@
       tbody.innerHTML = '';
 
       if (catalogData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Belum ada data flipbook.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Belum ada data flipbook.</td></tr>`;
         return;
       }
 
@@ -1071,7 +1102,8 @@
         tr.innerHTML = `
           <td class="p-3 font-medium text-white">${item.title}</td>
           <td class="p-3"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${item.category}</span></td>
-          <td class="p-3 text-xs text-slate-400">${new Date(item.created_at).toLocaleDateString('id-ID')}</td>
+          <td class="p-3 text-xs text-slate-300">${item.reading_direction === 'rtl' ? 'Kanan ke kiri' : 'Kiri ke kanan'}</td>
+          <td class="p-3 text-xs text-slate-400">${item.description || '-'}</td>
           <td class="p-3 text-right">
             <button onclick="editFlipbook('${item.id}')" class="text-indigo-300 hover:text-indigo-200 p-1" title="Edit buku"><i class="fa-solid fa-pen"></i> Edit</button>
             <button onclick="moveFlipbook('${item.id}', -1)" class="text-slate-300 hover:text-white p-1 ${index === 0 ? 'opacity-30 pointer-events-none' : ''}" title="Pindah ke atas"><i class="fa-solid fa-arrow-up"></i></button>
@@ -1091,6 +1123,7 @@
       row.innerHTML = `
         <td class="p-3"><input id="edit-title-${id}" value="${escapeHtml(item.title || '')}" class="w-full glass-input rounded px-2 py-1 text-sm"></td>
         <td class="p-3"><input id="edit-category-${id}" value="${escapeHtml(item.category || '')}" class="w-full glass-input rounded px-2 py-1 text-sm"></td>
+        <td class="p-3"><select id="edit-direction-${id}" class="w-full glass-input rounded px-2 py-1 text-sm bg-slate-900"><option value="ltr" ${item.reading_direction !== 'rtl' ? 'selected' : ''}>Kiri ke kanan</option><option value="rtl" ${item.reading_direction === 'rtl' ? 'selected' : ''}>Kanan ke kiri</option></select></td>
         <td class="p-3"><input id="edit-description-${id}" value="${escapeHtml(item.description || '')}" placeholder="Deskripsi" class="w-full glass-input rounded px-2 py-1 text-sm"></td>
         <td class="p-3 text-right whitespace-nowrap">
           <button onclick="saveFlipbook('${id}')" class="text-emerald-300 hover:text-emerald-200 p-1"><i class="fa-solid fa-check"></i> Simpan</button>
@@ -1110,6 +1143,7 @@
     async function saveFlipbook(id) {
       const title = document.getElementById(`edit-title-${id}`)?.value.trim();
       const category = document.getElementById(`edit-category-${id}`)?.value.trim();
+      const reading_direction = document.getElementById(`edit-direction-${id}`)?.value || 'ltr';
       const description = document.getElementById(`edit-description-${id}`)?.value.trim();
 
       if (!title || !category) {
@@ -1119,7 +1153,7 @@
 
       const { data, error } = await supabaseClient
         .from('flipbooks')
-        .update({ title, category, description })
+        .update({ title, category, description, reading_direction })
         .eq('id', id)
         .select()
         .single();
@@ -1130,7 +1164,7 @@
       }
 
       const itemIndex = catalogData.findIndex(book => String(book.id) === String(id));
-      catalogData[itemIndex] = { ...catalogData[itemIndex], ...(data || { title, category, description }) };
+      catalogData[itemIndex] = { ...catalogData[itemIndex], ...(data || { title, category, description, reading_direction }) };
       renderAdminTable();
       renderCatalogGrid(catalogData);
     }
