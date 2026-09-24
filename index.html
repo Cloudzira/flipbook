@@ -146,6 +146,15 @@
       min-height: 0;
     }
 
+    #reader-viewport {
+      overflow: hidden;
+    }
+
+    #flipbook-wrapper {
+      overflow: hidden;
+      transform-origin: center center;
+    }
+
     @media (max-width: 768px), (max-height: 500px) {
       #thumbnail-sidebar {
         position: fixed !important;
@@ -224,7 +233,7 @@
     <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950 overflow-hidden">
 
       <!-- Reader Body -->
-      <div class="flex-grow min-h-0 flex w-full h-auto overflow-hidden relative">
+      <div class="flex-grow min-h-0 flex w-full h-[calc(100%-48px)] overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
         <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex flex-col space-y-3 flex-shrink-0 mobile-hidden md:flex">
@@ -672,23 +681,24 @@
       const isPortrait = window.innerWidth < window.innerHeight;
       const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
 
-      let availWidth = viewportContainer.clientWidth || (window.innerWidth - 200);
-      let availHeight = viewportContainer.clientHeight || (window.innerHeight - 100);
+      const availWidth = viewportContainer.clientWidth || (window.innerWidth - 200);
+      const availHeight = viewportContainer.clientHeight || (window.innerHeight - 100);
+      const pageCountInView = isPortrait || isMobile ? 1 : 2;
+      const horizontalPadding = isPortrait || isMobile ? 24 : 48;
+      const verticalPadding = 24;
+      const maxWidthByViewport = Math.max(150, (availWidth - horizontalPadding) / pageCountInView);
+      const maxHeightByViewport = Math.max(200, availHeight - verticalPadding);
 
-      let targetHeight = Math.max(220, availHeight - 30);
-      let targetWidth = Math.round(targetHeight * aspectRatio);
+      let targetWidth = Math.min(maxWidthByViewport, maxHeightByViewport * aspectRatio);
+      let targetHeight = targetWidth / aspectRatio;
 
-      if (isPortrait || isMobile) {
-        if (targetWidth > availWidth * 0.95) {
-          targetWidth = Math.round(availWidth * 0.95);
-          targetHeight = Math.round(targetWidth / aspectRatio);
-        }
-      } else {
-        if (targetWidth * 2 > availWidth * 0.95) {
-          targetWidth = Math.round((availWidth * 0.95) / 2);
-          targetHeight = Math.round(targetWidth / aspectRatio);
-        }
+      if (targetHeight > maxHeightByViewport) {
+        targetHeight = maxHeightByViewport;
+        targetWidth = targetHeight * aspectRatio;
       }
+
+      targetWidth = Math.max(150, Math.round(targetWidth));
+      targetHeight = Math.max(200, Math.round(targetHeight));
 
       pageFlipInstance = new St.PageFlip(flipContainer, {
         width: targetWidth,
