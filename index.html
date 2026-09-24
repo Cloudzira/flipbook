@@ -694,9 +694,9 @@
       const availHeight = viewportContainer.clientHeight || (window.innerHeight - 100);
       const pageCountInView = isPortrait || isMobile ? 1 : 2;
       const horizontalPadding = isPortrait || isMobile ? 24 : 48;
-      const verticalPadding = 24;
+      const verticalPadding = isMobile ? 16 : 48;
       const maxWidthByViewport = Math.max(150, (availWidth - horizontalPadding) / pageCountInView);
-      const maxHeightByViewport = Math.max(200, availHeight - verticalPadding);
+      const maxHeightByViewport = Math.max(120, availHeight - verticalPadding);
 
       let targetWidth = Math.min(maxWidthByViewport, maxHeightByViewport * aspectRatio);
       let targetHeight = targetWidth / aspectRatio;
@@ -706,16 +706,16 @@
         targetWidth = targetHeight * aspectRatio;
       }
 
-      targetWidth = Math.max(150, Math.round(targetWidth));
-      targetHeight = Math.max(200, Math.round(targetHeight));
+      targetWidth = Math.max(120, Math.round(targetWidth));
+      targetHeight = Math.max(120, Math.round(targetHeight));
 
       pageFlipInstance = new St.PageFlip(flipContainer, {
         width: targetWidth,
         height: targetHeight,
         size: "fixed",
-        minWidth: 150,
+        minWidth: 120,
         maxWidth: 1000,
-        minHeight: 200,
+        minHeight: 120,
         maxHeight: 1200,
         maxShadowOpacity: 0.15,
         showCover: true,
