@@ -125,13 +125,22 @@
       object-fit: contain;
     }
 
-    /* Memaksa Flipbook Berada Tepat di Tengah Viewport */
+    /* Penataan layout agar flipbook terkunci di tengah */
+    #reader-viewport {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+      position: relative !important;
+    }
+
     #flipbook-wrapper {
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
       width: 100% !important;
       height: 100% !important;
+      margin: auto !important;
       position: relative !important;
     }
 
@@ -144,7 +153,11 @@
       position: relative !important;
     }
 
-    /* Memastikan Sidebar Memiliki Hierarki Layer Z-Index di Atas StPageFlip */
+    /* Memastikan StPageFlip internal elemen diisi dengan flex centering */
+    .stpageflip-container, .stpageflip-wrapper {
+      margin: auto !important;
+    }
+
     #thumbnail-sidebar {
       z-index: 40 !important;
       position: relative;
@@ -651,17 +664,18 @@
       let availWidth = viewportContainer.clientWidth || (window.innerWidth - 220);
       let availHeight = viewportContainer.clientHeight || (window.innerHeight - 100);
 
-      let targetHeight = Math.max(220, availHeight - 30);
+      let targetHeight = Math.max(200, availHeight - 40);
       let targetWidth = Math.round(targetHeight * aspectRatio);
 
+      // Koreksi Kalkulasi Lebar 1 Halaman agar Mode 2-Halaman Tidak Melebihi Viewport
       if (isPortrait || isMobile) {
-        if (targetWidth > availWidth * 0.95) {
-          targetWidth = Math.round(availWidth * 0.95);
+        if (targetWidth > availWidth * 0.9) {
+          targetWidth = Math.round(availWidth * 0.9);
           targetHeight = Math.round(targetWidth / aspectRatio);
         }
       } else {
-        if (targetWidth * 2 > availWidth * 0.95) {
-          targetWidth = Math.round((availWidth * 0.95) / 2);
+        if ((targetWidth * 2) > (availWidth * 0.9)) {
+          targetWidth = Math.round((availWidth * 0.9) / 2);
           targetHeight = Math.round(targetWidth / aspectRatio);
         }
       }
