@@ -91,19 +91,16 @@
       background: rgba(99, 102, 241, 0.7);
     }
 
-    /* Kunci Z-Index Sidebar agar tidak terhalang layer flipbook */
-    #thumbnail-sidebar {
-      z-index: 999 !important;
-      position: relative !important;
-      pointer-events: auto !important;
-    }
-
     .thumb-item {
       cursor: pointer !important;
       user-select: none;
-      pointer-events: auto !important;
+      -webkit-tap-highlight-color: transparent;
       position: relative;
-      z-index: 1000 !important;
+      z-index: 10;
+    }
+
+    .thumb-item * {
+      pointer-events: none !important;
     }
 
     .thumb-item.active {
@@ -128,41 +125,28 @@
       object-fit: contain;
     }
 
-    /* Kunci posisi wrapper flipbook agar berada tepat di tengah layar */
-    #reader-viewport {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      position: relative !important;
-      overflow: hidden !important;
-    }
-
-    #flipbook-wrapper {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      width: 100% !important;
-      height: 100% !important;
-      position: relative !important;
-    }
-
     #flipbook-container {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      margin: auto !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: auto;
       box-shadow: 0 20px 50px rgba(0,0,0,0.6);
     }
 
-    /* Menetralkan pemposisian absolut bawaan StPageFlip */
-    .stpageflip-container, .stpageflip-wrapper {
-      margin: auto !important;
-      position: relative !important;
-      top: 0 !important;
-      left: 0 !important;
+    #thumbnail-sidebar {
+      z-index: 60 !important;
+      transition: transform 0.25s ease-in-out;
+      min-width: 0;
+      min-height: 0;
     }
 
-    @media (max-width: 768px) {
+    #reader-viewport,
+    #flipbook-wrapper {
+      min-width: 0;
+      min-height: 0;
+    }
+
+    @media (max-width: 768px), (max-height: 500px) {
       #thumbnail-sidebar {
         position: fixed !important;
         top: 48px;
@@ -171,15 +155,17 @@
         height: calc(100% - 96px) !important;
         background: rgba(15, 23, 42, 0.96) !important;
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
-        width: 200px !important;
+        width: 190px !important;
       }
       
       #thumbnail-sidebar.mobile-hidden {
         transform: translateX(-100%);
+        pointer-events: none;
       }
       
       #thumbnail-sidebar.mobile-visible {
         transform: translateX(0);
+        pointer-events: auto;
       }
     }
   </style>
@@ -238,7 +224,7 @@
     <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950 overflow-hidden">
 
       <!-- Reader Body -->
-      <div class="flex-grow flex w-full h-[calc(100%-48px)] overflow-hidden relative">
+      <div class="flex-grow min-h-0 flex w-full h-auto overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
         <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex flex-col space-y-3 flex-shrink-0 mobile-hidden md:flex">
@@ -422,6 +408,22 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadCatalogFromSupabase();
 
+      // Event Delegation Thumbnail (Mouse & Touch Screen)
+      const thumbContainer = document.getElementById('thumbnail-container');
+      if (thumbContainer) {
+        thumbContainer.addEventListener('click', (e) => {
+          const item = e.target.closest('.thumb-item');
+          if (item && item.getAttribute('data-page')) {
+            const targetPage = parseInt(item.getAttribute('data-page'), 10);
+            jumpToPage(targetPage);
+            
+            if (window.innerWidth <= 768 || window.innerHeight <= 500) {
+              closeMobileSidebar();
+            }
+          }
+        });
+      }
+
       window.addEventListener('resize', handleResizeOrOrientation);
       window.addEventListener('orientationchange', () => {
         setTimeout(handleResizeOrOrientation, 300);
@@ -431,10 +433,29 @@
     function handleResizeOrOrientation() {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(async () => {
+        syncThumbnailSidebarMode();
         if (pdfDocInstance && document.getElementById('view-reader').classList.contains('flex')) {
           await rebuildFlipbookDOM();
         }
       }, 250);
+    }
+
+    function isCompactReader() {
+      return window.matchMedia('(max-width: 768px), (max-height: 500px)').matches;
+    }
+
+    function syncThumbnailSidebarMode() {
+      const sidebar = document.getElementById('thumbnail-sidebar');
+      if (!sidebar) return;
+
+      if (isCompactReader()) {
+        sidebar.classList.remove('hidden');
+        if (!sidebar.classList.contains('mobile-visible')) {
+          sidebar.classList.add('mobile-hidden');
+        }
+      } else {
+        sidebar.classList.remove('mobile-hidden', 'mobile-visible', 'hidden');
+      }
     }
 
     /* KATALOG & NAVIGATION */
@@ -581,7 +602,6 @@
         document.getElementById('loading-spinner').classList.add('hidden');
         document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
-        // Render thumbnail berurutan secara asinkron
         renderThumbnailsSequentially();
 
       } catch (err) {
@@ -599,11 +619,7 @@
         const thumbDiv = document.createElement('div');
         thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
         thumbDiv.id = `thumb-page-${pageNum}`;
-        
-        // Pemicu Klik Langsung pada elemen thumbnail
-        thumbDiv.onclick = function() {
-          handleThumbClick(pageNum);
-        };
+        thumbDiv.setAttribute('data-page', pageNum);
         
         const thumbCanvas = document.createElement('canvas');
         thumbCanvas.id = `thumb-canvas-${pageNum}`;
@@ -619,19 +635,13 @@
       }
     }
 
-    function handleThumbClick(targetPage) {
-      jumpToPage(targetPage);
-      if (window.innerWidth <= 768) {
-        closeMobileSidebar();
-      }
-    }
-
     async function rebuildFlipbookDOM() {
       if (!pdfDocInstance) return;
 
       const flipWrapper = document.getElementById('flipbook-wrapper');
       if (!flipWrapper) return;
 
+      // Re-create container agar ID terjamin ada
       flipWrapper.innerHTML = '<div id="flipbook-container"></div>';
       const flipContainer = document.getElementById('flipbook-container');
 
@@ -661,23 +671,22 @@
 
       const viewportContainer = document.getElementById('reader-viewport');
       const isPortrait = window.innerWidth < window.innerHeight;
-      const isMobile = window.innerWidth <= 768;
+      const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
 
-      let availWidth = viewportContainer.clientWidth || (window.innerWidth - 220);
+      let availWidth = viewportContainer.clientWidth || (window.innerWidth - 200);
       let availHeight = viewportContainer.clientHeight || (window.innerHeight - 100);
 
-      let targetHeight = Math.max(200, availHeight - 40);
+      let targetHeight = Math.max(220, availHeight - 30);
       let targetWidth = Math.round(targetHeight * aspectRatio);
 
-      // Batasi ukuran per halaman agar tidak tumpah ke luar kanan
       if (isPortrait || isMobile) {
-        if (targetWidth > availWidth * 0.9) {
-          targetWidth = Math.round(availWidth * 0.9);
+        if (targetWidth > availWidth * 0.95) {
+          targetWidth = Math.round(availWidth * 0.95);
           targetHeight = Math.round(targetWidth / aspectRatio);
         }
       } else {
-        if ((targetWidth * 2) > (availWidth * 0.9)) {
-          targetWidth = Math.round((availWidth * 0.9) / 2);
+        if (targetWidth * 2 > availWidth * 0.95) {
+          targetWidth = Math.round((availWidth * 0.95) / 2);
           targetHeight = Math.round(targetWidth / aspectRatio);
         }
       }
@@ -685,7 +694,7 @@
       pageFlipInstance = new St.PageFlip(flipContainer, {
         width: targetWidth,
         height: targetHeight,
-        size: "stretch",
+        size: "fixed",
         minWidth: 150,
         maxWidth: 1000,
         minHeight: 200,
@@ -742,7 +751,6 @@
       await page.render({ canvasContext: context, viewport: viewport }).promise;
     }
 
-    // Render thumbnail berurutan (Sequential Render Fix untuk Canvas Blank)
     async function renderThumbnailsSequentially() {
       if (!pdfDocInstance) return;
       for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
@@ -756,7 +764,6 @@
           thumbCanvas.height = thumbViewport.height;
           thumbCanvas.width = thumbViewport.width;
 
-          // Tunggu sampai halaman selesai dirender sebelum lanjut ke halaman berikutnya
           await page.render({ canvasContext: thumbContext, viewport: thumbViewport }).promise;
         } catch (err) {
           console.warn("Gagal render thumbnail:", pageNum, err);
@@ -766,7 +773,7 @@
 
     function toggleThumbnailSidebar() {
       const sidebar = document.getElementById('thumbnail-sidebar');
-      if (window.innerWidth <= 768) {
+      if (isCompactReader()) {
         if (sidebar.classList.contains('mobile-visible')) {
           closeMobileSidebar();
         } else {
@@ -970,3 +977,4 @@
   </script>
 </body>
 </html>
+
