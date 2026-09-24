@@ -615,6 +615,12 @@
       });
     }
 
+    function normalizeReadingDirection(value) {
+      return String(value || 'ltr').replaceAll("'", '').replaceAll('"', '').toLowerCase() === 'rtl'
+        ? 'rtl'
+        : 'ltr';
+    }
+
     async function loadBookCover(pdfUrl, bookId) {
       try {
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
@@ -683,7 +689,7 @@
 
     /* FLIPBOOK ENGINE */
     async function openReader(book) {
-      currentBook = { ...book, reading_direction: book.reading_direction === 'rtl' ? 'rtl' : 'ltr' };
+      currentBook = { ...book, reading_direction: normalizeReadingDirection(book.reading_direction) };
       currentPageIndex = 1;
       switchView('reader');
       document.getElementById('loading-spinner').classList.remove('hidden');
@@ -1069,7 +1075,7 @@
 
         const { error: dbError } = await supabaseClient
           .from('flipbooks')
-          .insert([{ title, category, description: desc, pdf_url: pdfUrl, reading_direction: readingDirection }]);
+          .insert([{ title, category, description: desc, pdf_url: pdfUrl, reading_direction: normalizeReadingDirection(readingDirection) }]);
 
         if (dbError) throw dbError;
 
@@ -1102,7 +1108,7 @@
         tr.innerHTML = `
           <td class="p-3 font-medium text-white">${item.title}</td>
           <td class="p-3"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${item.category}</span></td>
-          <td class="p-3 text-xs text-slate-300">${item.reading_direction === 'rtl' ? 'Kanan ke kiri' : 'Kiri ke kanan'}</td>
+          <td class="p-3 text-xs text-slate-300">${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'Kanan ke kiri' : 'Kiri ke kanan'}</td>
           <td class="p-3 text-xs text-slate-400">${item.description || '-'}</td>
           <td class="p-3 text-right">
             <button onclick="editFlipbook('${item.id}')" class="text-indigo-300 hover:text-indigo-200 p-1" title="Edit buku"><i class="fa-solid fa-pen"></i> Edit</button>
@@ -1123,7 +1129,7 @@
       row.innerHTML = `
         <td class="p-3"><input id="edit-title-${id}" value="${escapeHtml(item.title || '')}" class="w-full glass-input rounded px-2 py-1 text-sm"></td>
         <td class="p-3"><input id="edit-category-${id}" value="${escapeHtml(item.category || '')}" class="w-full glass-input rounded px-2 py-1 text-sm"></td>
-        <td class="p-3"><select id="edit-direction-${id}" class="w-full glass-input rounded px-2 py-1 text-sm bg-slate-900"><option value="ltr" ${item.reading_direction !== 'rtl' ? 'selected' : ''}>Kiri ke kanan</option><option value="rtl" ${item.reading_direction === 'rtl' ? 'selected' : ''}>Kanan ke kiri</option></select></td>
+        <td class="p-3"><select id="edit-direction-${id}" class="w-full glass-input rounded px-2 py-1 text-sm bg-slate-900"><option value="ltr" ${normalizeReadingDirection(item.reading_direction) !== 'rtl' ? 'selected' : ''}>Kiri ke kanan</option><option value="rtl" ${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'selected' : ''}>Kanan ke kiri</option></select></td>
         <td class="p-3"><input id="edit-description-${id}" value="${escapeHtml(item.description || '')}" placeholder="Deskripsi" class="w-full glass-input rounded px-2 py-1 text-sm"></td>
         <td class="p-3 text-right whitespace-nowrap">
           <button onclick="saveFlipbook('${id}')" class="text-emerald-300 hover:text-emerald-200 p-1"><i class="fa-solid fa-check"></i> Simpan</button>
