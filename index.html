@@ -1151,12 +1151,10 @@
         return;
       }
 
-      const { data, error } = await supabaseClient
+      const { error } = await supabaseClient
         .from('flipbooks')
         .update({ title, category, description, reading_direction })
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
       if (error) {
         alert('Gagal menyimpan perubahan: ' + error.message);
@@ -1164,7 +1162,15 @@
       }
 
       const itemIndex = catalogData.findIndex(book => String(book.id) === String(id));
-      catalogData[itemIndex] = { ...catalogData[itemIndex], ...(data || { title, category, description, reading_direction }) };
+      if (itemIndex >= 0) {
+        catalogData[itemIndex] = {
+          ...catalogData[itemIndex],
+          title,
+          category,
+          description,
+          reading_direction
+        };
+      }
       renderAdminTable();
       renderCatalogGrid(catalogData);
     }
