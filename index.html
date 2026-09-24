@@ -884,7 +884,8 @@
       currentZoom = Math.min(Math.max(0.6, currentZoom + amount), 2.5);
       const wrapper = document.getElementById('flipbook-wrapper');
       const viewport = document.getElementById('reader-viewport');
-      wrapper.style.transform = `scale(${currentZoom})`;
+      wrapper.style.transform = 'none';
+      wrapper.style.zoom = currentZoom;
       viewport.classList.toggle('is-zoomed', currentZoom > 1);
       if (currentZoom <= 1) {
         viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
@@ -895,7 +896,8 @@
       currentZoom = 1;
       const wrapper = document.getElementById('flipbook-wrapper');
       const viewport = document.getElementById('reader-viewport');
-      wrapper.style.transform = `scale(1)`;
+      wrapper.style.transform = 'none';
+      wrapper.style.zoom = 1;
       viewport.classList.remove('is-zoomed', 'is-dragging');
       viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
     }
