@@ -191,6 +191,16 @@
         pointer-events: auto;
       }
     }
+
+    @media (max-width: 768px) and (orientation: landscape) {
+      body > nav {
+        display: none;
+      }
+
+      body > main {
+        height: 100dvh;
+      }
+    }
   </style>
 </head>
 <body class="flex flex-col h-screen min-h-0 overflow-hidden">
