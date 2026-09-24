@@ -7,6 +7,7 @@
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="https://scontent.cdninstagram.com/v/t51.82787-19/809209232_18105150251625834_952652532206371015_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_cat=101&ccb=7-5&_nc_sid=f7ccc5&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=V5_LNznfN04Q7kNvwEAVMF8&_nc_oc=AdrzuvglYixrfB53uz7ety_lfWjjwGsoMbyTzNCWdsgOYa5CsbN3ICGcvjpuYwtNj-c&_nc_zt=24&_nc_ht=scontent.cdninstagram.com&_nc_gid=lmbkLuooWdOmSAVEUw1euQ&_nc_ss=7ba8c&oh=00_AQKtymHa9QQw-30SNi3uAk0yEFm75y3Uvy81WLJjqyRoig&oe=6AB9064A">
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -132,7 +133,6 @@
       box-shadow: 0 20px 50px rgba(0,0,0,0.6);
     }
 
-    /* Penanganan Layout Sidebar & Responsive Breakpoint */
     #thumbnail-sidebar {
       z-index: 60 !important;
       transition: transform 0.25s ease-in-out;
@@ -398,19 +398,21 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadCatalogFromSupabase();
 
-      // Event Delegation Thumbnail
+      // Event Delegation Thumbnail (Mouse & Touch Screen)
       const thumbContainer = document.getElementById('thumbnail-container');
-      thumbContainer.addEventListener('click', (e) => {
-        const item = e.target.closest('.thumb-item');
-        if (item && item.getAttribute('data-page')) {
-          const targetPage = parseInt(item.getAttribute('data-page'), 10);
-          jumpToPage(targetPage);
-          
-          if (window.innerWidth <= 768 || window.innerHeight <= 500) {
-            closeMobileSidebar();
+      if (thumbContainer) {
+        thumbContainer.addEventListener('click', (e) => {
+          const item = e.target.closest('.thumb-item');
+          if (item && item.getAttribute('data-page')) {
+            const targetPage = parseInt(item.getAttribute('data-page'), 10);
+            jumpToPage(targetPage);
+            
+            if (window.innerWidth <= 768 || window.innerHeight <= 500) {
+              closeMobileSidebar();
+            }
           }
-        }
-      });
+        });
+      }
 
       window.addEventListener('resize', handleResizeOrOrientation);
       window.addEventListener('orientationchange', () => {
@@ -571,7 +573,6 @@
         document.getElementById('loading-spinner').classList.add('hidden');
         document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
-        // Render thumbnail berurutan secara sequential agar canvas tidak meleset/blank
         renderThumbnailsSequentially();
 
       } catch (err) {
@@ -582,6 +583,7 @@
 
     async function generateThumbnailsList() {
       const thumbContainer = document.getElementById('thumbnail-container');
+      if (!thumbContainer) return;
       thumbContainer.innerHTML = '';
 
       for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
@@ -607,14 +609,18 @@
     async function rebuildFlipbookDOM() {
       if (!pdfDocInstance) return;
 
+      const flipWrapper = document.getElementById('flipbook-wrapper');
+      if (!flipWrapper) return;
+
+      // Re-create container agar ID terjamin ada
+      flipWrapper.innerHTML = '<div id="flipbook-container"></div>';
       const flipContainer = document.getElementById('flipbook-container');
-      
+
       if (pageFlipInstance) {
         try { pageFlipInstance.destroy(); } catch(e){}
         pageFlipInstance = null;
       }
 
-      flipContainer.innerHTML = '';
       renderedPages.clear();
 
       const totalPages = pdfDocInstance.numPages;
@@ -709,14 +715,13 @@
       if (!canvas) return;
 
       const viewport = page.getViewport({ scale: 2.0 });
-      const context = canvas.getContext('2d');
+      const context = canvas.getContext('2d', { willReadFrequently: true });
       canvas.height = viewport.height;
       canvas.width = viewport.width;
 
       await page.render({ canvasContext: context, viewport: viewport }).promise;
     }
 
-    /* Perbaikan Render Sequential untuk mencegah canvas thumbnail blank */
     async function renderThumbnailsSequentially() {
       if (!pdfDocInstance) return;
       for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
@@ -726,13 +731,13 @@
           if (!thumbCanvas) continue;
 
           const thumbViewport = page.getViewport({ scale: 0.25 });
-          const thumbContext = thumbCanvas.getContext('2d');
+          const thumbContext = thumbCanvas.getContext('2d', { willReadFrequently: true });
           thumbCanvas.height = thumbViewport.height;
           thumbCanvas.width = thumbViewport.width;
 
           await page.render({ canvasContext: thumbContext, viewport: thumbViewport }).promise;
         } catch (err) {
-          console.warn("Gagal render thumbnail halaman:", pageNum, err);
+          console.warn("Gagal render thumbnail:", pageNum, err);
         }
       }
     }
