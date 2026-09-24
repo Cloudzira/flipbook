@@ -385,7 +385,7 @@
               <tr>
                 <th class="p-3">Judul</th>
                 <th class="p-3">Kategori</th>
-                <th class="p-3">Tanggal</th>
+                <th class="p-3">Deskripsi</th>
                 <th class="p-3 text-right">Aksi</th>
               </tr>
             </thead>
@@ -558,7 +558,12 @@
         return;
       }
 
-      catalogData = data || [];
+      catalogData = (data || []).sort((firstBook, secondBook) => {
+        const firstOrder = firstBook.sort_order ?? Number.MAX_SAFE_INTEGER;
+        const secondOrder = secondBook.sort_order ?? Number.MAX_SAFE_INTEGER;
+        if (firstOrder !== secondOrder) return firstOrder - secondOrder;
+        return new Date(secondBook.created_at || 0) - new Date(firstBook.created_at || 0);
+      });
       populateCategoryDropdown();
       renderCatalogGrid(catalogData);
     }
@@ -1059,19 +1064,99 @@
         return;
       }
 
-      catalogData.forEach(item => {
+      catalogData.forEach((item, index) => {
         const tr = document.createElement('tr');
         tr.className = 'border-b border-white/5 hover:bg-white/5';
+        tr.dataset.bookId = item.id;
         tr.innerHTML = `
           <td class="p-3 font-medium text-white">${item.title}</td>
           <td class="p-3"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">${item.category}</span></td>
           <td class="p-3 text-xs text-slate-400">${new Date(item.created_at).toLocaleDateString('id-ID')}</td>
           <td class="p-3 text-right">
+            <button onclick="editFlipbook('${item.id}')" class="text-indigo-300 hover:text-indigo-200 p-1" title="Edit buku"><i class="fa-solid fa-pen"></i> Edit</button>
+            <button onclick="moveFlipbook('${item.id}', -1)" class="text-slate-300 hover:text-white p-1 ${index === 0 ? 'opacity-30 pointer-events-none' : ''}" title="Pindah ke atas"><i class="fa-solid fa-arrow-up"></i></button>
+            <button onclick="moveFlipbook('${item.id}', 1)" class="text-slate-300 hover:text-white p-1 ${index === catalogData.length - 1 ? 'opacity-30 pointer-events-none' : ''}" title="Pindah ke bawah"><i class="fa-solid fa-arrow-down"></i></button>
             <button onclick="deleteFlipbook('${item.id}')" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash"></i> Hapus</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    function editFlipbook(id) {
+      const item = catalogData.find(book => String(book.id) === String(id));
+      const row = document.querySelector(`#admin-table-body tr[data-book-id="${id}"]`);
+      if (!item || !row) return;
+
+      row.innerHTML = `
+        <td class="p-3"><input id="edit-title-${id}" value="${escapeHtml(item.title || '')}" class="w-full glass-input rounded px-2 py-1 text-sm"></td>
+        <td class="p-3"><input id="edit-category-${id}" value="${escapeHtml(item.category || '')}" class="w-full glass-input rounded px-2 py-1 text-sm"></td>
+        <td class="p-3"><input id="edit-description-${id}" value="${escapeHtml(item.description || '')}" placeholder="Deskripsi" class="w-full glass-input rounded px-2 py-1 text-sm"></td>
+        <td class="p-3 text-right whitespace-nowrap">
+          <button onclick="saveFlipbook('${id}')" class="text-emerald-300 hover:text-emerald-200 p-1"><i class="fa-solid fa-check"></i> Simpan</button>
+          <button onclick="renderAdminTable()" class="text-slate-300 hover:text-white p-1"><i class="fa-solid fa-xmark"></i> Batal</button>
+        </td>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+
+    async function saveFlipbook(id) {
+      const title = document.getElementById(`edit-title-${id}`)?.value.trim();
+      const category = document.getElementById(`edit-category-${id}`)?.value.trim();
+      const description = document.getElementById(`edit-description-${id}`)?.value.trim();
+
+      if (!title || !category) {
+        alert('Nama buku dan kategori wajib diisi.');
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('flipbooks')
+        .update({ title, category, description })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        alert('Gagal menyimpan perubahan: ' + error.message);
+        return;
+      }
+
+      const itemIndex = catalogData.findIndex(book => String(book.id) === String(id));
+      catalogData[itemIndex] = { ...catalogData[itemIndex], ...(data || { title, category, description }) };
+      renderAdminTable();
+      renderCatalogGrid(catalogData);
+    }
+
+    async function moveFlipbook(id, direction) {
+      const currentIndex = catalogData.findIndex(book => String(book.id) === String(id));
+      const targetIndex = currentIndex + direction;
+      if (currentIndex < 0 || targetIndex < 0 || targetIndex >= catalogData.length) return;
+
+      [catalogData[currentIndex], catalogData[targetIndex]] = [catalogData[targetIndex], catalogData[currentIndex]];
+      const now = Date.now();
+      catalogData.forEach((book, index) => {
+        book.created_at = new Date(now - index * 1000).toISOString();
+      });
+      renderAdminTable();
+      renderCatalogGrid(catalogData);
+
+      const updates = catalogData.map(book => supabaseClient
+        .from('flipbooks')
+        .update({ created_at: book.created_at })
+        .eq('id', book.id));
+      const results = await Promise.all(updates);
+      const error = results.find(result => result.error)?.error;
+      if (error) {
+        alert('Urutan berubah di tampilan, tetapi belum tersimpan ke database: ' + error.message);
+      }
     }
 
     async function deleteFlipbook(id) {
