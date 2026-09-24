@@ -699,7 +699,7 @@
         const loadingTask = pdfjsLib.getDocument(book.pdf_url);
         pdfDocInstance = await loadingTask.promise;
         document.getElementById('page-count').innerText = pdfDocInstance.numPages;
-        currentPageIndex = currentBook.reading_direction === 'rtl' ? pdfDocInstance.numPages : 1;
+        currentPageIndex = 1;
         document.getElementById('page-num-input').value = currentPageIndex;
 
         await generateThumbnailsList();
