@@ -1157,13 +1157,19 @@
         return;
       }
 
-      const { error } = await supabaseClient
+      const { data: updatedRows, error } = await supabaseClient
         .from('flipbooks')
         .update({ title, category, description, reading_direction })
-        .eq('id', id);
+        .eq('id', id)
+        .select('id, title, category, description, reading_direction');
 
       if (error) {
         alert('Gagal menyimpan perubahan: ' + error.message);
+        return;
+      }
+
+      if (!updatedRows || updatedRows.length === 0) {
+        alert('Tidak ada data yang diperbarui. Periksa policy UPDATE/SELECT RLS pada tabel flipbooks.');
         return;
       }
 
@@ -1171,14 +1177,13 @@
       if (itemIndex >= 0) {
         catalogData[itemIndex] = {
           ...catalogData[itemIndex],
-          title,
-          category,
-          description,
-          reading_direction
+          ...updatedRows[0]
         };
       }
       renderAdminTable();
       renderCatalogGrid(catalogData);
+      await loadCatalogFromSupabase();
+      renderAdminTable();
     }
 
     async function moveFlipbook(id, direction) {
