@@ -35,6 +35,7 @@
 
     html, body {
       height: 100%;
+      height: 100dvh;
       width: 100vw;
       margin: 0;
       padding: 0;
@@ -157,6 +158,10 @@
       flex: 1 1 auto;
     }
 
+    #view-reader {
+      height: 100%;
+    }
+
     #flipbook-wrapper {
       overflow: hidden;
       transform-origin: center center;
@@ -188,7 +193,7 @@
     }
   </style>
 </head>
-<body class="flex flex-col h-screen overflow-hidden">
+<body class="flex flex-col h-screen min-h-0 overflow-hidden">
 
   <!-- NAVBAR UTAMA -->
   <nav class="glass-panel sticky top-0 z-50 px-4 sm:px-6 py-2 flex items-center justify-between border-b border-white/10 flex-shrink-0 h-12">
@@ -212,7 +217,7 @@
   </nav>
 
   <!-- MAIN CONTENT CONTAINER -->
-  <main class="flex-grow overflow-hidden relative flex flex-col h-[calc(100vh-48px)]">
+  <main class="flex-1 min-h-0 overflow-hidden relative flex flex-col">
 
     <!-- VIEW 1: KATALOG UTAMA -->
     <section id="view-catalog" class="p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto h-full flex flex-col justify-between">
