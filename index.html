@@ -192,15 +192,6 @@
       }
     }
 
-    @media (max-width: 768px) and (orientation: landscape) {
-      body > nav {
-        display: none;
-      }
-
-      body > main {
-        height: 100dvh;
-      }
-    }
   </style>
 </head>
 <body class="flex flex-col h-screen min-h-0 overflow-hidden">
@@ -708,8 +699,9 @@
       const isPortrait = window.innerWidth < window.innerHeight;
       const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
 
-      const availWidth = viewportContainer.clientWidth || (window.innerWidth - 200);
-      const availHeight = viewportContainer.clientHeight || (window.innerHeight - 100);
+      const viewportRect = viewportContainer.getBoundingClientRect();
+      const availWidth = viewportRect.width || viewportContainer.clientWidth || (window.innerWidth - 200);
+      const availHeight = viewportRect.height || viewportContainer.clientHeight || (window.innerHeight - 100);
       const pageCountInView = isPortrait || isMobile ? 1 : 2;
       const horizontalPadding = isPortrait || isMobile ? 24 : 48;
       const verticalPadding = isMobile ? 16 : 48;
