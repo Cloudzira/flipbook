@@ -120,12 +120,10 @@
     }
 
     .page-canvas-wrapper canvas {
-      display: block;
-      max-width: 100%;
-      max-height: 100%;
-      width: auto;
-      height: auto;
+      width: 100% !important;
+      height: 100% !important;
       object-fit: contain;
+      display: block;
     }
 
     #flipbook-container {
@@ -143,25 +141,19 @@
       min-height: 0;
     }
 
+    #thumbnail-sidebar.desktop-hidden {
+      display: none !important;
+    }
+
     #reader-viewport,
     #flipbook-wrapper {
       min-width: 0;
       min-height: 0;
     }
 
-    #view-reader {
-      height: calc(100vh - 48px) !important;
-      min-height: 0;
-    }
-
-    .reader-body {
-      height: calc(100vh - 96px) !important;
-      flex: 0 0 calc(100vh - 96px);
-      min-height: 0;
-    }
-
     #reader-viewport {
       overflow: hidden;
+      min-height: 0;
     }
 
     #flipbook-wrapper {
@@ -174,8 +166,8 @@
         position: fixed !important;
         top: 48px;
         left: 0;
-        bottom: 48px;
-        height: calc(100% - 96px) !important;
+        bottom: 0;
+        height: calc(100% - 48px) !important;
         background: rgba(15, 23, 42, 0.96) !important;
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
         width: 190px !important;
@@ -247,7 +239,7 @@
     <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950 overflow-hidden">
 
       <!-- Reader Body -->
-      <div class="reader-body flex-grow min-h-0 flex w-full overflow-hidden relative">
+      <div class="flex-grow min-h-0 flex w-full overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
         <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex flex-col space-y-3 flex-shrink-0 mobile-hidden md:flex">
@@ -281,7 +273,7 @@
           <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card">
             <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Kembali</span>
           </button>
-          <button onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card border-indigo-500/30">
+          <button id="thumbnail-toggle-button" onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card border-indigo-500/30">
             <i class="fa-solid fa-border-all"></i> <span class="hidden sm:inline">Thumbnail</span>
           </button>
         </div>
@@ -476,7 +468,7 @@
           sidebar.classList.add('mobile-hidden');
         }
       } else {
-        sidebar.classList.remove('mobile-hidden', 'mobile-visible', 'hidden');
+        sidebar.classList.remove('mobile-hidden', 'mobile-visible', 'desktop-hidden');
       }
     }
 
@@ -619,11 +611,10 @@
         document.getElementById('page-count').innerText = pdfDocInstance.numPages;
 
         await generateThumbnailsList();
-        document.getElementById('flipbook-wrapper').classList.remove('hidden');
-        await new Promise(requestAnimationFrame);
         await rebuildFlipbookDOM();
 
         document.getElementById('loading-spinner').classList.add('hidden');
+        document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
         renderThumbnailsSequentially();
 
@@ -663,6 +654,9 @@
 
       const flipWrapper = document.getElementById('flipbook-wrapper');
       if (!flipWrapper) return;
+
+      const wasHidden = flipWrapper.classList.contains('hidden');
+      if (wasHidden) flipWrapper.classList.remove('hidden');
 
       // Re-create container agar ID terjamin ada
       flipWrapper.innerHTML = '<div id="flipbook-container"></div>';
@@ -757,6 +751,8 @@
           activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       });
+
+      if (wasHidden) flipWrapper.classList.add('hidden');
     }
 
     async function renderPageIfNeeded(pageNum) {
@@ -804,7 +800,7 @@
           openMobileSidebar();
         }
       } else {
-        sidebar.classList.toggle('hidden');
+        sidebar.classList.toggle('desktop-hidden');
       }
     }
 
@@ -1001,3 +997,4 @@
   </script>
 </body>
 </html>
+
