@@ -96,7 +96,7 @@
       user-select: none;
       -webkit-tap-highlight-color: transparent;
       position: relative;
-      z-index: 10;
+      z-index: 40 !important;
     }
 
     .thumb-item * {
@@ -133,12 +133,14 @@
       box-shadow: 0 20px 50px rgba(0,0,0,0.6);
     }
 
+    /* Penanganan Z-Index Khusus Sidebar Agar Tidak Tertutup Layer StPageFlip */
     #thumbnail-sidebar {
-      z-index: 60 !important;
+      z-index: 30 !important;
+      position: relative;
       transition: transform 0.25s ease-in-out;
     }
 
-    @media (max-width: 768px), (max-height: 500px) {
+    @media (max-width: 768px) {
       #thumbnail-sidebar {
         position: fixed !important;
         top: 48px;
@@ -147,7 +149,7 @@
         height: calc(100% - 96px) !important;
         background: rgba(15, 23, 42, 0.96) !important;
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
-        width: 190px !important;
+        width: 200px !important;
       }
       
       #thumbnail-sidebar.mobile-hidden {
@@ -398,22 +400,6 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadCatalogFromSupabase();
 
-      // Event Delegation Thumbnail (Mouse & Touch Screen)
-      const thumbContainer = document.getElementById('thumbnail-container');
-      if (thumbContainer) {
-        thumbContainer.addEventListener('click', (e) => {
-          const item = e.target.closest('.thumb-item');
-          if (item && item.getAttribute('data-page')) {
-            const targetPage = parseInt(item.getAttribute('data-page'), 10);
-            jumpToPage(targetPage);
-            
-            if (window.innerWidth <= 768 || window.innerHeight <= 500) {
-              closeMobileSidebar();
-            }
-          }
-        });
-      }
-
       window.addEventListener('resize', handleResizeOrOrientation);
       window.addEventListener('orientationchange', () => {
         setTimeout(handleResizeOrOrientation, 300);
@@ -590,7 +576,9 @@
         const thumbDiv = document.createElement('div');
         thumbDiv.className = `thumb-item glass-card p-1.5 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === 1 ? 'active' : ''}`;
         thumbDiv.id = `thumb-page-${pageNum}`;
-        thumbDiv.setAttribute('data-page', pageNum);
+        
+        // Pemicu Klik Langsung per-item untuk Keamanan Klik
+        thumbDiv.setAttribute('onclick', `handleThumbClick(${pageNum})`);
         
         const thumbCanvas = document.createElement('canvas');
         thumbCanvas.id = `thumb-canvas-${pageNum}`;
@@ -606,13 +594,19 @@
       }
     }
 
+    function handleThumbClick(targetPage) {
+      jumpToPage(targetPage);
+      if (window.innerWidth <= 768) {
+        closeMobileSidebar();
+      }
+    }
+
     async function rebuildFlipbookDOM() {
       if (!pdfDocInstance) return;
 
       const flipWrapper = document.getElementById('flipbook-wrapper');
       if (!flipWrapper) return;
 
-      // Re-create container agar ID terjamin ada
       flipWrapper.innerHTML = '<div id="flipbook-container"></div>';
       const flipContainer = document.getElementById('flipbook-container');
 
@@ -642,9 +636,9 @@
 
       const viewportContainer = document.getElementById('reader-viewport');
       const isPortrait = window.innerWidth < window.innerHeight;
-      const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
+      const isMobile = window.innerWidth <= 768;
 
-      let availWidth = viewportContainer.clientWidth || (window.innerWidth - 200);
+      let availWidth = viewportContainer.clientWidth || (window.innerWidth - 220);
       let availHeight = viewportContainer.clientHeight || (window.innerHeight - 100);
 
       let targetHeight = Math.max(220, availHeight - 30);
@@ -744,7 +738,7 @@
 
     function toggleThumbnailSidebar() {
       const sidebar = document.getElementById('thumbnail-sidebar');
-      if (window.innerWidth <= 768 || window.innerHeight <= 500) {
+      if (window.innerWidth <= 768) {
         if (sidebar.classList.contains('mobile-visible')) {
           closeMobileSidebar();
         } else {
