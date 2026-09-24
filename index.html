@@ -158,6 +158,16 @@
       flex: 1 1 auto;
     }
 
+    #reader-viewport.is-zoomed {
+      overflow: auto;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    #reader-viewport.is-dragging {
+      cursor: grabbing;
+    }
+
     #view-reader {
       height: 100%;
     }
@@ -452,7 +462,51 @@
       window.addEventListener('orientationchange', () => {
         setTimeout(handleResizeOrOrientation, 300);
       });
+
+      setupReaderPanning();
     });
+
+    function setupReaderPanning() {
+      const viewport = document.getElementById('reader-viewport');
+      if (!viewport) return;
+
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let scrollStartLeft = 0;
+      let scrollStartTop = 0;
+
+      viewport.addEventListener('pointerdown', (event) => {
+        if (currentZoom <= 1) return;
+        dragStartX = event.clientX;
+        dragStartY = event.clientY;
+        scrollStartLeft = viewport.scrollLeft;
+        scrollStartTop = viewport.scrollTop;
+        viewport.classList.add('is-dragging');
+        viewport.setPointerCapture(event.pointerId);
+      });
+
+      viewport.addEventListener('pointermove', (event) => {
+        if (!viewport.classList.contains('is-dragging')) return;
+        viewport.scrollLeft = scrollStartLeft - (event.clientX - dragStartX);
+        viewport.scrollTop = scrollStartTop - (event.clientY - dragStartY);
+      });
+
+      const stopDragging = (event) => {
+        viewport.classList.remove('is-dragging');
+        if (event?.pointerId !== undefined && viewport.hasPointerCapture(event.pointerId)) {
+          viewport.releasePointerCapture(event.pointerId);
+        }
+      };
+
+      viewport.addEventListener('pointerup', stopDragging);
+      viewport.addEventListener('pointercancel', stopDragging);
+      viewport.addEventListener('wheel', (event) => {
+        if (currentZoom <= 1) return;
+        event.preventDefault();
+        viewport.scrollLeft += event.deltaX;
+        viewport.scrollTop += event.deltaY;
+      }, { passive: false });
+    }
 
     function handleResizeOrOrientation() {
       clearTimeout(resizeTimer);
@@ -829,13 +883,21 @@
     function zoomFlipbook(amount) {
       currentZoom = Math.min(Math.max(0.6, currentZoom + amount), 2.5);
       const wrapper = document.getElementById('flipbook-wrapper');
+      const viewport = document.getElementById('reader-viewport');
       wrapper.style.transform = `scale(${currentZoom})`;
+      viewport.classList.toggle('is-zoomed', currentZoom > 1);
+      if (currentZoom <= 1) {
+        viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+      }
     }
 
     function resetZoom() {
       currentZoom = 1;
       const wrapper = document.getElementById('flipbook-wrapper');
+      const viewport = document.getElementById('reader-viewport');
       wrapper.style.transform = `scale(1)`;
+      viewport.classList.remove('is-zoomed', 'is-dragging');
+      viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
     }
 
     async function jumpToPage(val) {
