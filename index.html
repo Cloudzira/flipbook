@@ -192,8 +192,8 @@
         position: fixed !important;
         top: 48px;
         left: 0;
-        bottom: 0;
-        height: calc(100% - 48px) !important;
+        bottom: 48px; /* Diperbarui agar tidak menutupi bottom control bar */
+        height: calc(100% - 96px) !important; /* Disesuaikan dengan tinggi navbar dan bottom bar */
         background: rgba(15, 23, 42, 0.96) !important;
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
         width: 190px !important;
@@ -212,7 +212,7 @@
 
   </style>
 </head>
-<body class="flex flex-col h-screen min-h-0 overflow-hidden">
+<body class="flex flex-col h-screen h-[100dvh] min-h-0 overflow-hidden">
 
   <!-- NAVBAR UTAMA -->
   <nav class="glass-panel sticky top-0 z-50 px-4 sm:px-6 py-2 flex items-center justify-between border-b border-white/10 flex-shrink-0 h-12">
@@ -268,7 +268,7 @@
     </section>
 
     <!-- VIEW 2: FLIPBOOK READER -->
-    <section id="view-reader" class="hidden flex-col min-h-0 h-full w-full relative bg-slate-950 overflow-hidden">
+    <section id="view-reader" class="hidden flex-col h-full w-full relative bg-slate-950 overflow-hidden">
 
       <!-- Reader Body -->
       <div class="flex-1 min-h-0 flex w-full overflow-hidden relative">
@@ -1119,6 +1119,7 @@
             <button onclick="editFlipbook('${item.id}')" class="text-indigo-300 hover:text-indigo-200 p-1" title="Edit buku"><i class="fa-solid fa-pen"></i> Edit</button>
             <button onclick="moveFlipbook('${item.id}', -1)" class="text-slate-300 hover:text-white p-1 ${index === 0 ? 'opacity-30 pointer-events-none' : ''}" title="Pindah ke atas"><i class="fa-solid fa-arrow-up"></i></button>
             <button onclick="moveFlipbook('${item.id}', 1)" class="text-slate-300 hover:text-white p-1 ${index === catalogData.length - 1 ? 'opacity-30 pointer-events-none' : ''}" title="Pindah ke bawah"><i class="fa-solid fa-arrow-down"></i></button>
+            <button onclick="deleteFlybook('${item.id}')" class="text-red-400 hover:text-red-300 p-1" style="display:none"></button>
             <button onclick="deleteFlipbook('${item.id}')" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash"></i> Hapus</button>
           </td>
         `;
@@ -1233,4 +1234,3 @@
   </script>
 </body>
 </html>
-
