@@ -177,7 +177,8 @@
     }
 
     #view-reader {
-      height: 100%;
+      height: 100dvh; /* PERBAIKAN: Menggunakan dvh agar pas dengan layar HP */
+      max-height: 100dvh;
     }
 
     #flipbook-wrapper {
@@ -193,7 +194,7 @@
         top: 48px;
         left: 0;
         bottom: 0;
-        height: calc(100% - 48px) !important;
+        height: calc(100dvh - 48px) !important; /* PERBAIKAN */
         background: rgba(15, 23, 42, 0.96) !important;
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
         width: 190px !important;
@@ -212,7 +213,7 @@
 
   </style>
 </head>
-<body class="flex flex-col h-screen min-h-0 overflow-hidden">
+<body class="flex flex-col h-[100dvh] min-h-0 overflow-hidden">
 
   <!-- NAVBAR UTAMA -->
   <nav class="glass-panel sticky top-0 z-50 px-4 sm:px-6 py-2 flex items-center justify-between border-b border-white/10 flex-shrink-0 h-12">
@@ -268,6 +269,7 @@
     </section>
 
     <!-- VIEW 2: FLIPBOOK READER -->
+    <!-- PERBAIKAN: Tambahkan flex flex-col dan min-h-0 agar elemen di dalamnya fleksibel secara vertikal -->
     <section id="view-reader" class="hidden flex-col min-h-0 h-full w-full relative bg-slate-950 overflow-hidden">
 
       <!-- Reader Body -->
@@ -755,7 +757,6 @@
       const wasHidden = flipWrapper.classList.contains('hidden');
       if (wasHidden) flipWrapper.classList.remove('hidden');
 
-      // Re-create container agar ID terjamin ada
       flipWrapper.innerHTML = '<div id="flipbook-container"></div>';
       const flipContainer = document.getElementById('flipbook-container');
 
@@ -1226,7 +1227,7 @@
       if (error) {
         alert("Gagal menghapus: " + error.message);
       } else {
-        await loadCatalogFromSupabase();
+        loadCatalogFromSupabase();
         renderAdminTable();
       }
     }
