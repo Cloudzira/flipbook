@@ -651,7 +651,7 @@
         const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
         if (!canvas) return;
 
-        const viewport = page.getViewport({ scale: 0.4 }); // Dioptimalkan
+        const viewport = page.getViewport({ scale: 0.4 });
         const context = canvas.getContext('2d');
         canvas.height = viewport.height;
         canvas.width = viewport.width;
@@ -709,7 +709,6 @@
 
     async function openReader(book) {
       currentBook = { ...book, reading_direction: normalizeReadingDirection(book.reading_direction) };
-      currentPageIndex = 1;
       switchView('reader');
       document.getElementById('loading-spinner').classList.remove('hidden');
       document.getElementById('flipbook-wrapper').classList.add('hidden');
@@ -718,7 +717,19 @@
         const loadingTask = pdfjsLib.getDocument(book.pdf_url);
         pdfDocInstance = await loadingTask.promise;
         document.getElementById('page-count').innerText = pdfDocInstance.numPages;
-        currentPageIndex = 1;
+
+        // --- FITUR TERINTEGRASI: CEK HALAMAN TERAKHIR DI LOCALSTORAGE ---
+        const savedPage = localStorage.getItem(`flipbuku_last_page_${book.id}`);
+        if (savedPage) {
+          currentPageIndex = parseInt(savedPage, 10);
+          if (currentPageIndex > pdfDocInstance.numPages || currentPageIndex < 1) {
+            currentPageIndex = 1;
+          }
+        } else {
+          currentPageIndex = 1;
+        }
+        // -------------------------------------------------------------
+
         document.getElementById('page-num-input').value = currentPageIndex;
 
         await generateThumbnailsList();
@@ -727,7 +738,6 @@
         document.getElementById('loading-spinner').classList.add('hidden');
         document.getElementById('flipbook-wrapper').classList.remove('hidden');
 
-        // Render thumbnail secara asinkron tanpa memblokir antarmuka utama
         setTimeout(() => renderThumbnailsSequentially(), 100);
 
       } catch (err) {
@@ -854,6 +864,12 @@
         currentPageIndex = isRtl ? totalPages - e.data : e.data + 1;
         document.getElementById('page-num-input').value = currentPageIndex;
         
+        // --- FITUR TERINTEGRASI: SIMPAN HALAMAN SAAT INI KE LOCALSTORAGE ---
+        if (currentBook && currentBook.id) {
+          localStorage.setItem(`flipbuku_last_page_${currentBook.id}`, currentPageIndex);
+        }
+        // -----------------------------------------------------------------
+
         renderPageIfNeeded(currentPageIndex);
         renderPageIfNeeded(currentPageIndex + 1);
         renderPageIfNeeded(currentPageIndex + 2);
@@ -878,7 +894,6 @@
       const canvas = document.getElementById(`page-canvas-${pageNum}`);
       if (!canvas) return;
 
-      // PERBAIKAN: Diturunkan dari 2.0 ke 1.5 agar lebih ringan & cepat tanpa mengurangi ketajaman teks
       const viewport = page.getViewport({ scale: 1.5 });
       const context = canvas.getContext('2d', { willReadFrequently: true });
       canvas.height = viewport.height;
@@ -895,7 +910,7 @@
           const thumbCanvas = document.getElementById(`thumb-canvas-${pageNum}`);
           if (!thumbCanvas) continue;
 
-          const thumbViewport = page.getViewport({ scale: 0.2 }); // Dioptimalkan
+          const thumbViewport = page.getViewport({ scale: 0.2 });
           const thumbContext = thumbCanvas.getContext('2d', { willReadFrequently: true });
           thumbCanvas.height = thumbViewport.height;
           thumbCanvas.width = thumbViewport.width;
