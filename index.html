@@ -686,6 +686,11 @@
     }
 
     function switchView(viewName) {
+      // PERBAIKAN: Jika beralih dari reader ke view lain dan sedang Fullscreen, keluar dari Fullscreen dulu
+      if (viewName !== 'reader' && document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+
       document.getElementById('view-catalog').classList.add('hidden');
       document.getElementById('view-reader').classList.add('hidden');
       document.getElementById('view-reader').classList.remove('flex');
@@ -718,7 +723,6 @@
         pdfDocInstance = await loadingTask.promise;
         document.getElementById('page-count').innerText = pdfDocInstance.numPages;
 
-        // --- FITUR TERINTEGRASI: CEK HALAMAN TERAKHIR DI LOCALSTORAGE ---
         const savedPage = localStorage.getItem(`flipbuku_last_page_${book.id}`);
         if (savedPage) {
           currentPageIndex = parseInt(savedPage, 10);
@@ -728,7 +732,6 @@
         } else {
           currentPageIndex = 1;
         }
-        // -------------------------------------------------------------
 
         document.getElementById('page-num-input').value = currentPageIndex;
 
@@ -864,11 +867,9 @@
         currentPageIndex = isRtl ? totalPages - e.data : e.data + 1;
         document.getElementById('page-num-input').value = currentPageIndex;
         
-        // --- FITUR TERINTEGRASI: SIMPAN HALAMAN SAAT INI KE LOCALSTORAGE ---
         if (currentBook && currentBook.id) {
           localStorage.setItem(`flipbuku_last_page_${currentBook.id}`, currentPageIndex);
         }
-        // -----------------------------------------------------------------
 
         renderPageIfNeeded(currentPageIndex);
         renderPageIfNeeded(currentPageIndex + 1);
