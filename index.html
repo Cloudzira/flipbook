@@ -30,7 +30,6 @@
   <style>
     * {
       box-sizing: border-box;
-      touch-action: manipulation;
     }
 
     html, body {
@@ -43,6 +42,12 @@
       font-family: 'Inter', sans-serif;
       background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #020617);
       color: #f8fafc;
+      touch-action: none; /* Mencegah geser/zoom default browser secara global di body */
+    }
+
+    /* Kembalikan touch-action untuk elemen yang memang butuh scroll */
+    input, select, textarea, #thumbnail-sidebar, #view-catalog, #view-admin {
+      touch-action: pan-y;
     }
 
     .glass-panel {
@@ -156,6 +161,7 @@
       overflow: hidden;
       min-height: 0;
       flex: 1 1 auto;
+      touch-action: pan-x pan-y;
     }
 
     #reader-viewport.is-zoomed {
@@ -479,9 +485,18 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadCatalogFromSupabase();
 
+      // Mencegah propagasi event dari sidebar thumbnail agar tidak tembus ke engine flipbook
+      const sidebarEl = document.getElementById('thumbnail-sidebar');
+      if (sidebarEl) {
+        ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click'].forEach(evt => {
+          sidebarEl.addEventListener(evt, (e) => e.stopPropagation());
+        });
+      }
+
       const thumbContainer = document.getElementById('thumbnail-container');
       if (thumbContainer) {
         thumbContainer.addEventListener('click', (e) => {
+          e.stopPropagation();
           const item = e.target.closest('.thumb-item');
           if (item && item.getAttribute('data-page')) {
             const targetPage = parseInt(item.getAttribute('data-page'), 10);
@@ -491,6 +506,14 @@
               closeMobileSidebar();
             }
           }
+        });
+      }
+
+      // Mencegah propagasi dari navbar bawah agar tombol kontrol tidak memicu swipe buku
+      const bottomNavEl = document.querySelector('#view-reader > div:last-child');
+      if (bottomNavEl) {
+        ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click'].forEach(evt => {
+          bottomNavEl.addEventListener(evt, (e) => e.stopPropagation());
         });
       }
 
@@ -511,7 +534,6 @@
       let scrollStartLeft = 0;
       let scrollStartTop = 0;
 
-      // Hentikan propagasi event pointer/touch/klik agar StPageFlip tidak ikut mendeteksi drag atau swipe saat di-zoom
       ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'click'].forEach(eventType => {
         viewport.addEventListener(eventType, (event) => {
           if (currentZoom > 1) {
