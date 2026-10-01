@@ -42,6 +42,12 @@
       font-family: 'Inter', sans-serif;
       background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #020617);
       color: #f8fafc;
+      touch-action: none; /* Mencegah geser/zoom default browser secara global di body */
+    }
+
+    /* Kembalikan touch-action untuk elemen yang memang butuh scroll */
+    input, select, textarea, #thumbnail-sidebar, #view-catalog, #view-admin {
+      touch-action: pan-y;
     }
 
     .glass-panel {
@@ -155,11 +161,13 @@
       overflow: hidden;
       min-height: 0;
       flex: 1 1 auto;
+      touch-action: none;
     }
 
     #reader-viewport.is-zoomed {
       overflow: auto;
       cursor: grab;
+      touch-action: none;
     }
 
     #reader-viewport.is-dragging {
@@ -478,10 +486,10 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadCatalogFromSupabase();
 
-      // Mencegah propagasi event dari sidebar thumbnail agar aman
+      // Mencegah propagasi event dari sidebar thumbnail agar tidak tembus ke engine flipbook
       const sidebarEl = document.getElementById('thumbnail-sidebar');
       if (sidebarEl) {
-        ['click', 'pointerdown'].forEach(evt => {
+        ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click'].forEach(evt => {
           sidebarEl.addEventListener(evt, (e) => e.stopPropagation());
         });
       }
@@ -502,10 +510,10 @@
         });
       }
 
-      // Mencegah propagasi dari navbar bawah
+      // Mencegah propagasi dari navbar bawah agar tombol kontrol tidak memicu swipe buku
       const bottomNavEl = document.querySelector('#view-reader > div:last-child');
       if (bottomNavEl) {
-        ['click', 'pointerdown'].forEach(evt => {
+        ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click'].forEach(evt => {
           bottomNavEl.addEventListener(evt, (e) => e.stopPropagation());
         });
       }
@@ -528,9 +536,8 @@
       let scrollStartTop = 0;
       let initialPinchDistance = 0;
       let zoomAtPinchStart = 1;
-      let pinchCenterClientX = 0;
-      let pinchCenterClientY = 0;
 
+      // Helper untuk menghitung jarak antar 2 jari
       function getTouchDistance(e) {
         return Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
@@ -539,17 +546,13 @@
       }
 
       viewport.addEventListener('touchstart', (event) => {
-        if (currentZoom > 1 && event.touches.length === 2) {
-          event.preventDefault();
+        // Hentikan propagasi agar StPageFlip tidak ikut mendeteksi gestur pinch/swipe
+        event.stopPropagation();
+
+        if (event.touches.length === 2) {
           initialPinchDistance = getTouchDistance(event);
           zoomAtPinchStart = currentZoom;
-
-          const rect = viewport.getBoundingClientRect();
-          const midX = (event.touches[0].clientX + event.touches[1].clientX) / 2;
-          const midY = (event.touches[0].clientY + event.touches[1].clientY) / 2;
-          pinchCenterClientX = midX - rect.left;
-          pinchCenterClientY = midY - rect.top;
-        } else if (currentZoom > 1 && event.touches.length === 1) {
+        } else if (event.touches.length === 1 && currentZoom > 1) {
           dragStartX = event.touches[0].clientX;
           dragStartY = event.touches[0].clientY;
           scrollStartLeft = viewport.scrollLeft;
@@ -559,43 +562,38 @@
       }, { passive: false });
 
       viewport.addEventListener('touchmove', (event) => {
-        if (currentZoom > 1 && event.touches.length === 2 && initialPinchDistance > 0) {
+        // Hentikan propagasi agar event tidak tembus ke engine flipbook
+        event.stopPropagation();
+
+        if (event.touches.length === 2 && initialPinchDistance > 0) {
           event.preventDefault();
           const currentDistance = getTouchDistance(event);
           const scaleFactor = currentDistance / initialPinchDistance;
           let newZoom = zoomAtPinchStart * scaleFactor;
           
+          // Batasi rentang zoom antara 1 hingga 3
           newZoom = Math.min(Math.max(1, newZoom), 3);
           
           if (newZoom !== currentZoom) {
-            const oldScrollLeft = viewport.scrollLeft;
-            const oldScrollTop = viewport.scrollTop;
-            
-            const contentX = pinchCenterClientX + oldScrollLeft;
-            const contentY = pinchCenterClientY + oldScrollTop;
-            
-            const ratio = newZoom / currentZoom;
-            
             applyZoomLevel(newZoom);
-            
-            viewport.scrollLeft = (contentX * ratio) - pinchCenterClientX;
-            viewport.scrollTop = (contentY * ratio) - pinchCenterClientY;
           }
-        } else if (currentZoom > 1 && event.touches.length === 1 && viewport.classList.contains('is-dragging')) {
+        } else if (event.touches.length === 1 && viewport.classList.contains('is-dragging') && currentZoom > 1) {
           event.preventDefault();
           viewport.scrollLeft = scrollStartLeft - (event.touches[0].clientX - dragStartX);
           viewport.scrollTop = scrollStartTop - (event.touches[0].clientY - dragStartY);
         }
       }, { passive: false });
 
-      const stopTouch = () => {
+      const stopTouch = (event) => {
+        if (event) event.stopPropagation();
         initialPinchDistance = 0;
         viewport.classList.remove('is-dragging');
       };
 
-      viewport.addEventListener('touchend', stopTouch);
-      viewport.addEventListener('touchcancel', stopTouch);
+      viewport.addEventListener('touchend', stopTouch, { passive: false });
+      viewport.addEventListener('touchcancel', stopTouch, { passive: false });
 
+      // Support mouse pointer panning jika di-zoom lewat desktop
       viewport.addEventListener('pointerdown', (event) => {
         if (currentZoom <= 1 || event.pointerType === 'touch') return;
         dragStartX = event.clientX;
@@ -953,7 +951,7 @@
         maxShadowOpacity: 0.15,
         showCover: true,
         usePortrait: isPortrait || isMobile,
-        mobileScrollSupport: true,
+        mobileScrollSupport: false,
         flippingTime: 300,
         disableFlipAnimation: false
       });
