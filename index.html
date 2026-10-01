@@ -161,7 +161,7 @@
       overflow: hidden;
       min-height: 0;
       flex: 1 1 auto;
-      touch-action: pan-x pan-y;
+      touch-action: none;
     }
 
     #reader-viewport.is-zoomed {
@@ -213,11 +213,11 @@
 
     @media (max-width: 768px), (max-height: 500px) {
       #thumbnail-sidebar {
-        position: fixed !important;
-        top: 48px;
+        position: absolute !important;
+        top: 0;
         left: 0;
         bottom: 0;
-        height: calc(100dvh - 48px) !important;
+        height: 100% !important;
         background: rgba(15, 23, 42, 0.96) !important;
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
         width: 190px !important;
@@ -246,7 +246,7 @@
           FLIPBUKU
         </span>
         <span class="text-[9px] font-medium tracking-wide text-slate-400">
-          Bahan ajar pembelajaran Tartili / Al Quran
+          Bahan ajar Tartili / Al Quran
         </span>
       </div>
     </div>
@@ -299,6 +299,7 @@
 
     <!-- VIEW 2: FLIPBOOK READER -->
     <section id="view-reader" class="hidden flex-col min-h-0 h-full w-full relative bg-slate-950 overflow-hidden">
+      <!-- Area Tengah (Isi Pembaca & Sidebar) yang Terbatas di antara Navbar Atas dan Bawah -->
       <div class="flex-1 min-h-0 flex w-full overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
@@ -315,7 +316,7 @@
           
           <div id="loading-spinner" class="flex flex-col items-center space-y-3 my-auto">
             <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500"></i>
-            <span class="text-sm text-slate-400">Memproses Halaman PDF...</span>
+            <span class="text-sm text-slate-400">Memproses Halaman...</span>
           </div>
 
           <div id="flipbook-wrapper" class="hidden transform transition-transform duration-150 my-auto flex items-center justify-center w-full max-h-full relative">
@@ -332,7 +333,7 @@
             <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Kembali</span>
           </button>
           <button id="thumbnail-toggle-button" onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card border-indigo-500/30">
-            <i class="fa-solid fa-border-all"></i> <span class="hidden sm:inline">Thumbnail</span>
+            <i class="fa-solid fa-border-all"></i> <span class="hidden sm:inline">Halaman</span>
           </button>
         </div>
 
@@ -375,7 +376,7 @@
 
       <div class="glass-panel p-6 rounded-2xl space-y-4">
         <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2">
-          <i class="fa-solid fa-cloud-arrow-up"></i> Unggah Flipbook Baru
+          <i class="fa-solid fa-cloud-arrow-up"></i> Unggah PDF Baru
         </h3>
         <form id="upload-form" onsubmit="handleUpload(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -522,10 +523,10 @@
         setTimeout(handleResizeOrOrientation, 300);
       });
 
-      setupReaderPanning();
+      setupReaderPanningAndPinchZoom();
     });
 
-    function setupReaderPanning() {
+    function setupReaderPanningAndPinchZoom() {
       const viewport = document.getElementById('reader-viewport');
       if (!viewport) return;
 
@@ -533,17 +534,61 @@
       let dragStartY = 0;
       let scrollStartLeft = 0;
       let scrollStartTop = 0;
+      let initialPinchDistance = 0;
+      let zoomAtPinchStart = 1;
 
-      ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'click'].forEach(eventType => {
-        viewport.addEventListener(eventType, (event) => {
-          if (currentZoom > 1) {
-            event.stopPropagation();
+      // Helper untuk menghitung jarak antar 2 jari
+      function getTouchDistance(e) {
+        return Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+
+      viewport.addEventListener('touchstart', (event) => {
+        if (event.touches.length === 2) {
+          initialPinchDistance = getTouchDistance(event);
+          zoomAtPinchStart = currentZoom;
+        } else if (event.touches.length === 1 && currentZoom > 1) {
+          dragStartX = event.touches[0].clientX;
+          dragStartY = event.touches[0].clientY;
+          scrollStartLeft = viewport.scrollLeft;
+          scrollStartTop = viewport.scrollTop;
+          viewport.classList.add('is-dragging');
+        }
+      }, { passive: false });
+
+      viewport.addEventListener('touchmove', (event) => {
+        if (event.touches.length === 2 && initialPinchDistance > 0) {
+          event.preventDefault();
+          const currentDistance = getTouchDistance(event);
+          const scaleFactor = currentDistance / initialPinchDistance;
+          let newZoom = zoomAtPinchStart * scaleFactor;
+          
+          // Batasi rentang zoom antara 1 hingga 3
+          newZoom = Math.min(Math.max(1, newZoom), 3);
+          
+          if (newZoom !== currentZoom) {
+            applyZoomLevel(newZoom);
           }
-        }, { passive: false });
-      });
+        } else if (event.touches.length === 1 && viewport.classList.contains('is-dragging') && currentZoom > 1) {
+          event.preventDefault();
+          viewport.scrollLeft = scrollStartLeft - (event.touches[0].clientX - dragStartX);
+          viewport.scrollTop = scrollStartTop - (event.touches[0].clientY - dragStartY);
+        }
+      }, { passive: false });
 
+      const stopTouch = () => {
+        initialPinchDistance = 0;
+        viewport.classList.remove('is-dragging');
+      };
+
+      viewport.addEventListener('touchend', stopTouch);
+      viewport.addEventListener('touchcancel', stopTouch);
+
+      // Support mouse pointer panning jika di-zoom lewat desktop
       viewport.addEventListener('pointerdown', (event) => {
-        if (currentZoom <= 1) return;
+        if (currentZoom <= 1 || event.pointerType === 'touch') return;
         dragStartX = event.clientX;
         dragStartY = event.clientY;
         scrollStartLeft = viewport.scrollLeft;
@@ -553,7 +598,7 @@
       });
 
       viewport.addEventListener('pointermove', (event) => {
-        if (!viewport.classList.contains('is-dragging')) return;
+        if (!viewport.classList.contains('is-dragging') || event.pointerType === 'touch') return;
         viewport.scrollLeft = scrollStartLeft - (event.clientX - dragStartX);
         viewport.scrollTop = scrollStartTop - (event.clientY - dragStartY);
       });
@@ -573,6 +618,30 @@
         viewport.scrollLeft += event.deltaX;
         viewport.scrollTop += event.deltaY;
       }, { passive: false });
+    }
+
+    function applyZoomLevel(targetZoom) {
+      currentZoom = targetZoom;
+      const wrapper = document.getElementById('flipbook-wrapper');
+      const viewport = document.getElementById('reader-viewport');
+      const flipbook = document.getElementById('flipbook-container');
+
+      wrapper.style.transform = currentZoom > 1 ? `scale(${currentZoom})` : 'none';
+      viewport.classList.toggle('is-zoomed', currentZoom > 1);
+
+      if (currentZoom > 1 && flipbook) {
+        const baseWidth = flipbook.offsetWidth;
+        const baseHeight = flipbook.offsetHeight;
+        wrapper.style.width = `${Math.max(viewport.clientWidth, baseWidth * currentZoom)}px`;
+        wrapper.style.height = `${Math.max(viewport.clientHeight, baseHeight * currentZoom)}px`;
+      } else {
+        wrapper.style.width = '';
+        wrapper.style.height = '';
+      }
+
+      if (currentZoom <= 1) {
+        viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+      }
     }
 
     function handleResizeOrOrientation() {
@@ -978,38 +1047,11 @@
     }
 
     function zoomFlipbook(amount) {
-      currentZoom = Math.min(Math.max(0.6, currentZoom + amount), 2.5);
-      const wrapper = document.getElementById('flipbook-wrapper');
-      const viewport = document.getElementById('reader-viewport');
-      const flipbook = document.getElementById('flipbook-container');
-
-      wrapper.style.transform = currentZoom > 1 ? `scale(${currentZoom})` : 'none';
-      viewport.classList.toggle('is-zoomed', currentZoom > 1);
-
-      if (currentZoom > 1 && flipbook) {
-        const baseWidth = flipbook.offsetWidth;
-        const baseHeight = flipbook.offsetHeight;
-        wrapper.style.width = `${Math.max(viewport.clientWidth, baseWidth * currentZoom)}px`;
-        wrapper.style.height = `${Math.max(viewport.clientHeight, baseHeight * currentZoom)}px`;
-      } else {
-        wrapper.style.width = '';
-        wrapper.style.height = '';
-      }
-
-      if (currentZoom <= 1) {
-        viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
-      }
+      applyZoomLevel(Math.min(Math.max(1, currentZoom + amount), 3));
     }
 
     function resetZoom() {
-      currentZoom = 1;
-      const wrapper = document.getElementById('flipbook-wrapper');
-      const viewport = document.getElementById('reader-viewport');
-      wrapper.style.transform = 'none';
-      wrapper.style.width = '';
-      wrapper.style.height = '';
-      viewport.classList.remove('is-zoomed', 'is-dragging');
-      viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+      applyZoomLevel(1);
     }
 
     async function jumpToPage(val) {
