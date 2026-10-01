@@ -141,10 +141,11 @@
     }
 
     #thumbnail-sidebar {
-      z-index: 60 !important;
+      z-index: 40 !important;
       transition: transform 0.25s ease-in-out;
       min-width: 0;
       min-height: 0;
+      flex-shrink: 0;
     }
 
     #thumbnail-sidebar.desktop-hidden {
@@ -183,8 +184,8 @@
     }
 
     #view-reader {
-      height: 100dvh;
-      max-height: 100dvh;
+      height: 100%;
+      max-height: 100%;
     }
 
     #flipbook-wrapper {
@@ -213,14 +214,15 @@
 
     @media (max-width: 768px), (max-height: 500px) {
       #thumbnail-sidebar {
-        position: fixed !important;
-        top: 48px;
+        position: absolute !important;
+        top: 0;
         left: 0;
         bottom: 0;
-        height: calc(100dvh - 48px) !important;
+        height: 100% !important;
         background: rgba(15, 23, 42, 0.96) !important;
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
         width: 190px !important;
+        z-index: 45 !important;
       }
       #thumbnail-sidebar.mobile-hidden {
         transform: translateX(-100%);
