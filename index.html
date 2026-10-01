@@ -512,6 +512,15 @@
       let scrollStartLeft = 0;
       let scrollStartTop = 0;
 
+      // Hentikan propagasi event pointer/touch agar StPageFlip tidak ikut mendeteksi drag saat di-zoom
+      ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend'].forEach(eventType => {
+        viewport.addEventListener(eventType, (event) => {
+          if (currentZoom > 1) {
+            event.stopPropagation();
+          }
+        }, { passive: false });
+      });
+
       viewport.addEventListener('pointerdown', (event) => {
         if (currentZoom <= 1) return;
         dragStartX = event.clientX;
@@ -686,7 +695,6 @@
     }
 
     function switchView(viewName) {
-      // PERBAIKAN: Jika beralih dari reader ke view lain dan sedang Fullscreen, keluar dari Fullscreen dulu
       if (viewName !== 'reader' && document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
       }
