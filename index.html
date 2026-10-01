@@ -464,7 +464,7 @@
   <!-- JAVASCRIPT ENGINE -->
   <script>
     const SUPABASE_URL = 'https://prsgmirandndqomvwzxv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByc2dtaXJhbmRuZHFvbXZ3enh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMTE0MTEsImV4cCI6MjEwNTY4NzQxMX0.ox5Bt7Wc7yFDqzbWOLhSmCySEcJa2Ui2UljlVW2OpKA';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByc2dtaXJhbmRuZHFvbXZ3enh2Iiwicm9sZSI6InFub24iLCJpYXQiOjE3OTAxMTE0MTEsImV4cCI6MjEwNTY4NzQxMX0.ox5Bt7Wc7yFDqzbWOLhSmCySEcJa2Ui2UljlVW2OpKA';
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -546,7 +546,9 @@
       }
 
       viewport.addEventListener('touchstart', (event) => {
-        if (event.touches.length === 2) {
+        // PERBAIKAN UTAMA: Jika ada 2 jari atau lebih (pinch), cegah event menyebar ke StPageFlip
+        if (event.touches.length >= 2) {
+          event.stopPropagation();
           initialPinchDistance = getTouchDistance(event);
           zoomAtPinchStart = currentZoom;
         } else if (event.touches.length === 1 && currentZoom > 1) {
@@ -559,17 +561,20 @@
       }, { passive: false });
 
       viewport.addEventListener('touchmove', (event) => {
-        if (event.touches.length === 2 && initialPinchDistance > 0) {
+        if (event.touches.length >= 2) {
           event.preventDefault();
-          const currentDistance = getTouchDistance(event);
-          const scaleFactor = currentDistance / initialPinchDistance;
-          let newZoom = zoomAtPinchStart * scaleFactor;
-          
-          // Batasi rentang zoom antara 1 hingga 3
-          newZoom = Math.min(Math.max(1, newZoom), 3);
-          
-          if (newZoom !== currentZoom) {
-            applyZoomLevel(newZoom);
+          event.stopPropagation(); // Mencegah StPageFlip memproses aksi saat pinch
+          if (initialPinchDistance > 0) {
+            const currentDistance = getTouchDistance(event);
+            const scaleFactor = currentDistance / initialPinchDistance;
+            let newZoom = zoomAtPinchStart * scaleFactor;
+            
+            // Batasi rentang zoom antara 1 hingga 3
+            newZoom = Math.min(Math.max(1, newZoom), 3);
+            
+            if (newZoom !== currentZoom) {
+              applyZoomLevel(newZoom);
+            }
           }
         } else if (event.touches.length === 1 && viewport.classList.contains('is-dragging') && currentZoom > 1) {
           event.preventDefault();
@@ -578,13 +583,15 @@
         }
       }, { passive: false });
 
-      const stopTouch = () => {
-        initialPinchDistance = 0;
+      const stopTouch = (event) => {
+        if (event.touches && event.touches.length < 2) {
+          initialPinchDistance = 0;
+        }
         viewport.classList.remove('is-dragging');
       };
 
-      viewport.addEventListener('touchend', stopTouch);
-      viewport.addEventListener('touchcancel', stopTouch);
+      viewport.addEventListener('touchend', stopTouch, { passive: false });
+      viewport.addEventListener('touchcancel', stopTouch, { passive: false });
 
       // Support mouse pointer panning jika di-zoom lewat desktop
       viewport.addEventListener('pointerdown', (event) => {
