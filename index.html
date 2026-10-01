@@ -188,7 +188,6 @@
       max-height: 100%;
     }
 
-    /* Efek warna neon sosial media */
     .kurnia-icon {
         width: 2rem;
         height: 2rem;
@@ -512,8 +511,8 @@
       let scrollStartLeft = 0;
       let scrollStartTop = 0;
 
-      // Hentikan propagasi event pointer/touch agar StPageFlip tidak ikut mendeteksi drag saat di-zoom
-      ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend'].forEach(eventType => {
+      // Hentikan propagasi event pointer/touch/klik agar StPageFlip tidak ikut mendeteksi drag atau swipe saat di-zoom
+      ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'click'].forEach(eventType => {
         viewport.addEventListener(eventType, (event) => {
           if (currentZoom > 1) {
             event.stopPropagation();
