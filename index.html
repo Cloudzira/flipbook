@@ -546,9 +546,6 @@
       }
 
       viewport.addEventListener('touchstart', (event) => {
-        // Hentikan propagasi agar StPageFlip tidak ikut mendeteksi gestur pinch/swipe
-        event.stopPropagation();
-
         if (event.touches.length === 2) {
           initialPinchDistance = getTouchDistance(event);
           zoomAtPinchStart = currentZoom;
@@ -562,9 +559,6 @@
       }, { passive: false });
 
       viewport.addEventListener('touchmove', (event) => {
-        // Hentikan propagasi agar event tidak tembus ke engine flipbook
-        event.stopPropagation();
-
         if (event.touches.length === 2 && initialPinchDistance > 0) {
           event.preventDefault();
           const currentDistance = getTouchDistance(event);
@@ -584,14 +578,13 @@
         }
       }, { passive: false });
 
-      const stopTouch = (event) => {
-        if (event) event.stopPropagation();
+      const stopTouch = () => {
         initialPinchDistance = 0;
         viewport.classList.remove('is-dragging');
       };
 
-      viewport.addEventListener('touchend', stopTouch, { passive: false });
-      viewport.addEventListener('touchcancel', stopTouch, { passive: false });
+      viewport.addEventListener('touchend', stopTouch);
+      viewport.addEventListener('touchcancel', stopTouch);
 
       // Support mouse pointer panning jika di-zoom lewat desktop
       viewport.addEventListener('pointerdown', (event) => {
