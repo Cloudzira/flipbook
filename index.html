@@ -246,7 +246,7 @@
           FLIPBUKU
         </span>
         <span class="text-[9px] font-medium tracking-wide text-slate-400">
-          Bahan ajar Tartili / Al Quran
+          Bahan ajar pembelajaran Tartili / Al Quran
         </span>
       </div>
     </div>
@@ -316,7 +316,7 @@
           
           <div id="loading-spinner" class="flex flex-col items-center space-y-3 my-auto">
             <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500"></i>
-            <span class="text-sm text-slate-400">Memproses Halaman...</span>
+            <span class="text-sm text-slate-400">Memproses Halaman PDF...</span>
           </div>
 
           <div id="flipbook-wrapper" class="hidden transform transition-transform duration-150 my-auto flex items-center justify-center w-full max-h-full relative">
@@ -333,7 +333,7 @@
             <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Kembali</span>
           </button>
           <button id="thumbnail-toggle-button" onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-300 hover:text-white flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-card border-indigo-500/30">
-            <i class="fa-solid fa-border-all"></i> <span class="hidden sm:inline">Halaman</span>
+            <i class="fa-solid fa-border-all"></i> <span class="hidden sm:inline">Thumbnail</span>
           </button>
         </div>
 
@@ -376,7 +376,7 @@
 
       <div class="glass-panel p-6 rounded-2xl space-y-4">
         <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2">
-          <i class="fa-solid fa-cloud-arrow-up"></i> Unggah PDF Baru
+          <i class="fa-solid fa-cloud-arrow-up"></i> Unggah Flipbook Baru
         </h3>
         <form id="upload-form" onsubmit="handleUpload(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -464,7 +464,7 @@
   <!-- JAVASCRIPT ENGINE -->
   <script>
     const SUPABASE_URL = 'https://prsgmirandndqomvwzxv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByc2dtaXJhbmRuZHFvbXZ3enh2Iiwicm9sZSI6InFub24iLCJpYXQiOjE3OTAxMTE0MTEsImV4cCI6MjEwNTY4NzQxMX0.ox5Bt7Wc7yFDqzbWOLhSmCySEcJa2Ui2UljlVW2OpKA';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByc2dtaXJhbmRuZHFvbXZ3enh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMTE0MTEsImV4cCI6MjEwNTY4NzQxMX0.ox5Bt7Wc7yFDqzbWOLhSmCySEcJa2Ui2UljlVW2OpKA';
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -546,9 +546,10 @@
       }
 
       viewport.addEventListener('touchstart', (event) => {
-        // PERBAIKAN UTAMA: Jika ada 2 jari atau lebih (pinch), cegah event menyebar ke StPageFlip
-        if (event.touches.length >= 2) {
-          event.stopPropagation();
+        // Hentikan propagasi agar StPageFlip tidak ikut mendeteksi gestur pinch/swipe
+        event.stopPropagation();
+
+        if (event.touches.length === 2) {
           initialPinchDistance = getTouchDistance(event);
           zoomAtPinchStart = currentZoom;
         } else if (event.touches.length === 1 && currentZoom > 1) {
@@ -561,20 +562,20 @@
       }, { passive: false });
 
       viewport.addEventListener('touchmove', (event) => {
-        if (event.touches.length >= 2) {
+        // Hentikan propagasi agar event tidak tembus ke engine flipbook
+        event.stopPropagation();
+
+        if (event.touches.length === 2 && initialPinchDistance > 0) {
           event.preventDefault();
-          event.stopPropagation(); // Mencegah StPageFlip memproses aksi saat pinch
-          if (initialPinchDistance > 0) {
-            const currentDistance = getTouchDistance(event);
-            const scaleFactor = currentDistance / initialPinchDistance;
-            let newZoom = zoomAtPinchStart * scaleFactor;
-            
-            // Batasi rentang zoom antara 1 hingga 3
-            newZoom = Math.min(Math.max(1, newZoom), 3);
-            
-            if (newZoom !== currentZoom) {
-              applyZoomLevel(newZoom);
-            }
+          const currentDistance = getTouchDistance(event);
+          const scaleFactor = currentDistance / initialPinchDistance;
+          let newZoom = zoomAtPinchStart * scaleFactor;
+          
+          // Batasi rentang zoom antara 1 hingga 3
+          newZoom = Math.min(Math.max(1, newZoom), 3);
+          
+          if (newZoom !== currentZoom) {
+            applyZoomLevel(newZoom);
           }
         } else if (event.touches.length === 1 && viewport.classList.contains('is-dragging') && currentZoom > 1) {
           event.preventDefault();
@@ -584,9 +585,8 @@
       }, { passive: false });
 
       const stopTouch = (event) => {
-        if (event.touches && event.touches.length < 2) {
-          initialPinchDistance = 0;
-        }
+        if (event) event.stopPropagation();
+        initialPinchDistance = 0;
         viewport.classList.remove('is-dragging');
       };
 
