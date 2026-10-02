@@ -537,6 +537,7 @@
       let scrollStartLeft = 0;
       let scrollStartTop = 0;
       let pinchStartDistance = 0;
+      let pinchOccurred = false;
 
       const getPointerDistance = () => {
         const [first, second] = [...activePointers.values()];
@@ -545,10 +546,16 @@
 
       viewport.addEventListener('pointerdown', (event) => {
         if (event.pointerType === 'touch') {
-          activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          activePointers.set(event.pointerId, {
+            x: event.clientX,
+            y: event.clientY,
+            startX: event.clientX,
+            startY: event.clientY
+          });
           viewport.setPointerCapture(event.pointerId);
 
           if (activePointers.size === 2) {
+            pinchOccurred = true;
             viewport.classList.remove('is-dragging');
             pinchStartDistance = getPointerDistance();
             event.preventDefault();
@@ -588,6 +595,15 @@
       });
 
       const stopDragging = (event) => {
+        const pointer = activePointers.get(event?.pointerId);
+        if (event?.type === 'pointerup' && event.pointerType === 'touch' && activePointers.size === 1 && !pinchOccurred && currentZoom <= 1 && pointer) {
+          const deltaX = event.clientX - pointer.startX;
+          const deltaY = event.clientY - pointer.startY;
+          if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+            deltaX < 0 ? flipNextPage() : flipPreviousPage();
+          }
+        }
+
         if (event?.pointerId !== undefined) activePointers.delete(event.pointerId);
         if (activePointers.size < 2) pinchStartDistance = 0;
         viewport.classList.remove('is-dragging');
@@ -604,6 +620,7 @@
         if (event?.pointerId !== undefined && viewport.hasPointerCapture(event.pointerId)) {
           viewport.releasePointerCapture(event.pointerId);
         }
+        if (activePointers.size === 0) pinchOccurred = false;
       };
 
       viewport.addEventListener('pointerup', stopDragging);
@@ -1120,7 +1137,7 @@
       if (currentUser) {
         btnText.innerText = "Dashboard Admin";
       } else {
-        btnText.innerText = "Cloudz";
+        btnText.innerText = "Cloudzspace";
       }
     }
 
