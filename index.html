@@ -602,7 +602,8 @@
           const deltaX = event.clientX - pointer.startX;
           const deltaY = event.clientY - pointer.startY;
           if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
-            deltaX < 0 ? flipNextPage() : flipPreviousPage();
+            const swipeForward = currentBook?.reading_direction === 'rtl' ? deltaX > 0 : deltaX < 0;
+            swipeForward ? flipNextPage() : flipPreviousPage();
           }
         }
 
