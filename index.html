@@ -609,6 +609,12 @@
       viewport.addEventListener('pointerup', stopDragging);
       viewport.addEventListener('pointercancel', stopDragging);
       viewport.addEventListener('wheel', (event) => {
+        if (event.ctrlKey || event.metaKey) {
+          event.preventDefault();
+          setZoom(currentZoom * Math.exp(-event.deltaY * 0.002), false);
+          return;
+        }
+
         if (currentZoom <= 1) return;
         event.preventDefault();
         viewport.scrollLeft += event.deltaX;
