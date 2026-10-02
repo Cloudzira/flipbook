@@ -576,7 +576,9 @@
 
       viewport.addEventListener('pointermove', (event) => {
         if (event.pointerType === 'touch' && activePointers.has(event.pointerId)) {
-          activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          const pointer = activePointers.get(event.pointerId);
+          pointer.x = event.clientX;
+          pointer.y = event.clientY;
           if (activePointers.size >= 2) {
             const nextDistance = getPointerDistance();
             if (pinchStartDistance > 0 && nextDistance > 0) {
