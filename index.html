@@ -162,7 +162,7 @@
       overflow: hidden;
       min-height: 0;
       flex: 1 1 auto;
-      touch-action: pan-x pan-y;
+      touch-action: none;
     }
 
     #reader-viewport.is-zoomed {
@@ -531,37 +531,76 @@
       const viewport = document.getElementById('reader-viewport');
       if (!viewport) return;
 
+      const activePointers = new Map();
       let dragStartX = 0;
       let dragStartY = 0;
       let scrollStartLeft = 0;
       let scrollStartTop = 0;
+      let pinchStartDistance = 0;
 
-      ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'click'].forEach(eventType => {
-        viewport.addEventListener(eventType, (event) => {
-          if (currentZoom > 1) {
-            event.stopPropagation();
-          }
-        }, { passive: false });
-      });
+      const getPointerDistance = () => {
+        const [first, second] = [...activePointers.values()];
+        return Math.hypot(second.x - first.x, second.y - first.y);
+      };
 
       viewport.addEventListener('pointerdown', (event) => {
+        if (event.pointerType === 'touch') {
+          activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          viewport.setPointerCapture(event.pointerId);
+
+          if (activePointers.size === 2) {
+            viewport.classList.remove('is-dragging');
+            pinchStartDistance = getPointerDistance();
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+          if (activePointers.size > 1) return;
+        }
+
         if (currentZoom <= 1) return;
         dragStartX = event.clientX;
         dragStartY = event.clientY;
         scrollStartLeft = viewport.scrollLeft;
         scrollStartTop = viewport.scrollTop;
         viewport.classList.add('is-dragging');
-        viewport.setPointerCapture(event.pointerId);
+        if (event.pointerType !== 'touch') viewport.setPointerCapture(event.pointerId);
       });
 
       viewport.addEventListener('pointermove', (event) => {
+        if (event.pointerType === 'touch' && activePointers.has(event.pointerId)) {
+          activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (activePointers.size >= 2) {
+            const nextDistance = getPointerDistance();
+            if (pinchStartDistance > 0 && nextDistance > 0) {
+              setZoom(currentZoom * nextDistance / pinchStartDistance, false);
+            }
+            pinchStartDistance = nextDistance;
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+        }
+
         if (!viewport.classList.contains('is-dragging')) return;
         viewport.scrollLeft = scrollStartLeft - (event.clientX - dragStartX);
         viewport.scrollTop = scrollStartTop - (event.clientY - dragStartY);
       });
 
       const stopDragging = (event) => {
+        if (event?.pointerId !== undefined) activePointers.delete(event.pointerId);
+        if (activePointers.size < 2) pinchStartDistance = 0;
         viewport.classList.remove('is-dragging');
+
+        if (event?.type === 'pointerup' && activePointers.size === 1 && currentZoom > 1) {
+          const remainingPointer = activePointers.values().next().value;
+          dragStartX = remainingPointer.x;
+          dragStartY = remainingPointer.y;
+          scrollStartLeft = viewport.scrollLeft;
+          scrollStartTop = viewport.scrollTop;
+          viewport.classList.add('is-dragging');
+        }
+
         if (event?.pointerId !== undefined && viewport.hasPointerCapture(event.pointerId)) {
           viewport.releasePointerCapture(event.pointerId);
         }
@@ -877,6 +916,7 @@
         maxShadowOpacity: 0.15,
         showCover: true,
         usePortrait: isPortrait || isMobile,
+        useMouseEvents: false,
         mobileScrollSupport: false,
         flippingTime: 300,
         disableFlipAnimation: false
@@ -979,8 +1019,8 @@
       sidebar.classList.add('mobile-hidden');
     }
 
-    function zoomFlipbook(amount) {
-      currentZoom = Math.min(Math.max(0.6, currentZoom + amount), 2.5);
+    function setZoom(zoom, smoothReset = true) {
+      currentZoom = Math.min(Math.max(0.6, zoom), 2.5);
       const wrapper = document.getElementById('flipbook-wrapper');
       const viewport = document.getElementById('reader-viewport');
       const flipbook = document.getElementById('flipbook-container');
@@ -999,8 +1039,12 @@
       }
 
       if (currentZoom <= 1) {
-        viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+        viewport.scrollTo({ left: 0, top: 0, behavior: smoothReset ? 'smooth' : 'instant' });
       }
+    }
+
+    function zoomFlipbook(amount) {
+      setZoom(currentZoom + amount);
     }
 
     function resetZoom() {
