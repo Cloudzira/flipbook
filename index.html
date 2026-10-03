@@ -215,6 +215,22 @@
     .kurnia-icon.yt:hover { color: #ff007f; border-color: rgba(255, 0, 127, 0.6); box-shadow: 0 0 12px rgba(255,0,127,0.4); }
     .kurnia-icon.wa:hover { color: #00ff87; border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 12px rgba(0,255,135,0.4); }
 
+    /* Drag & Drop Styles for Admin Table */
+    .draggable-row {
+      cursor: grab;
+      transition: background-color 0.2s ease;
+    }
+    .draggable-row:active {
+      cursor: grabbing;
+    }
+    .draggable-row.dragging {
+      opacity: 0.4;
+      background: rgba(129, 140, 248, 0.15) !important;
+    }
+    .drag-over {
+      border-top: 2px dashed #818cf8 !important;
+    }
+
     @media (max-width: 768px), (max-height: 500px) {
       #thumbnail-sidebar {
         position: absolute !important;
@@ -285,7 +301,7 @@
           </div>
         </div>
 
-        <!-- Grid Katalog Buku (Diperhalus dan Minimalis) -->
+        <!-- Grid Katalog Buku -->
         <div id="catalog-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-6"></div>
       </div>
 
@@ -426,13 +442,17 @@
       </div>
 
       <div class="glass-panel p-6 sm:p-8 rounded-2xl space-y-5 pb-12">
-        <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2.5">
-          <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Koleksi Buku
-        </h3>
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2.5">
+            <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Koleksi Buku
+          </h3>
+          <span class="text-[11px] text-indigo-300/70 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full"><i class="fa-solid fa-grip-vertical mr-1"></i> Drag & Drop baris tabel untuk mengatur urutan</span>
+        </div>
         <div class="overflow-x-auto rounded-xl border border-white/10">
           <table class="w-full text-left text-sm text-slate-300">
             <thead class="bg-slate-900/80 text-xs uppercase text-indigo-300 tracking-wider border-b border-white/10">
               <tr>
+                <th class="p-3.5 w-8 text-center">#</th>
                 <th class="p-3.5">Judul</th>
                 <th class="p-3.5">Kategori</th>
                 <th class="p-3.5">Arah Baca</th>
@@ -492,6 +512,7 @@
     let currentUser = null;
     let resizeTimer = null;
     let currentPageIndex = 1;
+    let draggedRowIndex = null;
 
     // Cache Control Memory Store untuk PDF yang pernah dibuka di sesi ini
     const pdfCache = new Map();
@@ -1273,28 +1294,101 @@
       tbody.innerHTML = '';
 
       if (catalogData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">Belum ada data flipbook.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Belum ada data flipbook.</td></tr>`;
         return;
       }
 
       catalogData.forEach((item, index) => {
         const tr = document.createElement('tr');
-        tr.className = 'border-b border-white/5 hover:bg-white/[0.03] transition-colors';
+        tr.className = 'border-b border-white/5 hover:bg-white/[0.03] transition-colors draggable-row';
+        tr.draggable = true;
         tr.dataset.bookId = item.id;
+        tr.dataset.index = index;
+
+        // Event listeners untuk Drag & Drop
+        tr.addEventListener('dragstart', handleDragStart);
+        tr.addEventListener('dragover', handleDragOver);
+        tr.addEventListener('dragleave', handleDragLeave);
+        tr.addEventListener('drop', handleDrop);
+        tr.addEventListener('dragend', handleDragEnd);
+
         tr.innerHTML = `
+          <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono cursor-grab active:cursor-grabbing" title="Geser untuk memindahkan"><i class="fa-solid fa-grip-vertical"></i></td>
           <td class="p-3.5 font-medium text-white">${item.title}</td>
           <td class="p-3.5"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">${item.category}</span></td>
           <td class="p-3.5 text-xs text-indigo-200/70">${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'Kanan ke kiri' : 'Kiri ke kanan'}</td>
           <td class="p-3.5 text-xs text-indigo-200/60">${item.description || '-'}</td>
           <td class="p-3.5 text-right space-x-1">
             <button onclick="editFlipbook('${item.id}')" class="text-indigo-300 hover:text-indigo-100 p-1.5 transition" title="Edit buku"><i class="fa-solid fa-pen"></i></button>
-            <button onclick="moveFlipbook('${item.id}', -1)" class="text-slate-300 hover:text-white p-1.5 transition ${index === 0 ? 'opacity-30 pointer-events-none' : ''}" title="Pindah ke atas"><i class="fa-solid fa-arrow-up"></i></button>
-            <button onclick="moveFlipbook('${item.id}', 1)" class="text-slate-300 hover:text-white p-1.5 transition ${index === catalogData.length - 1 ? 'opacity-30 pointer-events-none' : ''}" title="Pindah ke bawah"><i class="fa-solid fa-arrow-down"></i></button>
             <button onclick="deleteFlipbook('${item.id}')" class="text-red-400 hover:text-red-300 p-1.5 transition" title="Hapus"><i class="fa-solid fa-trash"></i></button>
           </td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    function handleDragStart(e) {
+      draggedRowIndex = parseInt(this.dataset.index, 10);
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const targetRow = e.target.closest('tr');
+      if (targetRow && !targetRow.classList.contains('dragging')) {
+        targetRow.classList.add('drag-over');
+      }
+    }
+
+    function handleDragLeave(e) {
+      const targetRow = e.target.closest('tr');
+      if (targetRow) {
+        targetRow.classList.remove('drag-over');
+      }
+    }
+
+    async function handleDrop(e) {
+      e.preventDefault();
+      const targetRow = e.target.closest('tr');
+      if (!targetRow) return;
+      targetRow.classList.remove('drag-over');
+
+      const droppedRowIndex = parseInt(targetRow.dataset.index, 10);
+      if (isNaN(draggedRowIndex) || isNaN(droppedRowIndex) || draggedRowIndex === droppedRowIndex) return;
+
+      // Geser posisi item di array catalogData
+      const movedItem = catalogData.splice(draggedRowIndex, 1)[0];
+      catalogData.splice(droppedRowIndex, 0, movedItem);
+
+      // Perbarui urutan waktu created_at berdasarkan urutan array baru
+      const now = Date.now();
+      catalogData.forEach((book, index) => {
+        book.created_at = new Date(now - index * 1000).toISOString();
+      });
+
+      renderAdminTable();
+      renderCatalogGrid(catalogData);
+
+      // Simpan perubahan urutan ke Supabase secara otomatis
+      const updates = catalogData.map(book => supabaseClient
+        .from('flipbooks')
+        .update({ created_at: book.created_at })
+        .eq('id', book.id));
+      const results = await Promise.all(updates);
+      const error = results.find(result => result.error)?.error;
+      if (error) {
+        alert('Gagal menyimpan urutan baru ke database: ' + error.message);
+      }
+    }
+
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+      document.querySelectorAll('#admin-table-body tr').forEach(row => {
+        row.classList.remove('drag-over');
+      });
+      draggedRowIndex = null;
     }
 
     function editFlipbook(id) {
@@ -1303,6 +1397,7 @@
       if (!item || !row) return;
 
       row.innerHTML = `
+        <td class="p-3.5 text-center text-xs text-indigo-300/40"><i class="fa-solid fa-grip-vertical"></i></td>
         <td class="p-3.5"><input id="edit-title-${id}" value="${escapeHtml(item.title || '')}" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm"></td>
         <td class="p-3.5"><input id="edit-category-${id}" value="${escapeHtml(item.category || '')}" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm"></td>
         <td class="p-3.5"><select id="edit-direction-${id}" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm bg-slate-900"><option value="ltr" ${normalizeReadingDirection(item.reading_direction) !== 'rtl' ? 'selected' : ''}>Kiri ke kanan</option><option value="rtl" ${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'selected' : ''}>Kanan ke kiri</option></select></td>
@@ -1361,30 +1456,6 @@
       pdfCache.delete(id);
       await loadCatalogFromSupabase();
       renderAdminTable();
-    }
-
-    async function moveFlipbook(id, direction) {
-      const currentIndex = catalogData.findIndex(book => String(book.id) === String(id));
-      const targetIndex = currentIndex + direction;
-      if (currentIndex < 0 || targetIndex < 0 || targetIndex >= catalogData.length) return;
-
-      [catalogData[currentIndex], catalogData[targetIndex]] = [catalogData[targetIndex], catalogData[currentIndex]];
-      const now = Date.now();
-      catalogData.forEach((book, index) => {
-        book.created_at = new Date(now - index * 1000).toISOString();
-      });
-      renderAdminTable();
-      renderCatalogGrid(catalogData);
-
-      const updates = catalogData.map(book => supabaseClient
-        .from('flipbooks')
-        .update({ created_at: book.created_at })
-        .eq('id', book.id));
-      const results = await Promise.all(updates);
-      const error = results.find(result => result.error)?.error;
-      if (error) {
-        alert('Urutan berubah di tampilan, tetapi belum tersimpan ke database: ' + error.message);
-      }
     }
 
     async function deleteFlipbook(id) {
