@@ -196,6 +196,8 @@
       transform-origin: center center;
       min-height: 0;
       max-height: 100%;
+      /* Perbaikan: Membuat animasi zoom jauh lebih smooth */
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .kurnia-icon {
@@ -273,8 +275,9 @@
     </div>
 
     <div class="flex items-center space-x-2 sm:space-x-3">
+      <!-- PERBEDAAN 1: ICON KATALOG MENGGUNAKAN GRID/ICONS KHUSUS KATALOG -->
       <button onclick="switchView('catalog')" class="px-3 py-1.5 rounded-xl text-xs font-medium glass-card hover:bg-white/10 transition flex items-center gap-1.5 text-slate-200">
-        <i class="fa-solid fa-border-all text-indigo-400"></i> <span class="hidden sm:inline">Katalog</span>
+        <i class="fa-solid fa-layer-group text-sky-400"></i> <span class="hidden sm:inline">Katalog</span>
       </button>
       <button id="nav-admin-btn" onclick="openAdminModalOrView()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30">
         <i class="fa-solid fa-user-shield"></i> <span id="admin-btn-text">Admin</span>
@@ -347,14 +350,15 @@
         </div>
       </div>
 
-      <!-- BOTTOM CONTROL BAR (Diperbarui agar lebih rapi dan responsif) -->
+      <!-- BOTTOM CONTROL BAR -->
       <div class="w-full glass-panel py-2 px-2 sm:px-4 flex-shrink-0 z-40 border-t border-white/10 flex items-center justify-between gap-1.5 sm:gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] overflow-x-auto">
         <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
           <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-xl glass-card hover:border-indigo-400/40">
             <i class="fa-solid fa-arrow-left text-indigo-400"></i> <span class="hidden md:inline">Kembali</span>
           </button>
+          <!-- PERBEDAAN 1: ICON HALAMAN MENGGUNAKAN BUKU/BOOKMARK -->
           <button id="thumbnail-toggle-button" onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-200 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-xl glass-card border-indigo-500/30 bg-indigo-500/10">
-            <i class="fa-solid fa-border-all text-indigo-400"></i> <span class="hidden md:inline">Halaman</span>
+            <i class="fa-solid fa-book-bookmark text-indigo-400"></i> <span class="hidden md:inline">Halaman</span>
           </button>
         </div>
 
@@ -375,8 +379,8 @@
         </div>
 
         <div class="flex items-center space-x-1 flex-shrink-0">
-          <button onclick="zoomFlipbook(0.15)" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-          <button onclick="zoomFlipbook(-0.15)" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+          <button onclick="zoomFlipbook(0.2)" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+          <button onclick="zoomFlipbook(-0.2)" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
           <button onclick="resetZoom()" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Reset Zoom"><i class="fa-solid fa-rotate-left"></i></button>
           <button onclick="toggleFullscreen()" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
         </div>
@@ -514,7 +518,6 @@
     let currentPageIndex = 1;
     let draggedRowIndex = null;
 
-    // Cache Control Memory Store untuk PDF yang pernah dibuka di sesi ini
     const pdfCache = new Map();
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -664,10 +667,12 @@
 
       viewport.addEventListener('pointerup', stopDragging);
       viewport.addEventListener('pointercancel', stopDragging);
+      
+      // PERBAIKAN 2: Zoom dengan roda mouse yang lebih mulus dan natural
       viewport.addEventListener('wheel', (event) => {
         if (event.ctrlKey || event.metaKey) {
           event.preventDefault();
-          setZoom(currentZoom * Math.exp(-event.deltaY * 0.002), false);
+          setZoom(currentZoom * Math.exp(-event.deltaY * 0.0015), false);
           return;
         }
 
@@ -1088,8 +1093,9 @@
       sidebar.classList.add('mobile-hidden');
     }
 
+    // PERBAIKAN 2: Fungsi Zoom yang lebih optimal, smooth, dan ramah pengguna
     function setZoom(zoom, smoothReset = true) {
-      currentZoom = Math.min(Math.max(0.6, zoom), 2.5);
+      currentZoom = Math.min(Math.max(0.75, zoom), 3.0);
       const wrapper = document.getElementById('flipbook-wrapper');
       const viewport = document.getElementById('reader-viewport');
       const flipbook = document.getElementById('flipbook-container');
