@@ -285,7 +285,8 @@
           </div>
         </div>
 
-        <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-6"></div>
+        <!-- Grid Katalog Buku (Diperhalus dan Minimalis) -->
+        <div id="catalog-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-6"></div>
       </div>
 
       <!-- Bagian Bawah Halaman (Social Media & Footer) -->
@@ -718,25 +719,25 @@
 
       items.forEach(book => {
         const card = document.createElement('div');
-        card.className = 'glass-card rounded-2xl overflow-hidden flex flex-col justify-between cursor-pointer group';
+        card.className = 'glass-card rounded-xl overflow-hidden flex flex-col justify-between cursor-pointer group shadow-sm';
         card.onclick = () => openReader(book);
 
         card.innerHTML = `
-          <div class="h-56 bg-slate-900/85 flex items-center justify-center relative overflow-hidden group-hover:scale-[1.02] transition-transform duration-300">
+          <div class="h-44 sm:h-48 bg-slate-900/85 flex items-center justify-center relative overflow-hidden group-hover:scale-[1.02] transition-transform duration-300">
             <canvas id="cover-canvas-${book.id}" class="w-full h-full object-cover"></canvas>
             <div id="cover-placeholder-${book.id}" class="absolute inset-0 flex items-center justify-center bg-slate-950/90">
-              <i class="fa-solid fa-circle-notch fa-spin text-indigo-400 text-2xl"></i>
+              <i class="fa-solid fa-circle-notch fa-spin text-indigo-400 text-xl"></i>
             </div>
-            <span class="absolute top-3 left-3 text-[10px] uppercase tracking-wider bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2.5 py-1 rounded-full font-semibold backdrop-blur-md z-10 shadow-lg">${book.category || 'Umum'}</span>
+            <span class="absolute top-2.5 left-2.5 text-[9px] uppercase tracking-wider bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded-full font-semibold backdrop-blur-md z-10 shadow-sm">${book.category || 'Umum'}</span>
           </div>
-          <div class="p-4.5 flex-grow flex flex-col justify-between space-y-2.5">
+          <div class="p-3 flex-grow flex flex-col justify-between space-y-1.5">
             <div>
-              <h3 class="font-bold text-white text-base group-hover:text-indigo-300 transition-colors line-clamp-1">${book.title}</h3>
-              <p class="text-xs text-indigo-200/70 line-clamp-2 mt-1 leading-relaxed">${book.description || 'Tidak ada deskripsi.'}</p>
+              <h3 class="font-bold text-white text-xs sm:text-sm group-hover:text-indigo-300 transition-colors line-clamp-1">${book.title}</h3>
+              <p class="text-[11px] text-indigo-200/60 line-clamp-1 mt-0.5 leading-snug">${book.description || 'Tidak ada deskripsi.'}</p>
             </div>
-            <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-indigo-400 font-semibold">
-              <span>Buka Flipbook</span>
-              <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1.5 transition-transform"></i>
+            <div class="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-indigo-400 font-medium">
+              <span>Buka Buku</span>
+              <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition-transform text-[10px]"></i>
             </div>
           </div>
         `;
@@ -762,7 +763,7 @@
         const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
         if (!canvas) return;
 
-        const viewport = page.getViewport({ scale: 0.4 });
+        const viewport = page.getViewport({ scale: 0.35 });
         const context = canvas.getContext('2d');
         canvas.height = viewport.height;
         canvas.width = viewport.width;
@@ -772,7 +773,7 @@
       } catch (e) {
         const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
         if (placeholder) {
-          placeholder.innerHTML = `<i class="fa-solid fa-file-pdf text-5xl text-indigo-400/40"></i>`;
+          placeholder.innerHTML = `<i class="fa-solid fa-file-pdf text-4xl text-indigo-400/40"></i>`;
         }
       }
     }
