@@ -42,10 +42,9 @@
       font-family: 'Inter', sans-serif;
       background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #020617);
       color: #f8fafc;
-      touch-action: none; /* Mencegah geser/zoom default browser secara global di body */
+      touch-action: none;
     }
 
-    /* Kembalikan touch-action untuk elemen yang memang butuh scroll */
     input, select, textarea, #thumbnail-sidebar, #view-catalog, #view-admin {
       touch-action: pan-y;
     }
@@ -368,7 +367,7 @@
       <div class="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
           <h1 class="text-2xl font-bold text-white">Dashboard Admin</h1>
-          <p class="text-xs text-slate-400">Kelola koleksi dan unggah PDF baru</p>
+          <p class="text-xs text-slate-400">Kelola koleksi, unggah PDF, atau gunakan Link GitHub</p>
         </div>
         <button onclick="logoutAdmin()" class="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm font-medium border border-red-500/30 transition">
           <i class="fa-solid fa-right-from-bracket"></i> Keluar
@@ -377,7 +376,7 @@
 
       <div class="glass-panel p-6 rounded-2xl space-y-4">
         <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2">
-          <i class="fa-solid fa-cloud-arrow-up"></i> Unggah PDF Baru
+          <i class="fa-solid fa-cloud-arrow-up"></i> Tambah / Unggah Dokumen Baru
         </h3>
         <form id="upload-form" onsubmit="handleUpload(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -399,13 +398,23 @@
             <label class="block text-xs text-slate-300 mb-1 font-medium">Deskripsi Singkat</label>
             <textarea id="upload-desc" rows="2" placeholder="Tulis deskripsi singkat..." class="w-full glass-input rounded-xl px-4 py-2.5 text-sm"></textarea>
           </div>
-          <div class="md:col-span-2">
-            <label class="block text-xs text-slate-300 mb-1 font-medium">File Dokumen PDF *</label>
-            <input type="file" id="upload-file" accept="application/pdf" required class="w-full glass-input rounded-xl px-4 py-2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
+
+          <!-- Opsi 1: Upload File -->
+          <div class="md:col-span-2 p-4 rounded-xl border border-white/10 bg-white/5 space-y-2">
+            <label class="block text-xs text-indigo-300 font-semibold"><i class="fa-solid fa-file-arrow-up"></i> Opsi A: Unggah File Dokumen PDF</label>
+            <input type="file" id="upload-file" accept="application/pdf" class="w-full glass-input rounded-xl px-4 py-2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
           </div>
+
+          <!-- Opsi 2: Link GitHub / URL Eksternal -->
+          <div class="md:col-span-2 p-4 rounded-xl border border-white/10 bg-white/5 space-y-2">
+            <label class="block text-xs text-indigo-300 font-semibold"><i class="fa-brands fa-github"></i> Opsi B: Atau Gunakan Direct Link GitHub / URL PDF Publik</label>
+            <input type="url" id="upload-github-url" placeholder="Contoh: https://raw.githubusercontent.com/username/repo/main/buku.pdf" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm">
+            <p class="text-[11px] text-slate-400">Tips: Gunakan link "Raw" dari file PDF di repository GitHub Anda agar bisa diakses langsung.</p>
+          </div>
+
           <div class="md:col-span-2 flex justify-end">
             <button type="submit" id="btn-submit-upload" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium text-sm shadow-lg shadow-indigo-500/25 transition">
-              Simpan & Unggah
+              Simpan & Terbitkan
             </button>
           </div>
         </form>
@@ -449,7 +458,7 @@
       <form onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-xs text-slate-300 mb-1">Email Admin</label>
-          <input type="email" id="login-email" required class="w-full glass-input rounded-xl px-4 py-2.5 text-sm" placeholder="a**********70.com">
+          <input type="email" id="login-email" required class="w-full glass-input rounded-xl px-4 py-2.5 text-sm" placeholder="email@domain.com">
         </div>
         <div>
           <label class="block text-xs text-slate-300 mb-1">Password</label>
@@ -479,6 +488,9 @@
     let resizeTimer = null;
     let currentPageIndex = 1;
 
+    // Cache Control Memory Store untuk PDF yang pernah dibuka di sesi ini
+    const pdfCache = new Map();
+
     supabaseClient.auth.onAuthStateChange((event, session) => {
       currentUser = session?.user || null;
       updateAdminNavUI();
@@ -487,7 +499,6 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadCatalogFromSupabase();
 
-      // Mencegah propagasi event dari sidebar thumbnail agar tidak tembus ke engine flipbook
       const sidebarEl = document.getElementById('thumbnail-sidebar');
       if (sidebarEl) {
         ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click'].forEach(evt => {
@@ -511,7 +522,6 @@
         });
       }
 
-      // Mencegah propagasi dari navbar bawah agar tombol kontrol tidak memicu swipe buku
       const bottomNavEl = document.querySelector('#view-reader > div:last-child');
       if (bottomNavEl) {
         ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click'].forEach(evt => {
@@ -808,6 +818,7 @@
       }
     }
 
+    // FUNGSI CACHE CONTROL: Menggunakan memori cache / cache-busting aman agar PDF termuat instan
     async function openReader(book) {
       currentBook = { ...book, reading_direction: normalizeReadingDirection(book.reading_direction) };
       switchView('reader');
@@ -815,8 +826,18 @@
       document.getElementById('flipbook-wrapper').classList.add('hidden');
 
       try {
-        const loadingTask = pdfjsLib.getDocument(book.pdf_url);
-        pdfDocInstance = await loadingTask.promise;
+        // Periksa apakah dokumen sudah tersimpan dalam cache session (Cache Control)
+        if (pdfCache.has(book.id)) {
+          pdfDocInstance = pdfCache.get(book.id);
+        } else {
+          // Tambahkan parameter cache control di URL (jika berupa URL eksternal/GitHub) agar browser tidak mengambil versi usang yang salah
+          const cachedPdfUrl = book.pdf_url.includes('?') ? `${book.pdf_url}&v=${book.id}` : `${book.pdf_url}?v=${book.id}`;
+          const loadingTask = pdfjsLib.getDocument(cachedPdfUrl);
+          pdfDocInstance = await loadingTask.promise;
+          // Simpan ke cache agar saat dibuka kembali tidak perlu mendownload ulang dari internet
+          pdfCache.set(book.id, pdfDocInstance);
+        }
+
         document.getElementById('page-count').innerText = pdfDocInstance.numPages;
 
         const savedPage = localStorage.getItem(`flipbuku_last_page_${book.id}`);
@@ -1171,6 +1192,7 @@
       switchView('catalog');
     }
 
+    // PENANGANAN UPLOAD: Mendukung Upload File PDF maupun Link GitHub (URL Eksternal)
     async function handleUpload(e) {
       e.preventDefault();
 
@@ -1183,47 +1205,68 @@
       const category = document.getElementById('upload-category').value;
       const readingDirection = document.getElementById('upload-reading-direction').value;
       const desc = document.getElementById('upload-desc').value;
+      
       const fileInput = document.getElementById('upload-file');
+      const githubUrlInput = document.getElementById('upload-github-url').value.trim();
       const file = fileInput.files[0];
 
-      if (!file) return;
+      if (!file && !githubUrlInput) {
+        alert("Harap unggah file PDF atau masukkan Link GitHub / URL dokumen PDF!");
+        return;
+      }
 
       const btn = document.getElementById('btn-submit-upload');
       btn.disabled = true;
-      btn.innerText = "Mengunggah Ke Supabase...";
+      btn.innerText = "Menyimpan Data...";
 
       try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        let pdfUrl = githubUrlInput;
 
-        const { data: storageData, error: storageError } = await supabaseClient.storage
-          .from('pdf-files')
-          .upload(fileName, file, { contentType: 'application/pdf' });
+        // Jika opsi file diisi, upload ke Supabase Storage
+        if (file) {
+          btn.innerText = "Mengunggah File ke Supabase...";
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        if (storageError) throw storageError;
+          const { data: storageData, error: storageError } = await supabaseClient.storage
+            .from('pdf-files')
+            .upload(fileName, file, { contentType: 'application/pdf' });
 
-        const { data: urlData } = supabaseClient.storage
-          .from('pdf-files')
-          .getPublicUrl(fileName);
+          if (storageError) throw storageError;
 
-        const pdfUrl = urlData.publicUrl;
+          const { data: urlData } = supabaseClient.storage
+            .from('pdf-files')
+            .getPublicUrl(fileName);
+
+          pdfUrl = urlData.publicUrl;
+        }
 
         const { error: dbError } = await supabaseClient
           .from('flipbooks')
-          .insert([{ title, category, description: desc, pdf_url: pdfUrl, reading_direction: normalizeReadingDirection(readingDirection) }]);
+          .insert([{ 
+            title, 
+            category, 
+            description: desc, 
+            pdf_url: pdfUrl, 
+            reading_direction: normalizeReadingDirection(readingDirection) 
+          }]);
 
         if (dbError) throw dbError;
 
-        alert("Flipbook Berhasil Diunggah!");
+        alert("Flipbook Berhasil Disimpan!");
         document.getElementById('upload-form').reset();
+        
+        // Bersihkan cache memori terkait update katalog baru
+        pdfCache.clear();
+
         await loadCatalogFromSupabase();
         renderAdminTable();
 
       } catch (err) {
-        alert("Gagal Mengunggah: " + err.message);
+        alert("Gagal Menyimpan: " + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = "Simpan & Unggah";
+        btn.innerText = "Simpan & Terbitkan";
       }
     }
 
@@ -1317,6 +1360,7 @@
       }
       renderAdminTable();
       renderCatalogGrid(catalogData);
+      pdfCache.delete(id); // Bersihkan cache untuk item yang diedit
       await loadCatalogFromSupabase();
       renderAdminTable();
     }
@@ -1356,6 +1400,7 @@
       if (error) {
         alert("Gagal menghapus: " + error.message);
       } else {
+        pdfCache.delete(id);
         loadCatalogFromSupabase();
         renderAdminTable();
       }
