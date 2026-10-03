@@ -347,38 +347,38 @@
         </div>
       </div>
 
-      <!-- BOTTOM CONTROL BAR -->
-      <div class="w-full glass-panel h-14 py-1.5 px-3 sm:px-6 flex-shrink-0 z-40 border-t border-white/10 flex items-center justify-between gap-2 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-        <div class="flex items-center space-x-1.5 sm:space-x-2">
-          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card hover:border-indigo-400/40">
-            <i class="fa-solid fa-arrow-left text-indigo-400"></i> <span class="hidden sm:inline">Kembali</span>
+      <!-- BOTTOM CONTROL BAR (Diperbarui agar lebih rapi dan responsif) -->
+      <div class="w-full glass-panel py-2 px-2 sm:px-4 flex-shrink-0 z-40 border-t border-white/10 flex items-center justify-between gap-1.5 sm:gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] overflow-x-auto">
+        <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-xl glass-card hover:border-indigo-400/40">
+            <i class="fa-solid fa-arrow-left text-indigo-400"></i> <span class="hidden md:inline">Kembali</span>
           </button>
-          <button id="thumbnail-toggle-button" onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-200 hover:text-white flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card border-indigo-500/30 bg-indigo-500/10">
-            <i class="fa-solid fa-border-all text-indigo-400"></i> <span class="hidden sm:inline">Halaman</span>
+          <button id="thumbnail-toggle-button" onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-200 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-xl glass-card border-indigo-500/30 bg-indigo-500/10">
+            <i class="fa-solid fa-border-all text-indigo-400"></i> <span class="hidden md:inline">Halaman</span>
           </button>
         </div>
 
-        <div class="flex items-center space-x-1.5 sm:space-x-3">
-          <button onclick="flipPreviousPage()" class="px-3 py-2 text-indigo-300 hover:text-white flex items-center gap-1 text-xs glass-card rounded-xl">
+        <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+          <button onclick="flipPreviousPage()" class="p-2 sm:px-3 sm:py-1.5 text-indigo-300 hover:text-white flex items-center gap-1 text-xs glass-card rounded-xl">
             <i class="fa-solid fa-chevron-left"></i> <span class="hidden sm:inline">Prev</span>
           </button>
           
-          <div class="flex items-center px-2 py-1.5 rounded-xl glass-card">
-            <span class="text-[11px] sm:text-xs font-medium text-indigo-200">
-              Hal <input type="number" id="page-num-input" value="1" min="1" class="w-10 text-center glass-input rounded-lg px-1 py-0.5 text-[11px] sm:text-xs inline-block font-semibold text-white" onchange="jumpToPage(this.value)"> / <span id="page-count" class="text-indigo-300">0</span>
-            </span>
+          <div class="flex items-center space-x-1 px-2 py-1 rounded-xl glass-card whitespace-nowrap">
+            <span class="text-[11px] font-medium text-indigo-200">Hal</span>
+            <input type="number" id="page-num-input" value="1" min="1" class="w-8 sm:w-10 text-center glass-input rounded-md px-1 py-0.5 text-[11px] font-semibold text-white" onchange="jumpToPage(this.value)">
+            <span class="text-[11px] text-indigo-300">/ <span id="page-count">0</span></span>
           </div>
 
-          <button onclick="flipNextPage()" class="px-3 py-2 text-indigo-300 hover:text-white flex items-center gap-1 text-xs glass-card rounded-xl">
+          <button onclick="flipNextPage()" class="p-2 sm:px-3 sm:py-1.5 text-indigo-300 hover:text-white flex items-center gap-1 text-xs glass-card rounded-xl">
             <span class="hidden sm:inline">Next</span> <i class="fa-solid fa-chevron-right"></i>
           </button>
         </div>
 
-        <div class="flex items-center space-x-1">
-          <button onclick="zoomFlipbook(0.15)" class="p-2 sm:p-2.5 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-          <button onclick="zoomFlipbook(-0.15)" class="p-2 sm:p-2.5 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-          <button onclick="resetZoom()" class="p-2 sm:p-2.5 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Reset Zoom"><i class="fa-solid fa-rotate-left"></i></button>
-          <button onclick="toggleFullscreen()" class="p-2 sm:p-2.5 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+        <div class="flex items-center space-x-1 flex-shrink-0">
+          <button onclick="zoomFlipbook(0.15)" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+          <button onclick="zoomFlipbook(-0.15)" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+          <button onclick="resetZoom()" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Reset Zoom"><i class="fa-solid fa-rotate-left"></i></button>
+          <button onclick="toggleFullscreen()" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
         </div>
       </div>
     </section>
@@ -1305,7 +1305,6 @@
         tr.dataset.bookId = item.id;
         tr.dataset.index = index;
 
-        // Event listeners untuk Drag & Drop
         tr.addEventListener('dragstart', handleDragStart);
         tr.addEventListener('dragover', handleDragOver);
         tr.addEventListener('dragleave', handleDragLeave);
@@ -1358,11 +1357,9 @@
       const droppedRowIndex = parseInt(targetRow.dataset.index, 10);
       if (isNaN(draggedRowIndex) || isNaN(droppedRowIndex) || draggedRowIndex === droppedRowIndex) return;
 
-      // Geser posisi item di array catalogData
       const movedItem = catalogData.splice(draggedRowIndex, 1)[0];
       catalogData.splice(droppedRowIndex, 0, movedItem);
 
-      // Perbarui urutan waktu created_at berdasarkan urutan array baru
       const now = Date.now();
       catalogData.forEach((book, index) => {
         book.created_at = new Date(now - index * 1000).toISOString();
@@ -1371,7 +1368,6 @@
       renderAdminTable();
       renderCatalogGrid(catalogData);
 
-      // Simpan perubahan urutan ke Supabase secara otomatis
       const updates = catalogData.map(book => supabaseClient
         .from('flipbooks')
         .update({ created_at: book.created_at })
