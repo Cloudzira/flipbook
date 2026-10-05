@@ -994,7 +994,8 @@
       const viewportContainer = document.getElementById('reader-viewport');
       const isPortrait = window.innerWidth < window.innerHeight;
       const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
-      const useSinglePage = isPortrait || isMobile;
+      const isFullscreen = document.fullscreenElement === document.getElementById('view-reader');
+      const useSinglePage = !isFullscreen && (isPortrait || isMobile);
 
       const viewportRect = viewportContainer.getBoundingClientRect();
       const availWidth = viewportRect.width || viewportContainer.clientWidth || (window.innerWidth - 200);
@@ -1381,6 +1382,7 @@
 
     function handleDragStart(e) {
       draggedRowIndex = parseInt(this.dataset.index, 10);
+      e.dataTransfer.setData('text/plain', this.dataset.bookId);
       this.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
     }
@@ -1407,27 +1409,27 @@
       if (!targetRow) return;
       targetRow.classList.remove('drag-over');
 
+      const sourceIndex = draggedRowIndex;
       const droppedRowIndex = parseInt(targetRow.dataset.index, 10);
-      if (isNaN(draggedRowIndex) || isNaN(droppedRowIndex) || draggedRowIndex === droppedRowIndex) return;
+      if (isNaN(sourceIndex) || isNaN(droppedRowIndex) || sourceIndex === droppedRowIndex) return;
 
-      const movedItem = catalogData.splice(draggedRowIndex, 1)[0];
+      const previousOrder = [...catalogData];
+      const movedItem = catalogData.splice(sourceIndex, 1)[0];
       catalogData.splice(droppedRowIndex, 0, movedItem);
-
-      const now = Date.now();
-      catalogData.forEach((book, index) => {
-        book.created_at = new Date(now - index * 1000).toISOString();
-      });
+      catalogData.forEach((book, index) => { book.sort_order = index; });
+      draggedRowIndex = null;
 
       renderAdminTable();
-      renderCatalogGrid(catalogData);
 
       const updates = catalogData.map(book => supabaseClient
         .from('flipbooks')
-        .update({ created_at: book.created_at })
+        .update({ sort_order: book.sort_order })
         .eq('id', book.id));
       const results = await Promise.all(updates);
       const error = results.find(result => result.error)?.error;
       if (error) {
+        catalogData = previousOrder;
+        renderAdminTable();
         alert('Gagal menyimpan urutan baru ke database: ' + error.message);
       }
     }
