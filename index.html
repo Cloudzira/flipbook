@@ -544,7 +544,7 @@
     let currentUser = null;
     let resizeTimer = null;
     let currentPageIndex = 1;
-    let draggedRowIndex = null;
+    let activeAdminDrag = null;
 
     const pdfCache = new Map();
 
@@ -595,6 +595,12 @@
           handleResizeOrOrientation();
         }
       });
+      const adminTableBody = document.getElementById('admin-table-body');
+      adminTableBody.addEventListener('pointerdown', startAdminPointerDrag);
+      adminTableBody.addEventListener('keydown', handleAdminReorderKeydown);
+      document.addEventListener('pointermove', moveAdminPointerDrag);
+      document.addEventListener('pointerup', finishAdminPointerDrag);
+      document.addEventListener('pointercancel', cancelAdminPointerDrag);
 
       setupReaderPanning();
     });
@@ -1355,18 +1361,13 @@
       catalogData.forEach((item, index) => {
         const tr = document.createElement('tr');
         tr.className = 'border-b border-white/5 hover:bg-white/[0.03] transition-colors draggable-row';
-        tr.draggable = true;
         tr.dataset.bookId = item.id;
         tr.dataset.index = index;
 
-        tr.addEventListener('dragstart', handleDragStart);
-        tr.addEventListener('dragover', handleDragOver);
-        tr.addEventListener('dragleave', handleDragLeave);
-        tr.addEventListener('drop', handleDrop);
-        tr.addEventListener('dragend', handleDragEnd);
-
         tr.innerHTML = `
-          <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono cursor-grab active:cursor-grabbing" title="Geser untuk memindahkan"><i class="fa-solid fa-grip-vertical"></i></td>
+          <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono">
+            <button type="button" class="drag-handle rounded p-1 hover:text-indigo-200" aria-label="Ubah posisi ${escapeHtml(item.title)}" title="Ubah posisi buku"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>
+          </td>
           <td class="p-3.5 font-medium text-white">${item.title}</td>
           <td class="p-3.5"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">${item.category}</span></td>
           <td class="p-3.5 text-xs text-indigo-200/70">${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'Kanan ke kiri' : 'Kiri ke kanan'}</td>
@@ -1380,66 +1381,103 @@
       });
     }
 
-    function handleDragStart(e) {
-      draggedRowIndex = parseInt(this.dataset.index, 10);
-      e.dataTransfer.setData('text/plain', this.dataset.bookId);
-      this.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
+    function startAdminPointerDrag(event) {
+      const row = event.target.closest('tr.draggable-row');
+      const handle = event.target.closest('.drag-handle');
+      if (!row || event.button !== 0 || (event.target.closest('button, input, select, textarea, a') && !handle)) return;
+
+      activeAdminDrag = {
+        pointerId: event.pointerId,
+        sourceIndex: Number(row.dataset.index),
+        targetIndex: Number(row.dataset.index),
+        captureTarget: handle || row,
+        row
+      };
+      row.classList.add('dragging');
+      activeAdminDrag.captureTarget.setPointerCapture(event.pointerId);
+      event.preventDefault();
     }
 
-    function handleDragOver(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      const targetRow = e.target.closest('tr');
-      if (targetRow && !targetRow.classList.contains('dragging')) {
-        targetRow.classList.add('drag-over');
-      }
-    }
-
-    function handleDragLeave(e) {
-      const targetRow = e.target.closest('tr');
+    function moveAdminPointerDrag(event) {
+      if (!activeAdminDrag || event.pointerId !== activeAdminDrag.pointerId) return;
+      const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('#admin-table-body tr.draggable-row');
+      document.querySelectorAll('#admin-table-body .drag-over').forEach(row => row.classList.remove('drag-over'));
       if (targetRow) {
-        targetRow.classList.remove('drag-over');
+        activeAdminDrag.targetIndex = Number(targetRow.dataset.index);
+        if (targetRow !== activeAdminDrag.row) targetRow.classList.add('drag-over');
+      }
+      event.preventDefault();
+    }
+
+    function finishAdminPointerDrag(event) {
+      if (!activeAdminDrag || event.pointerId !== activeAdminDrag.pointerId) return;
+      const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('#admin-table-body tr.draggable-row');
+      const sourceIndex = activeAdminDrag.sourceIndex;
+      const targetIndex = targetRow ? Number(targetRow.dataset.index) : activeAdminDrag.targetIndex;
+      const captureTarget = activeAdminDrag.captureTarget;
+      activeAdminDrag = null;
+      clearAdminDragClasses();
+      if (captureTarget.hasPointerCapture(event.pointerId)) captureTarget.releasePointerCapture(event.pointerId);
+      if (Number.isInteger(sourceIndex) && Number.isInteger(targetIndex) && sourceIndex !== targetIndex) {
+        moveBookToIndex(sourceIndex, targetIndex);
       }
     }
 
-    async function handleDrop(e) {
-      e.preventDefault();
-      const targetRow = e.target.closest('tr');
-      if (!targetRow) return;
-      targetRow.classList.remove('drag-over');
+    function cancelAdminPointerDrag(event) {
+      if (!activeAdminDrag || event.pointerId !== activeAdminDrag.pointerId) return;
+      const captureTarget = activeAdminDrag.captureTarget;
+      activeAdminDrag = null;
+      clearAdminDragClasses();
+      if (captureTarget.hasPointerCapture(event.pointerId)) captureTarget.releasePointerCapture(event.pointerId);
+    }
 
-      const sourceIndex = draggedRowIndex;
-      const droppedRowIndex = parseInt(targetRow.dataset.index, 10);
-      if (isNaN(sourceIndex) || isNaN(droppedRowIndex) || sourceIndex === droppedRowIndex) return;
+    function handleAdminReorderKeydown(event) {
+      const handle = event.target.closest('.drag-handle');
+      if (!handle || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      event.preventDefault();
+      const row = handle.closest('tr');
+      const sourceIndex = Number(row.dataset.index);
+      const targetIndex = sourceIndex + (event.key === 'ArrowUp' ? -1 : 1);
+      if (targetIndex < 0 || targetIndex >= catalogData.length) return;
+      const bookId = row.dataset.bookId;
+      moveBookToIndex(sourceIndex, targetIndex);
+      requestAnimationFrame(() => {
+        [...document.querySelectorAll('#admin-table-body tr')]
+          .find(candidate => candidate.dataset.bookId === bookId)
+          ?.querySelector('.drag-handle')?.focus();
+      });
+    }
 
-      const previousOrder = [...catalogData];
-      const movedItem = catalogData.splice(sourceIndex, 1)[0];
-      catalogData.splice(droppedRowIndex, 0, movedItem);
+    function moveBookToIndex(sourceIndex, targetIndex) {
+      if (sourceIndex < 0 || targetIndex < 0 || sourceIndex >= catalogData.length || targetIndex >= catalogData.length) return;
+      const previousOrder = catalogData.map(book => ({ ...book }));
+      const [movedBook] = catalogData.splice(sourceIndex, 1);
+      catalogData.splice(targetIndex, 0, movedBook);
       catalogData.forEach((book, index) => { book.sort_order = index; });
-      draggedRowIndex = null;
-
       renderAdminTable();
+      persistCatalogOrder(previousOrder);
+    }
 
-      const updates = catalogData.map(book => supabaseClient
-        .from('flipbooks')
-        .update({ sort_order: book.sort_order })
-        .eq('id', book.id));
-      const results = await Promise.all(updates);
-      const error = results.find(result => result.error)?.error;
-      if (error) {
+    function clearAdminDragClasses() {
+      document.querySelectorAll('#admin-table-body .dragging, #admin-table-body .drag-over').forEach(row => {
+        row.classList.remove('dragging', 'drag-over');
+      });
+    }
+
+    async function persistCatalogOrder(previousOrder) {
+      try {
+        const updates = catalogData.map(book => supabaseClient
+          .from('flipbooks')
+          .update({ sort_order: book.sort_order })
+          .eq('id', book.id));
+        const results = await Promise.all(updates);
+        const error = results.find(result => result.error)?.error;
+        if (error) throw error;
+      } catch (error) {
         catalogData = previousOrder;
         renderAdminTable();
-        alert('Gagal menyimpan urutan baru ke database: ' + error.message);
+        alert('Gagal menyimpan urutan baru: ' + error.message);
       }
-    }
-
-    function handleDragEnd(e) {
-      this.classList.remove('dragging');
-      document.querySelectorAll('#admin-table-body tr').forEach(row => {
-        row.classList.remove('drag-over');
-      });
-      draggedRowIndex = null;
     }
 
     function editFlipbook(id) {
