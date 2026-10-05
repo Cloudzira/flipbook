@@ -205,6 +205,12 @@
       max-height: 100%;
     }
 
+    #view-reader:fullscreen {
+      width: 100vw;
+      height: 100dvh;
+      max-height: none;
+    }
+
     #flipbook-wrapper {
       overflow: hidden;
       transform-origin: center center;
@@ -253,7 +259,8 @@
         top: 0;
         left: 0;
         bottom: 0;
-        height: 100% !important;
+        height: auto !important;
+        padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
         background: rgba(13, 18, 30, 0.96) !important;
         box-shadow: 15px 0 40px rgba(0, 0, 0, 0.85);
         width: 190px !important;
@@ -348,12 +355,12 @@
       <div class="flex-1 min-h-0 flex w-full overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
-        <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-y-auto p-3 flex flex-col space-y-3 flex-shrink-0 mobile-hidden md:flex">
-          <div class="text-[11px] font-semibold text-indigo-300 uppercase tracking-wider mb-1 px-1 flex items-center justify-between sticky top-0 bg-slate-950/80 py-1.5 z-20 backdrop-blur-md border-b border-white/5">
+        <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-hidden p-3 flex flex-col flex-shrink-0 mobile-hidden md:flex">
+          <div class="text-[11px] font-semibold text-indigo-200 uppercase tracking-wider px-1 py-2 flex items-center justify-between flex-shrink-0 bg-slate-950/80 border-b border-white/10">
             <span>Daftar Halaman</span>
             <button onclick="toggleThumbnailSidebar()" class="md:hidden text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
           </div>
-          <div id="thumbnail-container" class="grid grid-cols-2 gap-2"></div>
+          <div id="thumbnail-container" class="grid grid-cols-2 content-start gap-2 overflow-y-auto flex-1 min-h-0 pt-3"></div>
         </aside>
 
         <!-- Main Viewport Reader -->
@@ -582,6 +589,11 @@
       window.addEventListener('resize', handleResizeOrOrientation);
       window.addEventListener('orientationchange', () => {
         setTimeout(handleResizeOrOrientation, 300);
+      });
+      document.addEventListener('fullscreenchange', () => {
+        if (document.getElementById('view-reader').classList.contains('flex')) {
+          handleResizeOrOrientation();
+        }
       });
 
       setupReaderPanning();
@@ -951,13 +963,13 @@
       const wasHidden = flipWrapper.classList.contains('hidden');
       if (wasHidden) flipWrapper.classList.remove('hidden');
 
-      flipWrapper.innerHTML = '<div id="flipbook-container"></div>';
-      const flipContainer = document.getElementById('flipbook-container');
-
       if (pageFlipInstance) {
         try { pageFlipInstance.destroy(); } catch(e){}
         pageFlipInstance = null;
       }
+
+      flipWrapper.innerHTML = '<div id="flipbook-container"></div>';
+      const flipContainer = document.getElementById('flipbook-container');
 
       renderedPages.clear();
 
