@@ -239,11 +239,22 @@
 
     /* Drag & Drop Styles for Admin Table */
     .draggable-row {
-      cursor: grab;
+      cursor: default;
       transition: background-color 0.2s ease;
     }
-    .draggable-row:active {
+
+    .drag-handle {
+      touch-action: none;
+      cursor: grab;
+    }
+
+    .drag-handle:active {
       cursor: grabbing;
+    }
+
+    .drag-handle:focus-visible {
+      outline: 2px solid #818cf8;
+      outline-offset: 2px;
     }
     .draggable-row.dragging {
       opacity: 0.4;
@@ -595,12 +606,15 @@
           handleResizeOrOrientation();
         }
       });
+
       const adminTableBody = document.getElementById('admin-table-body');
-      adminTableBody.addEventListener('pointerdown', startAdminPointerDrag);
-      adminTableBody.addEventListener('keydown', handleAdminReorderKeydown);
-      document.addEventListener('pointermove', moveAdminPointerDrag);
-      document.addEventListener('pointerup', finishAdminPointerDrag);
-      document.addEventListener('pointercancel', cancelAdminPointerDrag);
+      if (adminTableBody) {
+        adminTableBody.addEventListener('pointerdown', startAdminPointerDrag);
+        adminTableBody.addEventListener('keydown', handleAdminReorderKeydown);
+        document.addEventListener('pointermove', moveAdminPointerDrag);
+        document.addEventListener('pointerup', finishAdminPointerDrag);
+        document.addEventListener('pointercancel', cancelAdminPointerDrag);
+      }
 
       setupReaderPanning();
     });
@@ -1382,25 +1396,26 @@
     }
 
     function startAdminPointerDrag(event) {
-      const row = event.target.closest('tr.draggable-row');
       const handle = event.target.closest('.drag-handle');
-      if (!row || event.button !== 0 || (event.target.closest('button, input, select, textarea, a') && !handle)) return;
+      const row = handle?.closest('tr');
+      if (!handle || !row || event.button !== 0) return;
 
       activeAdminDrag = {
         pointerId: event.pointerId,
         sourceIndex: Number(row.dataset.index),
         targetIndex: Number(row.dataset.index),
-        captureTarget: handle || row,
+        handle,
         row
       };
       row.classList.add('dragging');
-      activeAdminDrag.captureTarget.setPointerCapture(event.pointerId);
+      handle.setPointerCapture(event.pointerId);
       event.preventDefault();
     }
 
     function moveAdminPointerDrag(event) {
       if (!activeAdminDrag || event.pointerId !== activeAdminDrag.pointerId) return;
-      const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('#admin-table-body tr.draggable-row');
+
+      const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('#admin-table-body tr');
       document.querySelectorAll('#admin-table-body .drag-over').forEach(row => row.classList.remove('drag-over'));
       if (targetRow) {
         activeAdminDrag.targetIndex = Number(targetRow.dataset.index);
@@ -1411,13 +1426,15 @@
 
     function finishAdminPointerDrag(event) {
       if (!activeAdminDrag || event.pointerId !== activeAdminDrag.pointerId) return;
-      const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('#admin-table-body tr.draggable-row');
+
+      const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('#admin-table-body tr');
       const sourceIndex = activeAdminDrag.sourceIndex;
       const targetIndex = targetRow ? Number(targetRow.dataset.index) : activeAdminDrag.targetIndex;
-      const captureTarget = activeAdminDrag.captureTarget;
+      const handle = activeAdminDrag.handle;
       activeAdminDrag = null;
       clearAdminDragClasses();
-      if (captureTarget.hasPointerCapture(event.pointerId)) captureTarget.releasePointerCapture(event.pointerId);
+      if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+
       if (Number.isInteger(sourceIndex) && Number.isInteger(targetIndex) && sourceIndex !== targetIndex) {
         moveBookToIndex(sourceIndex, targetIndex);
       }
@@ -1425,20 +1442,22 @@
 
     function cancelAdminPointerDrag(event) {
       if (!activeAdminDrag || event.pointerId !== activeAdminDrag.pointerId) return;
-      const captureTarget = activeAdminDrag.captureTarget;
+      const handle = activeAdminDrag.handle;
       activeAdminDrag = null;
       clearAdminDragClasses();
-      if (captureTarget.hasPointerCapture(event.pointerId)) captureTarget.releasePointerCapture(event.pointerId);
+      if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
     }
 
     function handleAdminReorderKeydown(event) {
       const handle = event.target.closest('.drag-handle');
       if (!handle || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+
       event.preventDefault();
       const row = handle.closest('tr');
       const sourceIndex = Number(row.dataset.index);
       const targetIndex = sourceIndex + (event.key === 'ArrowUp' ? -1 : 1);
       if (targetIndex < 0 || targetIndex >= catalogData.length) return;
+
       const bookId = row.dataset.bookId;
       moveBookToIndex(sourceIndex, targetIndex);
       requestAnimationFrame(() => {
@@ -1450,6 +1469,7 @@
 
     function moveBookToIndex(sourceIndex, targetIndex) {
       if (sourceIndex < 0 || targetIndex < 0 || sourceIndex >= catalogData.length || targetIndex >= catalogData.length) return;
+
       const previousOrder = catalogData.map(book => ({ ...book }));
       const [movedBook] = catalogData.splice(sourceIndex, 1);
       catalogData.splice(targetIndex, 0, movedBook);
