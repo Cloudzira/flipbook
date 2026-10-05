@@ -170,6 +170,9 @@
 
     #reader-viewport.is-zoomed {
       overflow: auto;
+      padding: 0;
+      align-items: flex-start;
+      justify-content: flex-start;
       cursor: grab;
       touch-action: none;
     }
@@ -179,11 +182,22 @@
     }
 
     #reader-viewport.is-zoomed #flipbook-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: none;
+      flex: 0 0 auto;
       max-width: none;
       max-height: none;
+      margin: 0;
       align-items: flex-start;
       justify-content: flex-start;
       transform-origin: top left;
+    }
+
+    #reader-viewport.is-zoomed #flipbook-container {
+      transform-origin: top left;
+      margin: 0;
     }
 
     #view-reader {
@@ -696,6 +710,7 @@
         syncThumbnailSidebarMode();
         if (pdfDocInstance && document.getElementById('view-reader').classList.contains('flex')) {
           await rebuildFlipbookDOM();
+          if (currentZoom > 1) setZoom(currentZoom, false);
         }
       }, 250);
     }
@@ -858,6 +873,7 @@
 
     async function openReader(book) {
       currentBook = { ...book, reading_direction: normalizeReadingDirection(book.reading_direction) };
+      resetZoom();
       document.getElementById('reader-book-title').textContent = book.title;
       switchView('reader');
       document.getElementById('loading-spinner').classList.remove('hidden');
@@ -1108,20 +1124,29 @@
       const viewport = document.getElementById('reader-viewport');
       const flipbook = document.getElementById('flipbook-container');
 
-      wrapper.style.transform = currentZoom > 1 ? `scale(${currentZoom})` : 'none';
       viewport.classList.toggle('is-zoomed', currentZoom > 1);
 
       if (currentZoom > 1 && flipbook) {
         const baseWidth = flipbook.offsetWidth;
         const baseHeight = flipbook.offsetHeight;
-        wrapper.style.width = `${Math.max(viewport.clientWidth, baseWidth * currentZoom)}px`;
-        wrapper.style.height = `${Math.max(viewport.clientHeight, baseHeight * currentZoom)}px`;
+        const scaledWidth = baseWidth * currentZoom;
+        const scaledHeight = baseHeight * currentZoom;
+        const offsetX = Math.max(0, (viewport.clientWidth - scaledWidth) / 2);
+        const offsetY = Math.max(0, (viewport.clientHeight - scaledHeight) / 2);
+        flipbook.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${currentZoom})`;
+        wrapper.style.width = `${Math.max(viewport.clientWidth, scaledWidth)}px`;
+        wrapper.style.height = `${Math.max(viewport.clientHeight, scaledHeight)}px`;
+        const maxScrollLeft = viewport.scrollWidth - viewport.clientWidth;
+        const maxScrollTop = viewport.scrollHeight - viewport.clientHeight;
+        viewport.scrollTo({
+          left: Math.min(maxScrollLeft, Math.max(0, (scaledWidth - viewport.clientWidth) / 2)),
+          top: Math.min(maxScrollTop, Math.max(0, (scaledHeight - viewport.clientHeight) / 2)),
+          behavior: smoothReset ? 'smooth' : 'instant'
+        });
       } else {
+        if (flipbook) flipbook.style.transform = currentZoom === 1 ? 'none' : `scale(${currentZoom})`;
         wrapper.style.width = '';
         wrapper.style.height = '';
-      }
-
-      if (currentZoom <= 1) {
         viewport.scrollTo({ left: 0, top: 0, behavior: smoothReset ? 'smooth' : 'instant' });
       }
     }
@@ -1134,7 +1159,8 @@
       currentZoom = 1;
       const wrapper = document.getElementById('flipbook-wrapper');
       const viewport = document.getElementById('reader-viewport');
-      wrapper.style.transform = 'none';
+      const flipbook = document.getElementById('flipbook-container');
+      if (flipbook) flipbook.style.transform = 'none';
       wrapper.style.width = '';
       wrapper.style.height = '';
       viewport.classList.remove('is-zoomed', 'is-dragging');
