@@ -595,6 +595,8 @@
           handleResizeOrOrientation();
         }
       });
+      document.addEventListener('dragend', clearAdminDragState);
+      document.addEventListener('drop', () => requestAnimationFrame(clearAdminDragState));
 
       setupReaderPanning();
     });
@@ -1382,9 +1384,11 @@
 
     function handleDragStart(e) {
       draggedRowIndex = parseInt(this.dataset.index, 10);
-      e.dataTransfer.setData('text/plain', this.dataset.bookId);
+      if (e.dataTransfer) {
+        e.dataTransfer.setData('text/plain', this.dataset.bookId);
+        e.dataTransfer.effectAllowed = 'move';
+      }
       this.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
     }
 
     function handleDragOver(e) {
@@ -1406,20 +1410,27 @@
     async function handleDrop(e) {
       e.preventDefault();
       const targetRow = e.target.closest('tr');
-      if (!targetRow) return;
+      if (!targetRow) {
+        clearAdminDragState();
+        return;
+      }
       targetRow.classList.remove('drag-over');
 
       const sourceIndex = draggedRowIndex;
       const droppedRowIndex = parseInt(targetRow.dataset.index, 10);
-      if (isNaN(sourceIndex) || isNaN(droppedRowIndex) || sourceIndex === droppedRowIndex) return;
+      if (isNaN(sourceIndex) || isNaN(droppedRowIndex) || sourceIndex === droppedRowIndex) {
+        clearAdminDragState();
+        return;
+      }
 
-      const previousOrder = [...catalogData];
+      const previousOrder = catalogData.map(book => ({ ...book }));
       const movedItem = catalogData.splice(sourceIndex, 1)[0];
       catalogData.splice(droppedRowIndex, 0, movedItem);
       catalogData.forEach((book, index) => { book.sort_order = index; });
       draggedRowIndex = null;
 
       renderAdminTable();
+      clearAdminDragState();
 
       const updates = catalogData.map(book => supabaseClient
         .from('flipbooks')
@@ -1434,12 +1445,15 @@
       }
     }
 
-    function handleDragEnd(e) {
-      this.classList.remove('dragging');
-      document.querySelectorAll('#admin-table-body tr').forEach(row => {
-        row.classList.remove('drag-over');
-      });
+    function clearAdminDragState() {
       draggedRowIndex = null;
+      document.querySelectorAll('#admin-table-body .dragging, #admin-table-body .drag-over').forEach(row => {
+        row.classList.remove('dragging', 'drag-over');
+      });
+    }
+
+    function handleDragEnd(e) {
+      clearAdminDragState();
     }
 
     function editFlipbook(id) {
