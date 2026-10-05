@@ -994,12 +994,14 @@
       const viewportContainer = document.getElementById('reader-viewport');
       const isPortrait = window.innerWidth < window.innerHeight;
       const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
+      const isFullscreen = document.fullscreenElement === document.getElementById('view-reader');
+      const useSinglePage = isPortrait || isMobile || isFullscreen;
 
       const viewportRect = viewportContainer.getBoundingClientRect();
       const availWidth = viewportRect.width || viewportContainer.clientWidth || (window.innerWidth - 200);
       const availHeight = viewportRect.height || viewportContainer.clientHeight || (window.innerHeight - 100);
-      const pageCountInView = isPortrait || isMobile ? 1 : 2;
-      const horizontalPadding = isPortrait || isMobile ? 24 : 48;
+      const pageCountInView = useSinglePage ? 1 : 2;
+      const horizontalPadding = useSinglePage ? 24 : 48;
       const verticalPadding = isMobile ? 16 : 48;
       const maxWidthByViewport = Math.max(150, (availWidth - horizontalPadding) / pageCountInView);
       const maxHeightByViewport = Math.max(120, availHeight - verticalPadding);
@@ -1025,7 +1027,7 @@
         maxHeight: 1200,
         maxShadowOpacity: 0.2,
         showCover: true,
-        usePortrait: isPortrait || isMobile,
+        usePortrait: useSinglePage,
         useMouseEvents: false,
         mobileScrollSupport: false,
         flippingTime: 300,
