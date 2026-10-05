@@ -1,1568 +1,1554 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>FlipbuKu</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FlipbuKu</title>
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="icon" href="favicon.png">
-  
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="icon" href="favicon.png">
 
-  <!-- PDF.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  </script>
+<!-- FontAwesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- StPageFlip CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+<!-- PDF.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
 
-  <!-- Supabase JS Client v2 -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- StPageFlip CDN -->
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
 
-  <!-- Google Fonts (Inter) -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Supabase JS Client v2 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<!-- Google Fonts (Inter) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    html, body {
-      height: 100%;
-      height: 100dvh;
-      width: 100vw;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      font-family: 'Inter', sans-serif;
-      background: radial-gradient(circle at 15% 15%, #2e1065 0%, #090d16 50%, #020617 100%);
-      color: #f8fafc;
-      touch-action: none;
-    }
+<style>
+* {
+box-sizing: border-box;
+}
 
-    input, select, textarea, #thumbnail-sidebar, #view-catalog, #view-admin {
-      touch-action: pan-y;
-    }
+html, body {
+height: 100%;
+height: 100dvh;
+width: 100vw;
+margin: 0;
+padding: 0;
+overflow: hidden;
+font-family: 'Inter', sans-serif;
+background: radial-gradient(circle at 15% 15%, #2e1065 0%, #090d16 50%, #020617 100%);
+color: #f8fafc;
+touch-action: none;
+}
 
-    /* Glassmorphism Aesthetic & Futuristic Enhancements */
-    .glass-panel {
-      background: rgba(13, 18, 30, 0.72);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-    }
+input, select, textarea, #thumbnail-sidebar, #view-catalog, #view-admin {
+touch-action: pan-y;
+}
 
-    .glass-card {
-      background: rgba(255, 255, 255, 0.03);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+/* Glassmorphism Aesthetic & Futuristic Enhancements */
+.glass-panel {
+background: rgba(13, 18, 30, 0.72);
+backdrop-filter: blur(16px);
+-webkit-backdrop-filter: blur(16px);
+border: 1px solid rgba(255, 255, 255, 0.08);
+box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
 
-    .glass-card:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(129, 140, 248, 0.4);
-      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
-    }
+.glass-card {
+background: rgba(255, 255, 255, 0.03);
+backdrop-filter: blur(12px);
+-webkit-backdrop-filter: blur(12px);
+border: 1px solid rgba(255, 255, 255, 0.07);
+transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-    .glass-input {
-      background: rgba(9, 13, 22, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #f8fafc;
-      transition: all 0.2s ease;
-    }
+.glass-card:hover {
+background: rgba(255, 255, 255, 0.06);
+border-color: rgba(129, 140, 248, 0.4);
+box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+}
 
-    .glass-input:focus {
-      border-color: #818cf8;
-      outline: none;
-      box-shadow: 0 0 16px rgba(129, 140, 248, 0.25), inset 0 1px 2px rgba(0,0,0,0.5);
-    }
+.glass-input {
+background: rgba(9, 13, 22, 0.75);
+border: 1px solid rgba(255, 255, 255, 0.1);
+color: #f8fafc;
+transition: all 0.2s ease;
+}
 
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(9, 13, 22, 0.6);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(129, 140, 248, 0.3);
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(129, 140, 248, 0.6);
-    }
+.glass-input:focus {
+border-color: #818cf8;
+outline: none;
+box-shadow: 0 0 16px rgba(129, 140, 248, 0.25), inset 0 1px 2px rgba(0,0,0,0.5);
+}
 
-    .thumb-item {
-      cursor: pointer !important;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      position: relative;
-      z-index: 10;
-    }
+::-webkit-scrollbar {
+width: 6px;
+height: 6px;
+}
+::-webkit-scrollbar-track {
+background: rgba(9, 13, 22, 0.6);
+}
+::-webkit-scrollbar-thumb {
+background: rgba(129, 140, 248, 0.3);
+border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+background: rgba(129, 140, 248, 0.6);
+}
 
-    .thumb-item * {
-      pointer-events: none !important;
-    }
+.thumb-item {
+cursor: pointer !important;
+user-select: none;
+-webkit-tap-highlight-color: transparent;
+position: relative;
+z-index: 10;
+}
 
-    .thumb-item.active {
-      border-color: #818cf8 !important;
-      background: rgba(129, 140, 248, 0.2) !important;
-      box-shadow: 0 0 16px rgba(129, 140, 248, 0.4);
-    }
+.thumb-item * {
+pointer-events: none !important;
+}
 
-    .page-canvas-wrapper {
-      background-color: #ffffff;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
+.thumb-item.active {
+border-color: #818cf8 !important;
+background: rgba(129, 140, 248, 0.2) !important;
+box-shadow: 0 0 16px rgba(129, 140, 248, 0.4);
+}
 
-    .page-canvas-wrapper canvas {
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: contain;
-      display: block;
-    }
+.page-canvas-wrapper {
+background-color: #ffffff;
+width: 100%;
+height: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+overflow: hidden;
+}
 
-    #flipbook-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: auto;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.7), 0 0 40px rgba(99, 102, 241, 0.1);
-    }
+.page-canvas-wrapper canvas {
+width: 100% !important;
+height: 100% !important;
+object-fit: contain;
+display: block;
+}
 
-    #thumbnail-sidebar {
-      z-index: 40 !important;
-      transition: transform 0.25s ease-in-out;
-      min-width: 0;
-      min-height: 0;
-      flex-shrink: 0;
-    }
+#flipbook-container {
+display: flex;
+align-items: center;
+justify-content: center;
+margin: auto;
+box-shadow: 0 25px 60px rgba(0,0,0,0.7), 0 0 40px rgba(99, 102, 241, 0.1);
+}
 
-    #thumbnail-sidebar.desktop-hidden {
-      display: none !important;
-    }
+#thumbnail-sidebar {
+z-index: 40 !important;
+transition: transform 0.25s ease-in-out;
+min-width: 0;
+min-height: 0;
+flex-shrink: 0;
+}
 
-    #reader-viewport,
-    #flipbook-wrapper {
-      min-width: 0;
-      min-height: 0;
-    }
+#thumbnail-sidebar.desktop-hidden {
+display: none !important;
+}
 
-    #reader-viewport {
-      overflow: hidden;
-      min-height: 0;
-      flex: 1 1 auto;
-      touch-action: none;
-    }
+#reader-viewport,
+#flipbook-wrapper {
+min-width: 0;
+min-height: 0;
+}
 
-    #reader-viewport.is-zoomed {
-      overflow: auto;
-      padding: 0;
-      align-items: flex-start;
-      justify-content: flex-start;
-      cursor: grab;
-      touch-action: none;
-    }
+#reader-viewport {
+overflow: hidden;
+min-height: 0;
+flex: 1 1 auto;
+touch-action: none;
+}
 
-    #reader-viewport.is-dragging {
-      cursor: grabbing;
-    }
+#reader-viewport.is-zoomed {
+overflow: auto;
+padding: 0;
+align-items: flex-start;
+justify-content: flex-start;
+cursor: grab;
+touch-action: none;
+}
 
-    #reader-viewport.is-zoomed #flipbook-wrapper {
-      position: absolute;
-      top: 0;
-      left: 0;
-      transition: none;
-      flex: 0 0 auto;
-      max-width: none;
-      max-height: none;
-      margin: 0;
-      align-items: flex-start;
-      justify-content: flex-start;
-      transform-origin: top left;
-    }
+#reader-viewport.is-dragging {
+cursor: grabbing;
+}
 
-    #reader-viewport.is-zoomed #flipbook-container {
-      transform-origin: top left;
-      margin: 0;
-    }
+#reader-viewport.is-zoomed #flipbook-wrapper {
+position: absolute;
+top: 0;
+left: 0;
+transition: none;
+flex: 0 0 auto;
+max-width: none;
+max-height: none;
+margin: 0;
+align-items: flex-start;
+justify-content: flex-start;
+transform-origin: top left;
+}
 
-    #view-reader {
-      height: 100%;
-      max-height: 100%;
-    }
+#reader-viewport.is-zoomed #flipbook-container {
+transform-origin: top left;
+margin: 0;
+}
 
-    #view-reader:fullscreen {
-      width: 100vw;
-      height: 100dvh;
-      max-height: none;
-    }
+#view-reader {
+height: 100%;
+max-height: 100%;
+}
 
-    #flipbook-wrapper {
-      overflow: hidden;
-      transform-origin: center center;
-      min-height: 0;
-      max-height: 100%;
-      /* Perbaikan: Membuat animasi zoom jauh lebih smooth */
-      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+#view-reader:fullscreen {
+width: 100vw;
+height: 100dvh;
+max-height: none;
+}
 
-    .kurnia-icon {
-        width: 2rem;
-        height: 2rem;
-        border-radius: 9999px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #cbd5e1;
-        font-size: 0.75rem;
-        transition: all 0.3s ease;
-        text-decoration: none;
-    }
-    .kurnia-icon.ig:hover { color: #00f2fe; border-color: rgba(0, 242, 254, 0.6); box-shadow: 0 0 12px rgba(0,242,254,0.4); }
-    .kurnia-icon.tt:hover { color: #bd00ff; border-color: rgba(189, 0, 255, 0.6); box-shadow: 0 0 12px rgba(189,0,255,0.4); }
-    .kurnia-icon.yt:hover { color: #ff007f; border-color: rgba(255, 0, 127, 0.6); box-shadow: 0 0 12px rgba(255,0,127,0.4); }
-    .kurnia-icon.wa:hover { color: #00ff87; border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 12px rgba(0,255,135,0.4); }
+#flipbook-wrapper {
+overflow: hidden;
+transform-origin: center center;
+min-height: 0;
+max-height: 100%;
+/* Perbaikan: Membuat animasi zoom jauh lebih smooth */
+transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-    /* Drag & Drop Styles for Admin Table */
-    .draggable-row {
-      cursor: grab;
-      transition: background-color 0.2s ease;
-    }
-    .draggable-row:active {
-      cursor: grabbing;
-    }
-    .draggable-row.dragging {
-      opacity: 0.4;
-      background: rgba(129, 140, 248, 0.15) !important;
-    }
-    .drag-over {
-      border-top: 2px dashed #818cf8 !important;
-    }
+.kurnia-icon {
+width: 2rem;
+height: 2rem;
+border-radius: 9999px;
+display: flex;
+align-items: center;
+justify-content: center;
+color: #cbd5e1;
+font-size: 0.75rem;
+transition: all 0.3s ease;
+text-decoration: none;
+}
+.kurnia-icon.ig:hover { color: #00f2fe; border-color: rgba(0, 242, 254, 0.6); box-shadow: 0 0 12px rgba(0,242,254,0.4); }
+.kurnia-icon.tt:hover { color: #bd00ff; border-color: rgba(189, 0, 255, 0.6); box-shadow: 0 0 12px rgba(189,0,255,0.4); }
+.kurnia-icon.yt:hover { color: #ff007f; border-color: rgba(255, 0, 127, 0.6); box-shadow: 0 0 12px rgba(255,0,127,0.4); }
+.kurnia-icon.wa:hover { color: #00ff87; border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 12px rgba(0,255,135,0.4); }
 
-    @media (max-width: 768px), (max-height: 500px) {
-      #thumbnail-sidebar {
-        position: absolute !important;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        height: auto !important;
-        padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
-        background: rgba(13, 18, 30, 0.96) !important;
-        box-shadow: 15px 0 40px rgba(0, 0, 0, 0.85);
-        width: 190px !important;
-        z-index: 45 !important;
-      }
-      #thumbnail-sidebar.mobile-hidden {
-        transform: translateX(-100%);
-        pointer-events: none;
-      }
-      #thumbnail-sidebar.mobile-visible {
-        transform: translateX(0);
-        pointer-events: auto;
-      }
-    }
-  </style>
+/* Drag & Drop Styles for Admin Table */
+.draggable-row {
+cursor: grab;
+transition: background-color 0.2s ease;
+}
+.draggable-row:active {
+cursor: grabbing;
+}
+.draggable-row.dragging {
+opacity: 0.4;
+background: rgba(129, 140, 248, 0.15) !important;
+}
+.drag-over {
+border-top: 2px dashed #818cf8 !important;
+}
+
+@media (max-width: 768px), (max-height: 500px) {
+#thumbnail-sidebar {
+position: absolute !important;
+top: 0;
+left: 0;
+bottom: 0;
+height: auto !important;
+padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+background: rgba(13, 18, 30, 0.96) !important;
+box-shadow: 15px 0 40px rgba(0, 0, 0, 0.85);
+width: 190px !important;
+z-index: 45 !important;
+}
+#thumbnail-sidebar.mobile-hidden {
+transform: translateX(-100%);
+pointer-events: none;
+}
+#thumbnail-sidebar.mobile-visible {
+transform: translateX(0);
+pointer-events: auto;
+}
+}
+</style>
 </head>
 <body class="flex flex-col h-[100dvh] min-h-0 overflow-hidden">
 
-  <!-- NAVBAR UTAMA -->
-  <nav class="glass-panel sticky top-0 z-50 px-4 sm:px-6 py-2.5 flex items-center justify-between border-b border-white/10 flex-shrink-0 h-14">
-    <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchView('catalog')">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/40 group-hover:scale-105 transition-transform">
-        <i class="fa-solid fa-book-open text-white text-sm"></i>
-      </div>
-      <div class="flex flex-col leading-tight">
-        <span class="text-base font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-purple-300">
-          FLIPBUKU
-        </span>
-        <span class="text-[9px] font-medium tracking-widest text-indigo-300/70 uppercase">
-          Bahan ajar Tartili
-        </span>
-      </div>
-    </div>
+<!-- NAVBAR UTAMA -->
+<nav class="glass-panel sticky top-0 z-50 px-4 sm:px-6 py-2.5 flex items-center justify-between border-b border-white/10 flex-shrink-0 h-14">
+<div class="flex items-center space-x-3 cursor-pointer group" onclick="switchView('catalog')">
+<div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/40 group-hover:scale-105 transition-transform">
+<i class="fa-solid fa-book-open text-white text-sm"></i>
+</div>
+<div class="flex flex-col leading-tight">
+<span class="text-base font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-purple-300">
+FLIPBUKU
+</span>
+<span class="text-[9px] font-medium tracking-widest text-indigo-300/70 uppercase">
+Bahan ajar Tartili
+</span>
+</div>
+</div>
 
-    <div class="flex items-center space-x-2 sm:space-x-3">
-      <!-- PERBEDAAN 1: ICON KATALOG MENGGUNAKAN GRID/ICONS KHUSUS KATALOG -->
-      <button onclick="switchView('catalog')" class="px-3 py-1.5 rounded-xl text-xs font-medium glass-card hover:bg-white/10 transition flex items-center gap-1.5 text-slate-200">
-        <i class="fa-solid fa-layer-group text-sky-400"></i> <span class="hidden sm:inline">Katalog</span>
-      </button>
-      <button id="nav-admin-btn" onclick="openAdminModalOrView()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30">
-        <i class="fa-solid fa-user-shield"></i> <span id="admin-btn-text">Admin</span>
-      </button>
-    </div>
-  </nav>
+<div class="flex items-center space-x-2 sm:space-x-3">
+<!-- PERBEDAAN 1: ICON KATALOG MENGGUNAKAN GRID/ICONS KHUSUS KATALOG -->
+<button onclick="switchView('catalog')" class="px-3 py-1.5 rounded-xl text-xs font-medium glass-card hover:bg-white/10 transition flex items-center gap-1.5 text-slate-200">
+<i class="fa-solid fa-layer-group text-sky-400"></i> <span class="hidden sm:inline">Katalog</span>
+</button>
+<button id="nav-admin-btn" onclick="openAdminModalOrView()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30">
+<i class="fa-solid fa-user-shield"></i> <span id="admin-btn-text">Admin</span>
+</button>
+</div>
+</nav>
 
-  <!-- MAIN CONTENT CONTAINER -->
-  <main class="flex-1 min-h-0 overflow-hidden relative flex flex-col">
+<!-- MAIN CONTENT CONTAINER -->
+<main class="flex-1 min-h-0 overflow-hidden relative flex flex-col">
 
-    <!-- VIEW 1: KATALOG UTAMA -->
-    <section id="view-catalog" class="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto h-full flex flex-col justify-between">
-      <div class="space-y-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-4 sm:p-5 rounded-2xl">
-          <div class="relative flex-grow max-w-md">
-            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-indigo-300/70"></i>
-            <input type="text" id="search-input" oninput="filterCatalog()" placeholder="Cari judul atau deskripsi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl glass-input text-sm">
-          </div>
-          <div class="flex items-center space-x-2.5">
-            <label class="text-xs text-indigo-300 font-medium">Kategori:</label>
-            <select id="category-filter" onchange="filterCatalog()" class="glass-input rounded-xl px-3 py-2.5 text-sm bg-slate-900/90">
-              <option value="ALL">Semua Kategori</option>
-            </select>
-          </div>
-        </div>
+<!-- VIEW 1: KATALOG UTAMA -->
+<section id="view-catalog" class="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto h-full flex flex-col justify-between">
+<div class="space-y-6">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-4 sm:p-5 rounded-2xl">
+<div class="relative flex-grow max-w-md">
+<i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-indigo-300/70"></i>
+<input type="text" id="search-input" oninput="filterCatalog()" placeholder="Cari judul atau deskripsi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl glass-input text-sm">
+</div>
+<div class="flex items-center space-x-2.5">
+<label class="text-xs text-indigo-300 font-medium">Kategori:</label>
+<select id="category-filter" onchange="filterCatalog()" class="glass-input rounded-xl px-3 py-2.5 text-sm bg-slate-900/90">
+<option value="ALL">Semua Kategori</option>
+</select>
+</div>
+</div>
 
-        <!-- Grid Katalog Buku -->
-        <div id="catalog-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-6"></div>
-      </div>
+<!-- Grid Katalog Buku -->
+<div id="catalog-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-6"></div>
+</div>
 
-      <!-- Bagian Bawah Halaman (Social Media & Footer) -->
-      <div class="space-y-4 pt-6 border-t border-white/5">
-        <div id="socialMediaRow" style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-          <a href="https://instagram.com/kurniapedia" target="_blank" class="glass-panel kurnia-icon ig"><i class="fa-brands fa-instagram"></i></a>
-          <a href="https://tiktok.com/@kurniapedia" target="_blank" class="glass-panel kurnia-icon tt"><i class="fa-brands fa-tiktok"></i></a>
-          <a href="https://www.youtube.com/@kurniapedia" target="_blank" class="glass-panel kurnia-icon yt"><i class="fa-brands fa-youtube"></i></a>
-          <a href="https://wa.me/+6285870906050" target="_blank" class="glass-panel kurnia-icon wa"><i class="fa-brands fa-whatsapp"></i></a>
-        </div>
-        <footer style="text-align: center; font-size: 11px; color: #94a3b8; font-family: sans-serif;">
-          <p>Crafted with <span style="color: #ff007f;">♥</span> by <span style="color: #00f2fe; font-weight: 600; text-shadow: 0 0 10px rgba(0,242,254,0.4);">Kurniapedia</span> 2026</p>
-        </footer>
-      </div>
-    </section>
+<!-- Bagian Bawah Halaman (Social Media & Footer) -->
+<div class="space-y-4 pt-6 border-t border-white/5">
+<div id="socialMediaRow" style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+<a href="https://instagram.com/kurniapedia" target="_blank" class="glass-panel kurnia-icon ig"><i class="fa-brands fa-instagram"></i></a>
+<a href="https://tiktok.com/@kurniapedia" target="_blank" class="glass-panel kurnia-icon tt"><i class="fa-brands fa-tiktok"></i></a>
+<a href="https://www.youtube.com/@kurniapedia" target="_blank" class="glass-panel kurnia-icon yt"><i class="fa-brands fa-youtube"></i></a>
+<a href="https://wa.me/+6285870906050" target="_blank" class="glass-panel kurnia-icon wa"><i class="fa-brands fa-whatsapp"></i></a>
+</div>
+<footer style="text-align: center; font-size: 11px; color: #94a3b8; font-family: sans-serif;">
+<p>Crafted with <span style="color: #ff007f;">♥</span> by <span style="color: #00f2fe; font-weight: 600; text-shadow: 0 0 10px rgba(0,242,254,0.4);">Kurniapedia</span> 2026</p>
+</footer>
+</div>
+</section>
 
-    <!-- VIEW 2: FLIPBOOK READER -->
-    <section id="view-reader" class="hidden flex-col min-h-0 h-full w-full relative bg-slate-950 overflow-hidden">
-      <div class="flex justify-center flex-shrink-0 px-4 pt-2">
-        <div class="glass-panel max-w-full rounded-full px-4 py-2 flex items-center gap-2 pointer-events-none">
-          <i class="fa-solid fa-book-open text-indigo-300" aria-hidden="true"></i>
-          <span id="reader-book-title" class="text-sm font-semibold text-white truncate"></span>
-        </div>
-      </div>
+<!-- VIEW 2: FLIPBOOK READER -->
+<section id="view-reader" class="hidden flex-col min-h-0 h-full w-full relative bg-slate-950 overflow-hidden">
+<div class="flex justify-center flex-shrink-0 px-4 pt-2">
+<div class="glass-panel max-w-full rounded-full px-4 py-2 flex items-center gap-2 pointer-events-none">
+<i class="fa-solid fa-book-open text-indigo-300" aria-hidden="true"></i>
+<span id="reader-book-title" class="text-sm font-semibold text-white truncate"></span>
+</div>
+</div>
 
-      <div class="flex-1 min-h-0 flex w-full overflow-hidden relative">
-        
-        <!-- Sidebar Thumbnails -->
-        <aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-hidden p-3 flex flex-col flex-shrink-0 mobile-hidden md:flex">
-          <div class="text-[11px] font-semibold text-indigo-200 uppercase tracking-wider px-1 py-2 flex items-center justify-between flex-shrink-0 bg-slate-950/80 border-b border-white/10">
-            <span>Daftar Halaman</span>
-            <button onclick="toggleThumbnailSidebar()" class="md:hidden text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
-          </div>
-          <div id="thumbnail-container" class="grid grid-cols-2 content-start gap-2 overflow-y-auto flex-1 min-h-0 pt-3"></div>
-        </aside>
+<div class="flex-1 min-h-0 flex w-full overflow-hidden relative">
 
-        <!-- Main Viewport Reader -->
-        <div id="reader-viewport" class="flex-1 min-h-0 overflow-hidden p-2 sm:p-6 bg-gradient-to-br from-slate-950 via-[#0a0f1d] to-[#04060b] flex items-center justify-center relative">
-          
-          <div id="loading-spinner" class="flex flex-col items-center space-y-3 my-auto">
-            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-400 drop-shadow-[0_0_12px_rgba(129,140,248,0.5)]"></i>
-            <span class="text-sm text-indigo-200/80 font-medium">Memproses Halaman..</span>
-          </div>
+<!-- Sidebar Thumbnails -->
+<aside id="thumbnail-sidebar" class="w-48 sm:w-56 glass-panel border-r border-white/10 h-full overflow-hidden p-3 flex flex-col flex-shrink-0 mobile-hidden md:flex">
+<div class="text-[11px] font-semibold text-indigo-200 uppercase tracking-wider px-1 py-2 flex items-center justify-between flex-shrink-0 bg-slate-950/80 border-b border-white/10">
+<span>Daftar Halaman</span>
+<button onclick="toggleThumbnailSidebar()" class="md:hidden text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
+</div>
+<div id="thumbnail-container" class="grid grid-cols-2 content-start gap-2 overflow-y-auto flex-1 min-h-0 pt-3"></div>
+</aside>
 
-          <div id="flipbook-wrapper" class="hidden transform transition-transform duration-150 my-auto flex items-center justify-center w-full max-h-full relative">
-            <div id="flipbook-container"></div>
-          </div>
+<!-- Main Viewport Reader -->
+<div id="reader-viewport" class="flex-1 min-h-0 overflow-hidden p-2 sm:p-6 bg-gradient-to-br from-slate-950 via-[#0a0f1d] to-[#04060b] flex items-center justify-center relative">
 
-        </div>
-      </div>
+<div id="loading-spinner" class="flex flex-col items-center space-y-3 my-auto">
+<i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-400 drop-shadow-[0_0_12px_rgba(129,140,248,0.5)]"></i>
+<span class="text-sm text-indigo-200/80 font-medium">Memproses Halaman..</span>
+</div>
 
-      <!-- BOTTOM CONTROL BAR -->
-      <div class="w-full glass-panel py-2 px-2 sm:px-4 flex-shrink-0 z-40 border-t border-white/10 flex items-center justify-between gap-1.5 sm:gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] overflow-x-auto">
-        <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-          <button onclick="switchView('catalog')" class="text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-xl glass-card hover:border-indigo-400/40">
-            <i class="fa-solid fa-arrow-left text-indigo-400"></i> <span class="hidden md:inline">Kembali</span>
-          </button>
-          <!-- PERBEDAAN 1: ICON HALAMAN MENGGUNAKAN BUKU/BOOKMARK -->
-          <button id="thumbnail-toggle-button" onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-200 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-xl glass-card border-indigo-500/30 bg-indigo-500/10">
-            <i class="fa-solid fa-book-bookmark text-indigo-400"></i> <span class="hidden md:inline">Halaman</span>
-          </button>
-        </div>
+<div id="flipbook-wrapper" class="hidden transform transition-transform duration-150 my-auto flex items-center justify-center w-full max-h-full relative">
+<div id="flipbook-container"></div>
+</div>
 
-        <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-          <button onclick="flipPreviousPage()" class="p-2 sm:px-3 sm:py-1.5 text-indigo-300 hover:text-white flex items-center gap-1 text-xs glass-card rounded-xl">
-            <i class="fa-solid fa-chevron-left"></i> <span class="hidden sm:inline">Prev</span>
-          </button>
-          
-          <div class="flex items-center space-x-1 px-2 py-1 rounded-xl glass-card whitespace-nowrap">
-            <span class="text-[11px] font-medium text-indigo-200">Hal</span>
-            <input type="number" id="page-num-input" value="1" min="1" class="w-8 sm:w-10 text-center glass-input rounded-md px-1 py-0.5 text-[11px] font-semibold text-white" onchange="jumpToPage(this.value)">
-            <span class="text-[11px] text-indigo-300">/ <span id="page-count">0</span></span>
-          </div>
+</div>
+</div>
 
-          <button onclick="flipNextPage()" class="p-2 sm:px-3 sm:py-1.5 text-indigo-300 hover:text-white flex items-center gap-1 text-xs glass-card rounded-xl">
-            <span class="hidden sm:inline">Next</span> <i class="fa-solid fa-chevron-right"></i>
-          </button>
-        </div>
+<!-- BOTTOM CONTROL BAR -->
+<div class="w-full glass-panel py-2 px-2 sm:px-4 flex-shrink-0 z-40 border-t border-white/10 flex items-center justify-between gap-1.5 sm:gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] overflow-x-auto">
+<div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+<button onclick="switchView('catalog')" class="text-xs font-medium text-slate-200 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-xl glass-card hover:border-indigo-400/40">
+<i class="fa-solid fa-arrow-left text-indigo-400"></i> <span class="hidden md:inline">Kembali</span>
+</button>
+<!-- PERBEDAAN 1: ICON HALAMAN MENGGUNAKAN BUKU/BOOKMARK -->
+<button id="thumbnail-toggle-button" onclick="toggleThumbnailSidebar()" class="text-xs font-medium text-indigo-200 hover:text-white flex items-center gap-1 px-2.5 py-1.5 rounded-xl glass-card border-indigo-500/30 bg-indigo-500/10">
+<i class="fa-solid fa-book-bookmark text-indigo-400"></i> <span class="hidden md:inline">Halaman</span>
+</button>
+</div>
 
-        <div class="flex items-center space-x-1 flex-shrink-0">
-          <button onclick="zoomFlipbook(0.2)" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-          <button onclick="zoomFlipbook(-0.2)" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-          <button onclick="resetZoom()" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Reset Zoom"><i class="fa-solid fa-rotate-left"></i></button>
-          <button onclick="toggleFullscreen()" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
-        </div>
-      </div>
-    </section>
+<div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+<button onclick="flipPreviousPage()" class="p-2 sm:px-3 sm:py-1.5 text-indigo-300 hover:text-white flex items-center gap-1 text-xs glass-card rounded-xl">
+<i class="fa-solid fa-chevron-left"></i> <span class="hidden sm:inline">Prev</span>
+</button>
 
-    <!-- VIEW 3: HALAMAN ADMIN -->
-    <section id="view-admin" class="hidden p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-8 overflow-y-auto h-full">
-      <div class="flex items-center justify-between border-b border-white/10 pb-5">
-        <div>
-          <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-purple-300">Cloudzone</h1>
-          <p class="text-xs text-indigo-300/70 mt-0.5">Kelola koleksi, unggah PDF, atau gunakan Link GitHub</p>
-        </div>
-        <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 text-xs font-medium border border-red-500/30 transition shadow-lg shadow-red-500/10 flex items-center gap-2">
-          <i class="fa-solid fa-right-from-bracket"></i> Keluar
-        </button>
-      </div>
+<div class="flex items-center space-x-1 px-2 py-1 rounded-xl glass-card whitespace-nowrap">
+<span class="text-[11px] font-medium text-indigo-200">Hal</span>
+<input type="number" id="page-num-input" value="1" min="1" class="w-8 sm:w-10 text-center glass-input rounded-md px-1 py-0.5 text-[11px] font-semibold text-white" onchange="jumpToPage(this.value)">
+<span class="text-[11px] text-indigo-300">/ <span id="page-count">0</span></span>
+</div>
 
-      <div class="glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
-        <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2.5">
-          <i class="fa-solid fa-cloud-arrow-up text-indigo-400"></i> Tambah / Unggah Dokumen Baru
-        </h3>
-        <form id="upload-form" onsubmit="handleUpload(event)" class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label class="block text-xs text-indigo-200 mb-1.5 font-medium">Judul Buku *</label>
-            <input type="text" id="upload-title" required placeholder="Contoh: Majalah Digital Edisi 01" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
-          </div>
-          <div>
-            <label class="block text-xs text-indigo-200 mb-1.5 font-medium">Kategori *</label>
-            <input type="text" id="upload-category" required placeholder="Contoh: Majalah, Buku, Katalog" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
-          </div>
-          <div>
-            <label class="block text-xs text-indigo-200 mb-1.5 font-medium">Arah Baca *</label>
-            <select id="upload-reading-direction" class="w-full glass-input rounded-xl px-3.5 py-3 text-sm bg-slate-900/90">
-              <option value="ltr">Kiri ke kanan (buku umum)</option>
-              <option value="rtl">Kanan ke kiri (Al-Qur'an)</option>
-            </select>
-          </div>
-          <div class="md:col-span-2">
-            <label class="block text-xs text-indigo-200 mb-1.5 font-medium">Deskripsi Singkat</label>
-            <textarea id="upload-desc" rows="2" placeholder="Tulis deskripsi singkat..." class="w-full glass-input rounded-xl px-4 py-3 text-sm"></textarea>
-          </div>
+<button onclick="flipNextPage()" class="p-2 sm:px-3 sm:py-1.5 text-indigo-300 hover:text-white flex items-center gap-1 text-xs glass-card rounded-xl">
+<span class="hidden sm:inline">Next</span> <i class="fa-solid fa-chevron-right"></i>
+</button>
+</div>
 
-          <!-- Opsi 1: Upload File -->
-          <div class="md:col-span-2 p-5 rounded-xl border border-white/10 bg-white/[0.02] space-y-2.5">
-            <label class="block text-xs text-indigo-300 font-semibold flex items-center gap-2"><i class="fa-solid fa-file-arrow-up text-indigo-400"></i> Opsi A: Unggah File Dokumen PDF</label>
-            <input type="file" id="upload-file" accept="application/pdf" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gradient-to-r file:from-indigo-600 file:to-purple-600 file:text-white hover:file:opacity-90 cursor-pointer">
-          </div>
+<div class="flex items-center space-x-1 flex-shrink-0">
+<button onclick="zoomFlipbook(0.2)" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+<button onclick="zoomFlipbook(-0.2)" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+<button onclick="resetZoom()" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Reset Zoom"><i class="fa-solid fa-rotate-left"></i></button>
+<button onclick="toggleFullscreen()" class="p-2 rounded-xl glass-card hover:bg-white/10 text-indigo-300 hover:text-white text-xs transition" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+</div>
+</div>
+</section>
 
-          <!-- Opsi 2: Link GitHub / URL Eksternal -->
-          <div class="md:col-span-2 p-5 rounded-xl border border-white/10 bg-white/[0.02] space-y-2.5">
-            <label class="block text-xs text-indigo-300 font-semibold flex items-center gap-2"><i class="fa-brands fa-github text-indigo-400"></i> Opsi B: Atau Gunakan Direct Link GitHub / URL PDF Publik</label>
-            <input type="url" id="upload-github-url" placeholder="Contoh: https://raw.githubusercontent.com/username/repo/main/buku.pdf" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
-            <p class="text-[11px] text-indigo-300/70">Tips: Gunakan link "Raw" dari file PDF di repository GitHub Anda agar bisa diakses langsung.</p>
-          </div>
+<!-- VIEW 3: HALAMAN ADMIN -->
+<section id="view-admin" class="hidden p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-8 overflow-y-auto h-full">
+<div class="flex items-center justify-between border-b border-white/10 pb-5">
+<div>
+<h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-purple-300">Cloudzone</h1>
+<p class="text-xs text-indigo-300/70 mt-0.5">Kelola koleksi, unggah PDF, atau gunakan Link GitHub</p>
+</div>
+<button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 text-xs font-medium border border-red-500/30 transition shadow-lg shadow-red-500/10 flex items-center gap-2">
+<i class="fa-solid fa-right-from-bracket"></i> Keluar
+</button>
+</div>
 
-          <div class="md:col-span-2 flex justify-end pt-2">
-            <button type="submit" id="btn-submit-upload" class="px-7 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-95 text-white font-medium text-sm shadow-xl shadow-indigo-600/30 transition border border-indigo-400/30">
-              Simpan & Terbitkan
-            </button>
-          </div>
-        </form>
-      </div>
+<div class="glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
+<h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2.5">
+<i class="fa-solid fa-cloud-arrow-up text-indigo-400"></i> Tambah / Unggah Dokumen Baru
+</h3>
+<form id="upload-form" onsubmit="handleUpload(event)" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<div>
+<label class="block text-xs text-indigo-200 mb-1.5 font-medium">Judul Buku *</label>
+<input type="text" id="upload-title" required placeholder="Contoh: Majalah Digital Edisi 01" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
+</div>
+<div>
+<label class="block text-xs text-indigo-200 mb-1.5 font-medium">Kategori *</label>
+<input type="text" id="upload-category" required placeholder="Contoh: Majalah, Buku, Katalog" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
+</div>
+<div>
+<label class="block text-xs text-indigo-200 mb-1.5 font-medium">Arah Baca *</label>
+<select id="upload-reading-direction" class="w-full glass-input rounded-xl px-3.5 py-3 text-sm bg-slate-900/90">
+<option value="ltr">Kiri ke kanan (buku umum)</option>
+<option value="rtl">Kanan ke kiri (Al-Qur'an)</option>
+</select>
+</div>
+<div class="md:col-span-2">
+<label class="block text-xs text-indigo-200 mb-1.5 font-medium">Deskripsi Singkat</label>
+<textarea id="upload-desc" rows="2" placeholder="Tulis deskripsi singkat..." class="w-full glass-input rounded-xl px-4 py-3 text-sm"></textarea>
+</div>
 
-      <div class="glass-panel p-6 sm:p-8 rounded-2xl space-y-5 pb-12">
-        <div class="flex items-center justify-between">
-          <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2.5">
-            <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Koleksi Buku
-          </h3>
-          <span class="text-[11px] text-indigo-300/70 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full"><i class="fa-solid fa-grip-vertical mr-1"></i> Drag & Drop baris tabel untuk mengatur urutan</span>
-        </div>
-        <div class="overflow-x-auto rounded-xl border border-white/10">
-          <table class="w-full text-left text-sm text-slate-300">
-            <thead class="bg-slate-900/80 text-xs uppercase text-indigo-300 tracking-wider border-b border-white/10">
-              <tr>
-                <th class="p-3.5 w-8 text-center">#</th>
-                <th class="p-3.5">Judul</th>
-                <th class="p-3.5">Kategori</th>
-                <th class="p-3.5">Arah Baca</th>
-                <th class="p-3.5">Deskripsi</th>
-                <th class="p-3.5 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="admin-table-body" class="divide-y divide-white/5"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+<!-- Opsi 1: Upload File -->
+<div class="md:col-span-2 p-5 rounded-xl border border-white/10 bg-white/[0.02] space-y-2.5">
+<label class="block text-xs text-indigo-300 font-semibold flex items-center gap-2"><i class="fa-solid fa-file-arrow-up text-indigo-400"></i> Opsi A: Unggah File Dokumen PDF</label>
+<input type="file" id="upload-file" accept="application/pdf" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gradient-to-r file:from-indigo-600 file:to-purple-600 file:text-white hover:file:opacity-90 cursor-pointer">
+</div>
 
-  </main>
+<!-- Opsi 2: Link GitHub / URL Eksternal -->
+<div class="md:col-span-2 p-5 rounded-xl border border-white/10 bg-white/[0.02] space-y-2.5">
+<label class="block text-xs text-indigo-300 font-semibold flex items-center gap-2"><i class="fa-brands fa-github text-indigo-400"></i> Opsi B: Atau Gunakan Direct Link GitHub / URL PDF Publik</label>
+<input type="url" id="upload-github-url" placeholder="Contoh: https://raw.githubusercontent.com/username/repo/main/buku.pdf" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
+<p class="text-[11px] text-indigo-300/70">Tips: Gunakan link "Raw" dari file PDF di repository GitHub Anda agar bisa diakses langsung.</p>
+</div>
 
-  <!-- MODAL LOGIN ADMIN -->
-  <div id="login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-xl p-4">
-    <div class="glass-panel p-8 rounded-2xl w-full max-w-md relative border border-white/20 shadow-2xl space-y-6">
-      <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
-      <div class="text-center">
-        <div class="w-14 h-14 bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3.5 text-xl shadow-lg shadow-indigo-600/40 border border-indigo-400/30">
-          <i class="fa-solid fa-lock"></i>
-        </div>
-        <h3 class="text-xl font-bold text-white">Cloudzone</h3>
-        <p class="text-xs text-indigo-300/70 mt-1">Masuk untuk mengelola flipbuku</p>
-      </div>
+<div class="md:col-span-2 flex justify-end pt-2">
+<button type="submit" id="btn-submit-upload" class="px-7 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-95 text-white font-medium text-sm shadow-xl shadow-indigo-600/30 transition border border-indigo-400/30">
+Simpan & Terbitkan
+</button>
+</div>
+</form>
+</div>
 
-      <form onsubmit="handleLogin(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs text-indigo-200 mb-1.5 font-medium">Email</label>
-          <input type="email" id="login-email" required class="w-full glass-input rounded-xl px-4 py-3 text-sm" placeholder="a**********70@gmail.com">
-        </div>
-        <div>
-          <label class="block text-xs text-indigo-200 mb-1.5 font-medium">Password</label>
-          <input type="password" id="login-password" required class="w-full glass-input rounded-xl px-4 py-3 text-sm" placeholder="••••••••">
-        </div>
-        <button type="submit" id="btn-login" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-95 text-white font-medium text-sm shadow-xl shadow-indigo-600/30 transition border border-indigo-400/30">
-          Masuk Cloudzone
-        </button>
-      </form>
-    </div>
-  </div>
+<div class="glass-panel p-6 sm:p-8 rounded-2xl space-y-5 pb-12">
+<div class="flex items-center justify-between">
+<h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2.5">
+<i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Koleksi Buku
+</h3>
+<span class="text-[11px] text-indigo-300/70 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full"><i class="fa-solid fa-grip-vertical mr-1"></i> Drag & Drop baris tabel untuk mengatur urutan</span>
+</div>
+<div class="overflow-x-auto rounded-xl border border-white/10">
+<table class="w-full text-left text-sm text-slate-300">
+<thead class="bg-slate-900/80 text-xs uppercase text-indigo-300 tracking-wider border-b border-white/10">
+<tr>
+<th class="p-3.5 w-8 text-center">#</th>
+<th class="p-3.5">Judul</th>
+<th class="p-3.5">Kategori</th>
+<th class="p-3.5">Arah Baca</th>
+<th class="p-3.5">Deskripsi</th>
+<th class="p-3.5 text-right">Aksi</th>
+</tr>
+</thead>
+<tbody id="admin-table-body" class="divide-y divide-white/5"></tbody>
+</table>
+</div>
+</div>
+</section>
 
-  <!-- JAVASCRIPT ENGINE -->
-  <script>
-    const SUPABASE_URL = 'https://prsgmirandndqomvwzxv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByc2dtaXJhbmRuZHFvbXZ3enh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMTE0MTEsImV4cCI6MjEwNTY4NzQxMX0.ox5Bt7Wc7yFDqzbWOLhSmCySEcJa2Ui2UljlVW2OpKA';
+</main>
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<!-- MODAL LOGIN ADMIN -->
+<div id="login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-xl p-4">
+<div class="glass-panel p-8 rounded-2xl w-full max-w-md relative border border-white/20 shadow-2xl space-y-6">
+<button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+<div class="text-center">
+<div class="w-14 h-14 bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3.5 text-xl shadow-lg shadow-indigo-600/40 border border-indigo-400/30">
+<i class="fa-solid fa-lock"></i>
+</div>
+<h3 class="text-xl font-bold text-white">Cloudzone</h3>
+<p class="text-xs text-indigo-300/70 mt-1">Masuk untuk mengelola flipbuku</p>
+</div>
 
-    let catalogData = [];
-    let pageFlipInstance = null;
-    let pdfDocInstance = null;
-    let currentBook = null;
-    let renderedPages = new Set();
-    let currentZoom = 1;
-    let currentUser = null;
-    let resizeTimer = null;
-    let currentPageIndex = 1;
-    let activeAdminDrag = null;
+<form onsubmit="handleLogin(event)" class="space-y-4">
+<div>
+<label class="block text-xs text-indigo-200 mb-1.5 font-medium">Email</label>
+<input type="email" id="login-email" required class="w-full glass-input rounded-xl px-4 py-3 text-sm" placeholder="a**********70@gmail.com">
+</div>
+<div>
+<label class="block text-xs text-indigo-200 mb-1.5 font-medium">Password</label>
+<input type="password" id="login-password" required class="w-full glass-input rounded-xl px-4 py-3 text-sm" placeholder="••••••••">
+</div>
+<button type="submit" id="btn-login" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-95 text-white font-medium text-sm shadow-xl shadow-indigo-600/30 transition border border-indigo-400/30">
+Masuk Cloudzone
+</button>
+</form>
+</div>
+</div>
 
-    const pdfCache = new Map();
+<!-- JAVASCRIPT ENGINE -->
+<script>
+const SUPABASE_URL = 'https://prsgmirandndqomvwzxv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByc2dtaXJhbmRuZHFvbXZ3enh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMTE0MTEsImV4cCI6MjEwNTY4NzQxMX0.ox5Bt7Wc7yFDqzbWOLhSmCySEcJa2Ui2UljlVW2OpKA';
 
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      currentUser = session?.user || null;
-      updateAdminNavUI();
-    });
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    document.addEventListener("DOMContentLoaded", () => {
-      loadCatalogFromSupabase();
+let catalogData = [];
+let pageFlipInstance = null;
+let pdfDocInstance = null;
+let currentBook = null;
+let renderedPages = new Set();
+let currentZoom = 1;
+let currentUser = null;
+let resizeTimer = null;
+let currentPageIndex = 1;
+let draggedRowIndex = null;
 
-      const sidebarEl = document.getElementById('thumbnail-sidebar');
-      if (sidebarEl) {
-        ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click'].forEach(evt => {
-          sidebarEl.addEventListener(evt, (e) => e.stopPropagation());
-        });
+const pdfCache = new Map();
+
+supabaseClient.auth.onAuthStateChange((event, session) => {
+currentUser = session?.user || null;
+updateAdminNavUI();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+loadCatalogFromSupabase();
+
+const sidebarEl = document.getElementById('thumbnail-sidebar');
+if (sidebarEl) {
+['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click'].forEach(evt => {
+sidebarEl.addEventListener(evt, (e) => e.stopPropagation());
+});
+}
+
+const thumbContainer = document.getElementById('thumbnail-container');
+if (thumbContainer) {
+thumbContainer.addEventListener('click', (e) => {
+e.stopPropagation();
+const item = e.target.closest('.thumb-item');
+if (item && item.getAttribute('data-page')) {
+const targetPage = parseInt(item.getAttribute('data-page'), 10);
+jumpToPage(targetPage);
+
+if (window.innerWidth <= 768 || window.innerHeight <= 500) {
+closeMobileSidebar();
+}
+}
+});
+}
+
+const bottomNavEl = document.querySelector('#view-reader > div:last-child');
+if (bottomNavEl) {
+['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click'].forEach(evt => {
+bottomNavEl.addEventListener(evt, (e) => e.stopPropagation());
+});
+}
+
+window.addEventListener('resize', handleResizeOrOrientation);
+window.addEventListener('orientationchange', () => {
+setTimeout(handleResizeOrOrientation, 300);
+});
+document.addEventListener('fullscreenchange', () => {
+if (document.getElementById('view-reader').classList.contains('flex')) {
+handleResizeOrOrientation();
+}
+});
+      document.addEventListener('dragend', clearAdminDragState);
+      document.addEventListener('drop', () => requestAnimationFrame(clearAdminDragState));
+
+setupReaderPanning();
+});
+
+function setupReaderPanning() {
+const viewport = document.getElementById('reader-viewport');
+if (!viewport) return;
+
+const activePointers = new Map();
+let dragStartX = 0;
+let dragStartY = 0;
+let scrollStartLeft = 0;
+let scrollStartTop = 0;
+let pinchStartDistance = 0;
+let pinchOccurred = false;
+
+const getPointerDistance = () => {
+const [first, second] = [...activePointers.values()];
+return Math.hypot(second.x - first.x, second.y - first.y);
+};
+
+viewport.addEventListener('pointerdown', (event) => {
+if (event.pointerType === 'touch') {
+activePointers.set(event.pointerId, {
+x: event.clientX,
+y: event.clientY,
+startX: event.clientX,
+startY: event.clientY
+});
+viewport.setPointerCapture(event.pointerId);
+
+if (activePointers.size === 2) {
+pinchOccurred = true;
+viewport.classList.remove('is-dragging');
+pinchStartDistance = getPointerDistance();
+event.preventDefault();
+event.stopPropagation();
+return;
+}
+if (activePointers.size > 1) return;
+}
+
+if (currentZoom <= 1) return;
+dragStartX = event.clientX;
+dragStartY = event.clientY;
+scrollStartLeft = viewport.scrollLeft;
+scrollStartTop = viewport.scrollTop;
+viewport.classList.add('is-dragging');
+if (event.pointerType !== 'touch') viewport.setPointerCapture(event.pointerId);
+});
+
+viewport.addEventListener('pointermove', (event) => {
+if (event.pointerType === 'touch' && activePointers.has(event.pointerId)) {
+const pointer = activePointers.get(event.pointerId);
+pointer.x = event.clientX;
+pointer.y = event.clientY;
+if (activePointers.size >= 2) {
+const nextDistance = getPointerDistance();
+if (pinchStartDistance > 0 && nextDistance > 0) {
+setZoom(currentZoom * nextDistance / pinchStartDistance, false);
+}
+pinchStartDistance = nextDistance;
+event.preventDefault();
+event.stopPropagation();
+return;
+}
+}
+
+if (!viewport.classList.contains('is-dragging')) return;
+viewport.scrollLeft = scrollStartLeft - (event.clientX - dragStartX);
+viewport.scrollTop = scrollStartTop - (event.clientY - dragStartY);
+});
+
+const stopDragging = (event) => {
+const pointer = activePointers.get(event?.pointerId);
+if (event?.type === 'pointerup' && event.pointerType === 'touch' && activePointers.size === 1 && !pinchOccurred && currentZoom <= 1 && pointer) {
+const deltaX = event.clientX - pointer.startX;
+const deltaY = event.clientY - pointer.startY;
+if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+const swipeForward = currentBook?.reading_direction === 'rtl' ? deltaX > 0 : deltaX < 0;
+swipeForward ? flipNextPage() : flipPreviousPage();
+}
+}
+
+if (event?.pointerId !== undefined) activePointers.delete(event.pointerId);
+if (activePointers.size < 2) pinchStartDistance = 0;
+viewport.classList.remove('is-dragging');
+
+if (event?.type === 'pointerup' && activePointers.size === 1 && currentZoom > 1) {
+const remainingPointer = activePointers.values().next().value;
+dragStartX = remainingPointer.x;
+dragStartY = remainingPointer.y;
+scrollStartLeft = viewport.scrollLeft;
+scrollStartTop = viewport.scrollTop;
+viewport.classList.add('is-dragging');
+}
+
+if (event?.pointerId !== undefined && viewport.hasPointerCapture(event.pointerId)) {
+viewport.releasePointerCapture(event.pointerId);
+}
+if (activePointers.size === 0) pinchOccurred = false;
+};
+
+viewport.addEventListener('pointerup', stopDragging);
+viewport.addEventListener('pointercancel', stopDragging);
+
+// PERBAIKAN 2: Zoom dengan roda mouse yang lebih mulus dan natural
+viewport.addEventListener('wheel', (event) => {
+if (event.ctrlKey || event.metaKey) {
+event.preventDefault();
+setZoom(currentZoom * Math.exp(-event.deltaY * 0.0015), false);
+return;
+}
+
+if (currentZoom <= 1) return;
+event.preventDefault();
+viewport.scrollLeft += event.deltaX;
+viewport.scrollTop += event.deltaY;
+}, { passive: false });
+}
+
+function handleResizeOrOrientation() {
+clearTimeout(resizeTimer);
+resizeTimer = setTimeout(async () => {
+syncThumbnailSidebarMode();
+if (pdfDocInstance && document.getElementById('view-reader').classList.contains('flex')) {
+await rebuildFlipbookDOM();
+if (currentZoom > 1) setZoom(currentZoom, false);
+}
+}, 250);
+}
+
+function isCompactReader() {
+return window.matchMedia('(max-width: 768px), (max-height: 500px)').matches;
+}
+
+function syncThumbnailSidebarMode() {
+const sidebar = document.getElementById('thumbnail-sidebar');
+if (!sidebar) return;
+
+if (isCompactReader()) {
+if (!sidebar.classList.contains('mobile-visible')) {
+sidebar.classList.add('mobile-hidden');
+}
+} else {
+sidebar.classList.remove('mobile-hidden', 'mobile-visible', 'desktop-hidden');
+}
+}
+
+async function loadCatalogFromSupabase() {
+const grid = document.getElementById('catalog-grid');
+grid.innerHTML = `<div class="col-span-full text-center py-12 text-indigo-300/70"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400"></i><p class="mt-2 text-sm">Mengambil koleksi flipbook...</p></div>`;
+
+const { data, error } = await supabaseClient
+.from('flipbooks')
+.select('*')
+.order('created_at', { ascending: false });
+
+if (error) {
+grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-400 text-sm">Gagal memuat data: ${error.message}</div>`;
+return;
+}
+
+catalogData = (data || []).sort((firstBook, secondBook) => {
+const firstOrder = firstBook.sort_order ?? Number.MAX_SAFE_INTEGER;
+const secondOrder = secondBook.sort_order ?? Number.MAX_SAFE_INTEGER;
+if (firstOrder !== secondOrder) return firstOrder - secondOrder;
+return new Date(secondBook.created_at || 0) - new Date(firstBook.created_at || 0);
+});
+populateCategoryDropdown();
+renderCatalogGrid(catalogData);
+}
+
+function renderCatalogGrid(items) {
+const grid = document.getElementById('catalog-grid');
+grid.innerHTML = '';
+
+if (items.length === 0) {
+grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500 text-sm">Tidak ada flipbook ditemukan.</div>`;
+return;
+}
+
+items.forEach(book => {
+const card = document.createElement('div');
+card.className = 'glass-card rounded-xl overflow-hidden flex flex-col justify-between cursor-pointer group shadow-sm';
+card.onclick = () => openReader(book);
+
+card.innerHTML = `
+         <div class="h-44 sm:h-48 bg-slate-900/85 flex items-center justify-center relative overflow-hidden group-hover:scale-[1.02] transition-transform duration-300">
+           <canvas id="cover-canvas-${book.id}" class="w-full h-full object-cover"></canvas>
+           <div id="cover-placeholder-${book.id}" class="absolute inset-0 flex items-center justify-center bg-slate-950/90">
+             <i class="fa-solid fa-circle-notch fa-spin text-indigo-400 text-xl"></i>
+           </div>
+           <span class="absolute top-2.5 left-2.5 text-[9px] uppercase tracking-wider bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded-full font-semibold backdrop-blur-md z-10 shadow-sm">${book.category || 'Umum'}</span>
+         </div>
+         <div class="p-3 flex-grow flex flex-col justify-between space-y-1.5">
+           <div>
+             <h3 class="font-bold text-white text-xs sm:text-sm group-hover:text-indigo-300 transition-colors line-clamp-1">${book.title}</h3>
+             <p class="text-[11px] text-indigo-200/60 line-clamp-1 mt-0.5 leading-snug">${book.description || 'Tidak ada deskripsi.'}</p>
+           </div>
+           <div class="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-indigo-400 font-medium">
+             <span>Buka Buku</span>
+             <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition-transform text-[10px]"></i>
+           </div>
+         </div>
+       `;
+grid.appendChild(card);
+
+loadBookCover(book.pdf_url, book.id);
+});
+}
+
+function normalizeReadingDirection(value) {
+return String(value || 'ltr').replaceAll("'", '').replaceAll('"', '').toLowerCase() === 'rtl'
+? 'rtl'
+: 'ltr';
+}
+
+async function loadBookCover(pdfUrl, bookId) {
+try {
+const loadingTask = pdfjsLib.getDocument(pdfUrl);
+const pdf = await loadingTask.promise;
+const page = await pdf.getPage(1);
+
+const canvas = document.getElementById(`cover-canvas-${bookId}`);
+const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
+if (!canvas) return;
+
+const viewport = page.getViewport({ scale: 0.35 });
+const context = canvas.getContext('2d');
+canvas.height = viewport.height;
+canvas.width = viewport.width;
+
+await page.render({ canvasContext: context, viewport: viewport }).promise;
+if (placeholder) placeholder.classList.add('hidden');
+} catch (e) {
+const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
+if (placeholder) {
+placeholder.innerHTML = `<i class="fa-solid fa-file-pdf text-4xl text-indigo-400/40"></i>`;
+}
+}
+}
+
+function populateCategoryDropdown() {
+const select = document.getElementById('category-filter');
+const categories = ['ALL', ...new Set(catalogData.map(b => b.category).filter(Boolean))];
+select.innerHTML = categories.map(c => `<option value="${c}">${c === 'ALL' ? 'Semua Kategori' : c}</option>`).join('');
+}
+
+function filterCatalog() {
+const query = document.getElementById('search-input').value.toLowerCase();
+const category = document.getElementById('category-filter').value;
+
+const filtered = catalogData.filter(book => {
+const matchQuery = book.title.toLowerCase().includes(query) || (book.description && book.description.toLowerCase().includes(query));
+const matchCategory = category === 'ALL' || book.category === category;
+return matchQuery && matchCategory;
+});
+
+renderCatalogGrid(filtered);
+}
+
+function switchView(viewName) {
+if (viewName !== 'reader' && document.fullscreenElement) {
+document.exitFullscreen().catch(() => {});
+}
+
+document.getElementById('view-catalog').classList.add('hidden');
+document.getElementById('view-reader').classList.add('hidden');
+document.getElementById('view-reader').classList.remove('flex');
+document.getElementById('view-admin').classList.add('hidden');
+
+if (viewName === 'catalog') {
+document.getElementById('view-catalog').classList.remove('hidden');
+} else if (viewName === 'reader') {
+document.getElementById('view-reader').classList.remove('hidden');
+document.getElementById('view-reader').classList.add('flex');
+} else if (viewName === 'admin') {
+if (!currentUser) {
+openAdminModal();
+document.getElementById('view-catalog').classList.remove('hidden');
+return;
+}
+document.getElementById('view-admin').classList.remove('hidden');
+renderAdminTable();
+}
+}
+
+async function openReader(book) {
+currentBook = { ...book, reading_direction: normalizeReadingDirection(book.reading_direction) };
+resetZoom();
+document.getElementById('reader-book-title').textContent = book.title;
+switchView('reader');
+document.getElementById('loading-spinner').classList.remove('hidden');
+document.getElementById('flipbook-wrapper').classList.add('hidden');
+
+try {
+if (pdfCache.has(book.id)) {
+pdfDocInstance = pdfCache.get(book.id);
+} else {
+const cachedPdfUrl = book.pdf_url.includes('?') ? `${book.pdf_url}&v=${book.id}` : `${book.pdf_url}?v=${book.id}`;
+const loadingTask = pdfjsLib.getDocument(cachedPdfUrl);
+pdfDocInstance = await loadingTask.promise;
+pdfCache.set(book.id, pdfDocInstance);
+}
+
+document.getElementById('page-count').innerText = pdfDocInstance.numPages;
+
+const savedPage = localStorage.getItem(`flipbuku_last_page_${book.id}`);
+if (savedPage) {
+currentPageIndex = parseInt(savedPage, 10);
+if (currentPageIndex > pdfDocInstance.numPages || currentPageIndex < 1) {
+currentPageIndex = 1;
+}
+} else {
+currentPageIndex = 1;
+}
+
+document.getElementById('page-num-input').value = currentPageIndex;
+
+await generateThumbnailsList();
+await rebuildFlipbookDOM();
+
+document.getElementById('loading-spinner').classList.add('hidden');
+document.getElementById('flipbook-wrapper').classList.remove('hidden');
+
+setTimeout(() => renderThumbnailsSequentially(), 100);
+
+} catch (err) {
+alert("Gagal memuat dokumen PDF: " + err.message);
+switchView('catalog');
+}
+}
+
+async function generateThumbnailsList() {
+const thumbContainer = document.getElementById('thumbnail-container');
+if (!thumbContainer) return;
+thumbContainer.innerHTML = '';
+
+for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
+const thumbDiv = document.createElement('div');
+thumbDiv.className = `thumb-item glass-card p-2 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === currentPageIndex ? 'active' : ''}`;
+thumbDiv.id = `thumb-page-${pageNum}`;
+thumbDiv.setAttribute('data-page', pageNum);
+
+const thumbCanvas = document.createElement('canvas');
+thumbCanvas.id = `thumb-canvas-${pageNum}`;
+thumbCanvas.className = "rounded-lg w-full h-auto bg-white shadow-md min-h-[50px]";
+
+const label = document.createElement('span');
+label.className = "text-[10px] text-indigo-200 font-semibold mt-1.5";
+label.innerText = pageNum;
+
+thumbDiv.appendChild(thumbCanvas);
+thumbDiv.appendChild(label);
+thumbContainer.appendChild(thumbDiv);
+}
+}
+
+async function rebuildFlipbookDOM() {
+if (!pdfDocInstance) return;
+
+const flipWrapper = document.getElementById('flipbook-wrapper');
+if (!flipWrapper) return;
+
+const wasHidden = flipWrapper.classList.contains('hidden');
+if (wasHidden) flipWrapper.classList.remove('hidden');
+
+if (pageFlipInstance) {
+try { pageFlipInstance.destroy(); } catch(e){}
+pageFlipInstance = null;
+}
+
+flipWrapper.innerHTML = '<div id="flipbook-container"></div>';
+const flipContainer = document.getElementById('flipbook-container');
+
+renderedPages.clear();
+
+const totalPages = pdfDocInstance.numPages;
+const isRtl = currentBook?.reading_direction === 'rtl';
+
+for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+const pageDiv = document.createElement('div');
+pageDiv.className = 'page-canvas-wrapper';
+pageDiv.setAttribute('data-page-num', pageNum);
+
+const canvas = document.createElement('canvas');
+canvas.id = `page-canvas-${pageNum}`;
+pageDiv.appendChild(canvas);
+flipContainer.appendChild(pageDiv);
+}
+
+const firstPage = await pdfDocInstance.getPage(1);
+const originalViewport = firstPage.getViewport({ scale: 1.0 });
+const aspectRatio = originalViewport.width / originalViewport.height;
+
+const viewportContainer = document.getElementById('reader-viewport');
+const isPortrait = window.innerWidth < window.innerHeight;
+const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
+const isFullscreen = document.fullscreenElement === document.getElementById('view-reader');
+const useSinglePage = !isFullscreen && (isPortrait || isMobile);
+
+const viewportRect = viewportContainer.getBoundingClientRect();
+const availWidth = viewportRect.width || viewportContainer.clientWidth || (window.innerWidth - 200);
+const availHeight = viewportRect.height || viewportContainer.clientHeight || (window.innerHeight - 100);
+const pageCountInView = useSinglePage ? 1 : 2;
+const horizontalPadding = useSinglePage ? 24 : 48;
+const verticalPadding = isMobile ? 16 : 48;
+const maxWidthByViewport = Math.max(150, (availWidth - horizontalPadding) / pageCountInView);
+const maxHeightByViewport = Math.max(120, availHeight - verticalPadding);
+
+let targetWidth = Math.min(maxWidthByViewport, maxHeightByViewport * aspectRatio);
+let targetHeight = targetWidth / aspectRatio;
+
+if (targetHeight > maxHeightByViewport) {
+targetHeight = maxHeightByViewport;
+targetWidth = targetHeight * aspectRatio;
+}
+
+targetWidth = Math.max(120, Math.round(targetWidth));
+targetHeight = Math.max(120, Math.round(targetHeight));
+
+pageFlipInstance = new St.PageFlip(flipContainer, {
+width: targetWidth,
+height: targetHeight,
+size: "fixed",
+minWidth: 120,
+maxWidth: 1000,
+minHeight: 120,
+maxHeight: 1200,
+maxShadowOpacity: 0.2,
+showCover: false,
+usePortrait: useSinglePage,
+useMouseEvents: false,
+mobileScrollSupport: false,
+flippingTime: 300,
+disableFlipAnimation: false
+});
+
+const pageElements = Array.from(flipContainer.querySelectorAll('.page-canvas-wrapper'));
+pageFlipInstance.loadFromHTML(isRtl ? pageElements.reverse() : pageElements);
+
+await renderPageIfNeeded(currentPageIndex);
+await renderPageIfNeeded(currentPageIndex + 1);
+
+if (isRtl) {
+pageFlipInstance.turnToPage(totalPages - currentPageIndex);
+} else if (currentPageIndex > 1) {
+pageFlipInstance.turnToPage(currentPageIndex - 1);
+}
+
+pageFlipInstance.on('flip', (e) => {
+currentPageIndex = isRtl ? totalPages - e.data : e.data + 1;
+document.getElementById('page-num-input').value = currentPageIndex;
+
+if (currentBook && currentBook.id) {
+localStorage.setItem(`flipbuku_last_page_${currentBook.id}`, currentPageIndex);
+}
+
+renderPageIfNeeded(currentPageIndex);
+renderPageIfNeeded(currentPageIndex + 1);
+renderPageIfNeeded(currentPageIndex + 2);
+renderPageIfNeeded(currentPageIndex - 1);
+
+document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('active'));
+const activeThumb = document.getElementById(`thumb-page-${currentPageIndex}`);
+if (activeThumb) {
+activeThumb.classList.add('active');
+activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+});
+
+if (wasHidden) flipWrapper.classList.add('hidden');
+}
+
+async function renderPageIfNeeded(pageNum) {
+if (!pdfDocInstance || pageNum < 1 || pageNum > pdfDocInstance.numPages || renderedPages.has(pageNum)) return;
+renderedPages.add(pageNum);
+
+const page = await pdfDocInstance.getPage(pageNum);
+const canvas = document.getElementById(`page-canvas-${pageNum}`);
+if (!canvas) return;
+
+const viewport = page.getViewport({ scale: 1.5 });
+const context = canvas.getContext('2d', { willReadFrequently: true });
+canvas.height = viewport.height;
+canvas.width = viewport.width;
+
+await page.render({ canvasContext: context, viewport: viewport }).promise;
+}
+
+async function renderThumbnailsSequentially() {
+if (!pdfDocInstance) return;
+for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
+try {
+const page = await pdfDocInstance.getPage(pageNum);
+const thumbCanvas = document.getElementById(`thumb-canvas-${pageNum}`);
+if (!thumbCanvas) continue;
+
+const thumbViewport = page.getViewport({ scale: 0.2 });
+const thumbContext = thumbCanvas.getContext('2d', { willReadFrequently: true });
+thumbCanvas.height = thumbViewport.height;
+thumbCanvas.width = thumbViewport.width;
+
+await page.render({ canvasContext: thumbContext, viewport: thumbViewport }).promise;
+} catch (err) {
+console.warn("Gagal render thumbnail:", pageNum, err);
+}
+}
+}
+
+function toggleThumbnailSidebar() {
+const sidebar = document.getElementById('thumbnail-sidebar');
+if (isCompactReader()) {
+if (sidebar.classList.contains('mobile-visible')) {
+closeMobileSidebar();
+} else {
+openMobileSidebar();
+}
+} else {
+sidebar.classList.toggle('desktop-hidden');
+}
+}
+
+function openMobileSidebar() {
+const sidebar = document.getElementById('thumbnail-sidebar');
+sidebar.classList.remove('mobile-hidden');
+sidebar.classList.add('mobile-visible');
+}
+
+function closeMobileSidebar() {
+const sidebar = document.getElementById('thumbnail-sidebar');
+sidebar.classList.remove('mobile-visible');
+sidebar.classList.add('mobile-hidden');
+}
+
+// PERBAIKAN 2: Fungsi Zoom yang lebih optimal, smooth, dan ramah pengguna
+function setZoom(zoom, smoothReset = true) {
+currentZoom = Math.min(Math.max(0.75, zoom), 3.0);
+const wrapper = document.getElementById('flipbook-wrapper');
+const viewport = document.getElementById('reader-viewport');
+const flipbook = document.getElementById('flipbook-container');
+
+viewport.classList.toggle('is-zoomed', currentZoom > 1);
+
+if (currentZoom > 1 && flipbook) {
+const baseWidth = flipbook.offsetWidth;
+const baseHeight = flipbook.offsetHeight;
+const scaledWidth = baseWidth * currentZoom;
+const scaledHeight = baseHeight * currentZoom;
+const offsetX = Math.max(0, (viewport.clientWidth - scaledWidth) / 2);
+const offsetY = Math.max(0, (viewport.clientHeight - scaledHeight) / 2);
+flipbook.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${currentZoom})`;
+wrapper.style.width = `${Math.max(viewport.clientWidth, scaledWidth)}px`;
+wrapper.style.height = `${Math.max(viewport.clientHeight, scaledHeight)}px`;
+const maxScrollLeft = viewport.scrollWidth - viewport.clientWidth;
+const maxScrollTop = viewport.scrollHeight - viewport.clientHeight;
+viewport.scrollTo({
+left: Math.min(maxScrollLeft, Math.max(0, (scaledWidth - viewport.clientWidth) / 2)),
+top: Math.min(maxScrollTop, Math.max(0, (scaledHeight - viewport.clientHeight) / 2)),
+behavior: smoothReset ? 'smooth' : 'instant'
+});
+} else {
+if (flipbook) flipbook.style.transform = currentZoom === 1 ? 'none' : `scale(${currentZoom})`;
+wrapper.style.width = '';
+wrapper.style.height = '';
+viewport.scrollTo({ left: 0, top: 0, behavior: smoothReset ? 'smooth' : 'instant' });
+}
+}
+
+function zoomFlipbook(amount) {
+setZoom(currentZoom + amount);
+}
+
+function resetZoom() {
+currentZoom = 1;
+const wrapper = document.getElementById('flipbook-wrapper');
+const viewport = document.getElementById('reader-viewport');
+const flipbook = document.getElementById('flipbook-container');
+if (flipbook) flipbook.style.transform = 'none';
+wrapper.style.width = '';
+wrapper.style.height = '';
+viewport.classList.remove('is-zoomed', 'is-dragging');
+viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+}
+
+async function jumpToPage(val) {
+const target = parseInt(val, 10);
+if (pageFlipInstance && !isNaN(target) && target > 0 && target <= (pdfDocInstance?.numPages || 0)) {
+await renderPageIfNeeded(target);
+await renderPageIfNeeded(target + 1);
+const displayPage = currentBook?.reading_direction === 'rtl'
+? pdfDocInstance.numPages - target
+: target - 1;
+pageFlipInstance.turnToPage(displayPage);
+}
+}
+
+function flipPreviousPage() {
+if (!pageFlipInstance) return;
+currentBook?.reading_direction === 'rtl'
+? pageFlipInstance.flipNext()
+: pageFlipInstance.flipPrev();
+}
+
+function flipNextPage() {
+if (!pageFlipInstance) return;
+currentBook?.reading_direction === 'rtl'
+? pageFlipInstance.flipPrev()
+: pageFlipInstance.flipNext();
+}
+
+function toggleFullscreen() {
+const elem = document.getElementById('view-reader');
+if (!document.fullscreenElement) {
+elem.requestFullscreen().catch(err => alert(err.message));
+} else {
+document.exitFullscreen();
+}
+}
+
+function openAdminModalOrView() {
+if (currentUser) {
+switchView('admin');
+} else {
+openAdminModal();
+}
+}
+
+function openAdminModal() {
+document.getElementById('login-modal').classList.remove('hidden');
+}
+
+function closeAdminModal() {
+document.getElementById('login-modal').classList.add('hidden');
+}
+
+function updateAdminNavUI() {
+const btnText = document.getElementById('admin-btn-text');
+if (currentUser) {
+btnText.innerText = "Cloudzone";
+} else {
+btnText.innerText = "Cloudzone";
+}
+}
+
+async function handleLogin(e) {
+e.preventDefault();
+const email = document.getElementById('login-email').value;
+const password = document.getElementById('login-password').value;
+const btn = document.getElementById('btn-login');
+
+btn.disabled = true;
+btn.innerText = "Memproses...";
+
+const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+btn.disabled = false;
+btn.innerText = "Masuk Cloudzone";
+
+if (error) {
+alert("Login Gagal: " + error.message);
+} else {
+closeAdminModal();
+switchView('admin');
+}
+}
+
+async function logoutAdmin() {
+await supabaseClient.auth.signOut();
+switchView('catalog');
+}
+
+async function handleUpload(e) {
+e.preventDefault();
+
+if (!currentUser) {
+alert("Anda harus login sebagai Admin untuk mengunggah!");
+return;
+}
+
+const title = document.getElementById('upload-title').value;
+const category = document.getElementById('upload-category').value;
+const readingDirection = document.getElementById('upload-reading-direction').value;
+const desc = document.getElementById('upload-desc').value;
+
+const fileInput = document.getElementById('upload-file');
+const githubUrlInput = document.getElementById('upload-github-url').value.trim();
+const file = fileInput.files[0];
+
+if (!file && !githubUrlInput) {
+alert("Harap unggah file PDF atau masukkan Link GitHub / URL dokumen PDF!");
+return;
+}
+
+const btn = document.getElementById('btn-submit-upload');
+btn.disabled = true;
+btn.innerText = "Menyimpan Data...";
+
+try {
+let pdfUrl = githubUrlInput;
+
+if (file) {
+btn.innerText = "Mengunggah File ke Supabase...";
+const fileExt = file.name.split('.').pop();
+const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+const { data: storageData, error: storageError } = await supabaseClient.storage
+.from('pdf-files')
+.upload(fileName, file, { contentType: 'application/pdf' });
+
+if (storageError) throw storageError;
+
+const { data: urlData } = supabaseClient.storage
+.from('pdf-files')
+.getPublicUrl(fileName);
+
+pdfUrl = urlData.publicUrl;
+}
+
+const { error: dbError } = await supabaseClient
+.from('flipbooks')
+.insert([{ 
+title, 
+category, 
+description: desc, 
+pdf_url: pdfUrl, 
+reading_direction: normalizeReadingDirection(readingDirection) 
+}]);
+
+if (dbError) throw dbError;
+
+alert("Flipbook Berhasil Disimpan!");
+document.getElementById('upload-form').reset();
+
+pdfCache.clear();
+
+await loadCatalogFromSupabase();
+renderAdminTable();
+
+} catch (err) {
+alert("Gagal Menyimpan: " + err.message);
+} finally {
+btn.disabled = false;
+btn.innerText = "Simpan & Terbitkan";
+}
+}
+
+function renderAdminTable() {
+const tbody = document.getElementById('admin-table-body');
+tbody.innerHTML = '';
+
+if (catalogData.length === 0) {
+tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Belum ada data flipbook.</td></tr>`;
+return;
+}
+
+catalogData.forEach((item, index) => {
+const tr = document.createElement('tr');
+tr.className = 'border-b border-white/5 hover:bg-white/[0.03] transition-colors draggable-row';
+tr.draggable = true;
+tr.dataset.bookId = item.id;
+tr.dataset.index = index;
+
+tr.addEventListener('dragstart', handleDragStart);
+tr.addEventListener('dragover', handleDragOver);
+tr.addEventListener('dragleave', handleDragLeave);
+tr.addEventListener('drop', handleDrop);
+tr.addEventListener('dragend', handleDragEnd);
+
+tr.innerHTML = `
+         <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono cursor-grab active:cursor-grabbing" title="Geser untuk memindahkan"><i class="fa-solid fa-grip-vertical"></i></td>
+         <td class="p-3.5 font-medium text-white">${item.title}</td>
+         <td class="p-3.5"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">${item.category}</span></td>
+         <td class="p-3.5 text-xs text-indigo-200/70">${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'Kanan ke kiri' : 'Kiri ke kanan'}</td>
+         <td class="p-3.5 text-xs text-indigo-200/60">${item.description || '-'}</td>
+         <td class="p-3.5 text-right space-x-1">
+           <button onclick="editFlipbook('${item.id}')" class="text-indigo-300 hover:text-indigo-100 p-1.5 transition" title="Edit buku"><i class="fa-solid fa-pen"></i></button>
+           <button onclick="deleteFlipbook('${item.id}')" class="text-red-400 hover:text-red-300 p-1.5 transition" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+         </td>
+       `;
+tbody.appendChild(tr);
+});
+}
+
+function handleDragStart(e) {
+draggedRowIndex = parseInt(this.dataset.index, 10);
+      e.dataTransfer.setData('text/plain', this.dataset.bookId);
+      if (e.dataTransfer) {
+        e.dataTransfer.setData('text/plain', this.dataset.bookId);
+        e.dataTransfer.effectAllowed = 'move';
       }
+this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+}
 
-      const thumbContainer = document.getElementById('thumbnail-container');
-      if (thumbContainer) {
-        thumbContainer.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const item = e.target.closest('.thumb-item');
-          if (item && item.getAttribute('data-page')) {
-            const targetPage = parseInt(item.getAttribute('data-page'), 10);
-            jumpToPage(targetPage);
-            
-            if (window.innerWidth <= 768 || window.innerHeight <= 500) {
-              closeMobileSidebar();
-            }
-          }
-        });
+function handleDragOver(e) {
+e.preventDefault();
+e.dataTransfer.dropEffect = 'move';
+const targetRow = e.target.closest('tr');
+if (targetRow && !targetRow.classList.contains('dragging')) {
+targetRow.classList.add('drag-over');
+}
+}
+
+function handleDragLeave(e) {
+const targetRow = e.target.closest('tr');
+if (targetRow) {
+targetRow.classList.remove('drag-over');
+}
+}
+
+async function handleDrop(e) {
+e.preventDefault();
+const targetRow = e.target.closest('tr');
+      if (!targetRow) return;
+      if (!targetRow) {
+        clearAdminDragState();
+        return;
       }
+targetRow.classList.remove('drag-over');
 
-      const bottomNavEl = document.querySelector('#view-reader > div:last-child');
-      if (bottomNavEl) {
-        ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click'].forEach(evt => {
-          bottomNavEl.addEventListener(evt, (e) => e.stopPropagation());
-        });
-      }
-
-      window.addEventListener('resize', handleResizeOrOrientation);
-      window.addEventListener('orientationchange', () => {
-        setTimeout(handleResizeOrOrientation, 300);
-      });
-      document.addEventListener('fullscreenchange', () => {
-        if (document.getElementById('view-reader').classList.contains('flex')) {
-          handleResizeOrOrientation();
-        }
-      });
-      const adminTableBody = document.getElementById('admin-table-body');
-      adminTableBody.addEventListener('pointerdown', startAdminPointerDrag);
-      adminTableBody.addEventListener('keydown', handleAdminReorderKeydown);
-      document.addEventListener('pointermove', moveAdminPointerDrag);
-      document.addEventListener('pointerup', finishAdminPointerDrag);
-      document.addEventListener('pointercancel', cancelAdminPointerDrag);
-
-      setupReaderPanning();
-    });
-
-    function setupReaderPanning() {
-      const viewport = document.getElementById('reader-viewport');
-      if (!viewport) return;
-
-      const activePointers = new Map();
-      let dragStartX = 0;
-      let dragStartY = 0;
-      let scrollStartLeft = 0;
-      let scrollStartTop = 0;
-      let pinchStartDistance = 0;
-      let pinchOccurred = false;
-
-      const getPointerDistance = () => {
-        const [first, second] = [...activePointers.values()];
-        return Math.hypot(second.x - first.x, second.y - first.y);
-      };
-
-      viewport.addEventListener('pointerdown', (event) => {
-        if (event.pointerType === 'touch') {
-          activePointers.set(event.pointerId, {
-            x: event.clientX,
-            y: event.clientY,
-            startX: event.clientX,
-            startY: event.clientY
-          });
-          viewport.setPointerCapture(event.pointerId);
-
-          if (activePointers.size === 2) {
-            pinchOccurred = true;
-            viewport.classList.remove('is-dragging');
-            pinchStartDistance = getPointerDistance();
-            event.preventDefault();
-            event.stopPropagation();
-            return;
-          }
-          if (activePointers.size > 1) return;
-        }
-
-        if (currentZoom <= 1) return;
-        dragStartX = event.clientX;
-        dragStartY = event.clientY;
-        scrollStartLeft = viewport.scrollLeft;
-        scrollStartTop = viewport.scrollTop;
-        viewport.classList.add('is-dragging');
-        if (event.pointerType !== 'touch') viewport.setPointerCapture(event.pointerId);
-      });
-
-      viewport.addEventListener('pointermove', (event) => {
-        if (event.pointerType === 'touch' && activePointers.has(event.pointerId)) {
-          const pointer = activePointers.get(event.pointerId);
-          pointer.x = event.clientX;
-          pointer.y = event.clientY;
-          if (activePointers.size >= 2) {
-            const nextDistance = getPointerDistance();
-            if (pinchStartDistance > 0 && nextDistance > 0) {
-              setZoom(currentZoom * nextDistance / pinchStartDistance, false);
-            }
-            pinchStartDistance = nextDistance;
-            event.preventDefault();
-            event.stopPropagation();
-            return;
-          }
-        }
-
-        if (!viewport.classList.contains('is-dragging')) return;
-        viewport.scrollLeft = scrollStartLeft - (event.clientX - dragStartX);
-        viewport.scrollTop = scrollStartTop - (event.clientY - dragStartY);
-      });
-
-      const stopDragging = (event) => {
-        const pointer = activePointers.get(event?.pointerId);
-        if (event?.type === 'pointerup' && event.pointerType === 'touch' && activePointers.size === 1 && !pinchOccurred && currentZoom <= 1 && pointer) {
-          const deltaX = event.clientX - pointer.startX;
-          const deltaY = event.clientY - pointer.startY;
-          if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
-            const swipeForward = currentBook?.reading_direction === 'rtl' ? deltaX > 0 : deltaX < 0;
-            swipeForward ? flipNextPage() : flipPreviousPage();
-          }
-        }
-
-        if (event?.pointerId !== undefined) activePointers.delete(event.pointerId);
-        if (activePointers.size < 2) pinchStartDistance = 0;
-        viewport.classList.remove('is-dragging');
-
-        if (event?.type === 'pointerup' && activePointers.size === 1 && currentZoom > 1) {
-          const remainingPointer = activePointers.values().next().value;
-          dragStartX = remainingPointer.x;
-          dragStartY = remainingPointer.y;
-          scrollStartLeft = viewport.scrollLeft;
-          scrollStartTop = viewport.scrollTop;
-          viewport.classList.add('is-dragging');
-        }
-
-        if (event?.pointerId !== undefined && viewport.hasPointerCapture(event.pointerId)) {
-          viewport.releasePointerCapture(event.pointerId);
-        }
-        if (activePointers.size === 0) pinchOccurred = false;
-      };
-
-      viewport.addEventListener('pointerup', stopDragging);
-      viewport.addEventListener('pointercancel', stopDragging);
-      
-      // PERBAIKAN 2: Zoom dengan roda mouse yang lebih mulus dan natural
-      viewport.addEventListener('wheel', (event) => {
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault();
-          setZoom(currentZoom * Math.exp(-event.deltaY * 0.0015), false);
-          return;
-        }
-
-        if (currentZoom <= 1) return;
-        event.preventDefault();
-        viewport.scrollLeft += event.deltaX;
-        viewport.scrollTop += event.deltaY;
-      }, { passive: false });
-    }
-
-    function handleResizeOrOrientation() {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(async () => {
-        syncThumbnailSidebarMode();
-        if (pdfDocInstance && document.getElementById('view-reader').classList.contains('flex')) {
-          await rebuildFlipbookDOM();
-          if (currentZoom > 1) setZoom(currentZoom, false);
-        }
-      }, 250);
-    }
-
-    function isCompactReader() {
-      return window.matchMedia('(max-width: 768px), (max-height: 500px)').matches;
-    }
-
-    function syncThumbnailSidebarMode() {
-      const sidebar = document.getElementById('thumbnail-sidebar');
-      if (!sidebar) return;
-
-      if (isCompactReader()) {
-        if (!sidebar.classList.contains('mobile-visible')) {
-          sidebar.classList.add('mobile-hidden');
-        }
-      } else {
-        sidebar.classList.remove('mobile-hidden', 'mobile-visible', 'desktop-hidden');
-      }
-    }
-
-    async function loadCatalogFromSupabase() {
-      const grid = document.getElementById('catalog-grid');
-      grid.innerHTML = `<div class="col-span-full text-center py-12 text-indigo-300/70"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400"></i><p class="mt-2 text-sm">Mengambil koleksi flipbook...</p></div>`;
-
-      const { data, error } = await supabaseClient
-        .from('flipbooks')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-400 text-sm">Gagal memuat data: ${error.message}</div>`;
+const sourceIndex = draggedRowIndex;
+const droppedRowIndex = parseInt(targetRow.dataset.index, 10);
+      if (isNaN(sourceIndex) || isNaN(droppedRowIndex) || sourceIndex === droppedRowIndex) return;
+      if (isNaN(sourceIndex) || isNaN(droppedRowIndex) || sourceIndex === droppedRowIndex) {
+        clearAdminDragState();
         return;
       }
 
-      catalogData = (data || []).sort((firstBook, secondBook) => {
-        const firstOrder = firstBook.sort_order ?? Number.MAX_SAFE_INTEGER;
-        const secondOrder = secondBook.sort_order ?? Number.MAX_SAFE_INTEGER;
-        if (firstOrder !== secondOrder) return firstOrder - secondOrder;
-        return new Date(secondBook.created_at || 0) - new Date(firstBook.created_at || 0);
-      });
-      populateCategoryDropdown();
-      renderCatalogGrid(catalogData);
-    }
-
-    function renderCatalogGrid(items) {
-      const grid = document.getElementById('catalog-grid');
-      grid.innerHTML = '';
-
-      if (items.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500 text-sm">Tidak ada flipbook ditemukan.</div>`;
-        return;
-      }
-
-      items.forEach(book => {
-        const card = document.createElement('div');
-        card.className = 'glass-card rounded-xl overflow-hidden flex flex-col justify-between cursor-pointer group shadow-sm';
-        card.onclick = () => openReader(book);
-
-        card.innerHTML = `
-          <div class="h-44 sm:h-48 bg-slate-900/85 flex items-center justify-center relative overflow-hidden group-hover:scale-[1.02] transition-transform duration-300">
-            <canvas id="cover-canvas-${book.id}" class="w-full h-full object-cover"></canvas>
-            <div id="cover-placeholder-${book.id}" class="absolute inset-0 flex items-center justify-center bg-slate-950/90">
-              <i class="fa-solid fa-circle-notch fa-spin text-indigo-400 text-xl"></i>
-            </div>
-            <span class="absolute top-2.5 left-2.5 text-[9px] uppercase tracking-wider bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded-full font-semibold backdrop-blur-md z-10 shadow-sm">${book.category || 'Umum'}</span>
-          </div>
-          <div class="p-3 flex-grow flex flex-col justify-between space-y-1.5">
-            <div>
-              <h3 class="font-bold text-white text-xs sm:text-sm group-hover:text-indigo-300 transition-colors line-clamp-1">${book.title}</h3>
-              <p class="text-[11px] text-indigo-200/60 line-clamp-1 mt-0.5 leading-snug">${book.description || 'Tidak ada deskripsi.'}</p>
-            </div>
-            <div class="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-indigo-400 font-medium">
-              <span>Buka Buku</span>
-              <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition-transform text-[10px]"></i>
-            </div>
-          </div>
-        `;
-        grid.appendChild(card);
-
-        loadBookCover(book.pdf_url, book.id);
-      });
-    }
-
-    function normalizeReadingDirection(value) {
-      return String(value || 'ltr').replaceAll("'", '').replaceAll('"', '').toLowerCase() === 'rtl'
-        ? 'rtl'
-        : 'ltr';
-    }
-
-    async function loadBookCover(pdfUrl, bookId) {
-      try {
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
-        const pdf = await loadingTask.promise;
-        const page = await pdf.getPage(1);
-
-        const canvas = document.getElementById(`cover-canvas-${bookId}`);
-        const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
-        if (!canvas) return;
-
-        const viewport = page.getViewport({ scale: 0.35 });
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        await page.render({ canvasContext: context, viewport: viewport }).promise;
-        if (placeholder) placeholder.classList.add('hidden');
-      } catch (e) {
-        const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
-        if (placeholder) {
-          placeholder.innerHTML = `<i class="fa-solid fa-file-pdf text-4xl text-indigo-400/40"></i>`;
-        }
-      }
-    }
-
-    function populateCategoryDropdown() {
-      const select = document.getElementById('category-filter');
-      const categories = ['ALL', ...new Set(catalogData.map(b => b.category).filter(Boolean))];
-      select.innerHTML = categories.map(c => `<option value="${c}">${c === 'ALL' ? 'Semua Kategori' : c}</option>`).join('');
-    }
-
-    function filterCatalog() {
-      const query = document.getElementById('search-input').value.toLowerCase();
-      const category = document.getElementById('category-filter').value;
-
-      const filtered = catalogData.filter(book => {
-        const matchQuery = book.title.toLowerCase().includes(query) || (book.description && book.description.toLowerCase().includes(query));
-        const matchCategory = category === 'ALL' || book.category === category;
-        return matchQuery && matchCategory;
-      });
-
-      renderCatalogGrid(filtered);
-    }
-
-    function switchView(viewName) {
-      if (viewName !== 'reader' && document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-      }
-
-      document.getElementById('view-catalog').classList.add('hidden');
-      document.getElementById('view-reader').classList.add('hidden');
-      document.getElementById('view-reader').classList.remove('flex');
-      document.getElementById('view-admin').classList.add('hidden');
-
-      if (viewName === 'catalog') {
-        document.getElementById('view-catalog').classList.remove('hidden');
-      } else if (viewName === 'reader') {
-        document.getElementById('view-reader').classList.remove('hidden');
-        document.getElementById('view-reader').classList.add('flex');
-      } else if (viewName === 'admin') {
-        if (!currentUser) {
-          openAdminModal();
-          document.getElementById('view-catalog').classList.remove('hidden');
-          return;
-        }
-        document.getElementById('view-admin').classList.remove('hidden');
-        renderAdminTable();
-      }
-    }
-
-    async function openReader(book) {
-      currentBook = { ...book, reading_direction: normalizeReadingDirection(book.reading_direction) };
-      resetZoom();
-      document.getElementById('reader-book-title').textContent = book.title;
-      switchView('reader');
-      document.getElementById('loading-spinner').classList.remove('hidden');
-      document.getElementById('flipbook-wrapper').classList.add('hidden');
-
-      try {
-        if (pdfCache.has(book.id)) {
-          pdfDocInstance = pdfCache.get(book.id);
-        } else {
-          const cachedPdfUrl = book.pdf_url.includes('?') ? `${book.pdf_url}&v=${book.id}` : `${book.pdf_url}?v=${book.id}`;
-          const loadingTask = pdfjsLib.getDocument(cachedPdfUrl);
-          pdfDocInstance = await loadingTask.promise;
-          pdfCache.set(book.id, pdfDocInstance);
-        }
-
-        document.getElementById('page-count').innerText = pdfDocInstance.numPages;
-
-        const savedPage = localStorage.getItem(`flipbuku_last_page_${book.id}`);
-        if (savedPage) {
-          currentPageIndex = parseInt(savedPage, 10);
-          if (currentPageIndex > pdfDocInstance.numPages || currentPageIndex < 1) {
-            currentPageIndex = 1;
-          }
-        } else {
-          currentPageIndex = 1;
-        }
-
-        document.getElementById('page-num-input').value = currentPageIndex;
-
-        await generateThumbnailsList();
-        await rebuildFlipbookDOM();
-
-        document.getElementById('loading-spinner').classList.add('hidden');
-        document.getElementById('flipbook-wrapper').classList.remove('hidden');
-
-        setTimeout(() => renderThumbnailsSequentially(), 100);
-
-      } catch (err) {
-        alert("Gagal memuat dokumen PDF: " + err.message);
-        switchView('catalog');
-      }
-    }
-
-    async function generateThumbnailsList() {
-      const thumbContainer = document.getElementById('thumbnail-container');
-      if (!thumbContainer) return;
-      thumbContainer.innerHTML = '';
-
-      for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
-        const thumbDiv = document.createElement('div');
-        thumbDiv.className = `thumb-item glass-card p-2 rounded-xl border border-white/10 hover:border-indigo-400 transition flex flex-col items-center justify-center ${pageNum === currentPageIndex ? 'active' : ''}`;
-        thumbDiv.id = `thumb-page-${pageNum}`;
-        thumbDiv.setAttribute('data-page', pageNum);
-        
-        const thumbCanvas = document.createElement('canvas');
-        thumbCanvas.id = `thumb-canvas-${pageNum}`;
-        thumbCanvas.className = "rounded-lg w-full h-auto bg-white shadow-md min-h-[50px]";
-
-        const label = document.createElement('span');
-        label.className = "text-[10px] text-indigo-200 font-semibold mt-1.5";
-        label.innerText = pageNum;
-
-        thumbDiv.appendChild(thumbCanvas);
-        thumbDiv.appendChild(label);
-        thumbContainer.appendChild(thumbDiv);
-      }
-    }
-
-    async function rebuildFlipbookDOM() {
-      if (!pdfDocInstance) return;
-
-      const flipWrapper = document.getElementById('flipbook-wrapper');
-      if (!flipWrapper) return;
-
-      const wasHidden = flipWrapper.classList.contains('hidden');
-      if (wasHidden) flipWrapper.classList.remove('hidden');
-
-      if (pageFlipInstance) {
-        try { pageFlipInstance.destroy(); } catch(e){}
-        pageFlipInstance = null;
-      }
-
-      flipWrapper.innerHTML = '<div id="flipbook-container"></div>';
-      const flipContainer = document.getElementById('flipbook-container');
-
-      renderedPages.clear();
-
-      const totalPages = pdfDocInstance.numPages;
-      const isRtl = currentBook?.reading_direction === 'rtl';
-
-      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-        const pageDiv = document.createElement('div');
-        pageDiv.className = 'page-canvas-wrapper';
-        pageDiv.setAttribute('data-page-num', pageNum);
-
-        const canvas = document.createElement('canvas');
-        canvas.id = `page-canvas-${pageNum}`;
-        pageDiv.appendChild(canvas);
-        flipContainer.appendChild(pageDiv);
-      }
-
-      const firstPage = await pdfDocInstance.getPage(1);
-      const originalViewport = firstPage.getViewport({ scale: 1.0 });
-      const aspectRatio = originalViewport.width / originalViewport.height;
-
-      const viewportContainer = document.getElementById('reader-viewport');
-      const isPortrait = window.innerWidth < window.innerHeight;
-      const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
-      const isFullscreen = document.fullscreenElement === document.getElementById('view-reader');
-      const useSinglePage = !isFullscreen && (isPortrait || isMobile);
-
-      const viewportRect = viewportContainer.getBoundingClientRect();
-      const availWidth = viewportRect.width || viewportContainer.clientWidth || (window.innerWidth - 200);
-      const availHeight = viewportRect.height || viewportContainer.clientHeight || (window.innerHeight - 100);
-      const pageCountInView = useSinglePage ? 1 : 2;
-      const horizontalPadding = useSinglePage ? 24 : 48;
-      const verticalPadding = isMobile ? 16 : 48;
-      const maxWidthByViewport = Math.max(150, (availWidth - horizontalPadding) / pageCountInView);
-      const maxHeightByViewport = Math.max(120, availHeight - verticalPadding);
-
-      let targetWidth = Math.min(maxWidthByViewport, maxHeightByViewport * aspectRatio);
-      let targetHeight = targetWidth / aspectRatio;
-
-      if (targetHeight > maxHeightByViewport) {
-        targetHeight = maxHeightByViewport;
-        targetWidth = targetHeight * aspectRatio;
-      }
-
-      targetWidth = Math.max(120, Math.round(targetWidth));
-      targetHeight = Math.max(120, Math.round(targetHeight));
-
-      pageFlipInstance = new St.PageFlip(flipContainer, {
-        width: targetWidth,
-        height: targetHeight,
-        size: "fixed",
-        minWidth: 120,
-        maxWidth: 1000,
-        minHeight: 120,
-        maxHeight: 1200,
-        maxShadowOpacity: 0.2,
-        showCover: false,
-        usePortrait: useSinglePage,
-        useMouseEvents: false,
-        mobileScrollSupport: false,
-        flippingTime: 300,
-        disableFlipAnimation: false
-      });
-
-      const pageElements = Array.from(flipContainer.querySelectorAll('.page-canvas-wrapper'));
-      pageFlipInstance.loadFromHTML(isRtl ? pageElements.reverse() : pageElements);
-
-      await renderPageIfNeeded(currentPageIndex);
-      await renderPageIfNeeded(currentPageIndex + 1);
-
-      if (isRtl) {
-        pageFlipInstance.turnToPage(totalPages - currentPageIndex);
-      } else if (currentPageIndex > 1) {
-        pageFlipInstance.turnToPage(currentPageIndex - 1);
-      }
-
-      pageFlipInstance.on('flip', (e) => {
-        currentPageIndex = isRtl ? totalPages - e.data : e.data + 1;
-        document.getElementById('page-num-input').value = currentPageIndex;
-        
-        if (currentBook && currentBook.id) {
-          localStorage.setItem(`flipbuku_last_page_${currentBook.id}`, currentPageIndex);
-        }
-
-        renderPageIfNeeded(currentPageIndex);
-        renderPageIfNeeded(currentPageIndex + 1);
-        renderPageIfNeeded(currentPageIndex + 2);
-        renderPageIfNeeded(currentPageIndex - 1);
-
-        document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('active'));
-        const activeThumb = document.getElementById(`thumb-page-${currentPageIndex}`);
-        if (activeThumb) {
-          activeThumb.classList.add('active');
-          activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-      });
-
-      if (wasHidden) flipWrapper.classList.add('hidden');
-    }
-
-    async function renderPageIfNeeded(pageNum) {
-      if (!pdfDocInstance || pageNum < 1 || pageNum > pdfDocInstance.numPages || renderedPages.has(pageNum)) return;
-      renderedPages.add(pageNum);
-
-      const page = await pdfDocInstance.getPage(pageNum);
-      const canvas = document.getElementById(`page-canvas-${pageNum}`);
-      if (!canvas) return;
-
-      const viewport = page.getViewport({ scale: 1.5 });
-      const context = canvas.getContext('2d', { willReadFrequently: true });
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      await page.render({ canvasContext: context, viewport: viewport }).promise;
-    }
-
-    async function renderThumbnailsSequentially() {
-      if (!pdfDocInstance) return;
-      for (let pageNum = 1; pageNum <= pdfDocInstance.numPages; pageNum++) {
-        try {
-          const page = await pdfDocInstance.getPage(pageNum);
-          const thumbCanvas = document.getElementById(`thumb-canvas-${pageNum}`);
-          if (!thumbCanvas) continue;
-
-          const thumbViewport = page.getViewport({ scale: 0.2 });
-          const thumbContext = thumbCanvas.getContext('2d', { willReadFrequently: true });
-          thumbCanvas.height = thumbViewport.height;
-          thumbCanvas.width = thumbViewport.width;
-
-          await page.render({ canvasContext: thumbContext, viewport: thumbViewport }).promise;
-        } catch (err) {
-          console.warn("Gagal render thumbnail:", pageNum, err);
-        }
-      }
-    }
-
-    function toggleThumbnailSidebar() {
-      const sidebar = document.getElementById('thumbnail-sidebar');
-      if (isCompactReader()) {
-        if (sidebar.classList.contains('mobile-visible')) {
-          closeMobileSidebar();
-        } else {
-          openMobileSidebar();
-        }
-      } else {
-        sidebar.classList.toggle('desktop-hidden');
-      }
-    }
-
-    function openMobileSidebar() {
-      const sidebar = document.getElementById('thumbnail-sidebar');
-      sidebar.classList.remove('mobile-hidden');
-      sidebar.classList.add('mobile-visible');
-    }
-
-    function closeMobileSidebar() {
-      const sidebar = document.getElementById('thumbnail-sidebar');
-      sidebar.classList.remove('mobile-visible');
-      sidebar.classList.add('mobile-hidden');
-    }
-
-    // PERBAIKAN 2: Fungsi Zoom yang lebih optimal, smooth, dan ramah pengguna
-    function setZoom(zoom, smoothReset = true) {
-      currentZoom = Math.min(Math.max(0.75, zoom), 3.0);
-      const wrapper = document.getElementById('flipbook-wrapper');
-      const viewport = document.getElementById('reader-viewport');
-      const flipbook = document.getElementById('flipbook-container');
-
-      viewport.classList.toggle('is-zoomed', currentZoom > 1);
-
-      if (currentZoom > 1 && flipbook) {
-        const baseWidth = flipbook.offsetWidth;
-        const baseHeight = flipbook.offsetHeight;
-        const scaledWidth = baseWidth * currentZoom;
-        const scaledHeight = baseHeight * currentZoom;
-        const offsetX = Math.max(0, (viewport.clientWidth - scaledWidth) / 2);
-        const offsetY = Math.max(0, (viewport.clientHeight - scaledHeight) / 2);
-        flipbook.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${currentZoom})`;
-        wrapper.style.width = `${Math.max(viewport.clientWidth, scaledWidth)}px`;
-        wrapper.style.height = `${Math.max(viewport.clientHeight, scaledHeight)}px`;
-        const maxScrollLeft = viewport.scrollWidth - viewport.clientWidth;
-        const maxScrollTop = viewport.scrollHeight - viewport.clientHeight;
-        viewport.scrollTo({
-          left: Math.min(maxScrollLeft, Math.max(0, (scaledWidth - viewport.clientWidth) / 2)),
-          top: Math.min(maxScrollTop, Math.max(0, (scaledHeight - viewport.clientHeight) / 2)),
-          behavior: smoothReset ? 'smooth' : 'instant'
-        });
-      } else {
-        if (flipbook) flipbook.style.transform = currentZoom === 1 ? 'none' : `scale(${currentZoom})`;
-        wrapper.style.width = '';
-        wrapper.style.height = '';
-        viewport.scrollTo({ left: 0, top: 0, behavior: smoothReset ? 'smooth' : 'instant' });
-      }
-    }
-
-    function zoomFlipbook(amount) {
-      setZoom(currentZoom + amount);
-    }
-
-    function resetZoom() {
-      currentZoom = 1;
-      const wrapper = document.getElementById('flipbook-wrapper');
-      const viewport = document.getElementById('reader-viewport');
-      const flipbook = document.getElementById('flipbook-container');
-      if (flipbook) flipbook.style.transform = 'none';
-      wrapper.style.width = '';
-      wrapper.style.height = '';
-      viewport.classList.remove('is-zoomed', 'is-dragging');
-      viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
-    }
-
-    async function jumpToPage(val) {
-      const target = parseInt(val, 10);
-      if (pageFlipInstance && !isNaN(target) && target > 0 && target <= (pdfDocInstance?.numPages || 0)) {
-        await renderPageIfNeeded(target);
-        await renderPageIfNeeded(target + 1);
-        const displayPage = currentBook?.reading_direction === 'rtl'
-          ? pdfDocInstance.numPages - target
-          : target - 1;
-        pageFlipInstance.turnToPage(displayPage);
-      }
-    }
-
-    function flipPreviousPage() {
-      if (!pageFlipInstance) return;
-      currentBook?.reading_direction === 'rtl'
-        ? pageFlipInstance.flipNext()
-        : pageFlipInstance.flipPrev();
-    }
-
-    function flipNextPage() {
-      if (!pageFlipInstance) return;
-      currentBook?.reading_direction === 'rtl'
-        ? pageFlipInstance.flipPrev()
-        : pageFlipInstance.flipNext();
-    }
-
-    function toggleFullscreen() {
-      const elem = document.getElementById('view-reader');
-      if (!document.fullscreenElement) {
-        elem.requestFullscreen().catch(err => alert(err.message));
-      } else {
-        document.exitFullscreen();
-      }
-    }
-
-    function openAdminModalOrView() {
-      if (currentUser) {
-        switchView('admin');
-      } else {
-        openAdminModal();
-      }
-    }
-
-    function openAdminModal() {
-      document.getElementById('login-modal').classList.remove('hidden');
-    }
-
-    function closeAdminModal() {
-      document.getElementById('login-modal').classList.add('hidden');
-    }
-
-    function updateAdminNavUI() {
-      const btnText = document.getElementById('admin-btn-text');
-      if (currentUser) {
-        btnText.innerText = "Cloudzone";
-      } else {
-        btnText.innerText = "Cloudzone";
-      }
-    }
-
-    async function handleLogin(e) {
-      e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      const btn = document.getElementById('btn-login');
-
-      btn.disabled = true;
-      btn.innerText = "Memproses...";
-
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-      btn.disabled = false;
-      btn.innerText = "Masuk Cloudzone";
-
-      if (error) {
-        alert("Login Gagal: " + error.message);
-      } else {
-        closeAdminModal();
-        switchView('admin');
-      }
-    }
-
-    async function logoutAdmin() {
-      await supabaseClient.auth.signOut();
-      switchView('catalog');
-    }
-
-    async function handleUpload(e) {
-      e.preventDefault();
-
-      if (!currentUser) {
-        alert("Anda harus login sebagai Admin untuk mengunggah!");
-        return;
-      }
-
-      const title = document.getElementById('upload-title').value;
-      const category = document.getElementById('upload-category').value;
-      const readingDirection = document.getElementById('upload-reading-direction').value;
-      const desc = document.getElementById('upload-desc').value;
-      
-      const fileInput = document.getElementById('upload-file');
-      const githubUrlInput = document.getElementById('upload-github-url').value.trim();
-      const file = fileInput.files[0];
-
-      if (!file && !githubUrlInput) {
-        alert("Harap unggah file PDF atau masukkan Link GitHub / URL dokumen PDF!");
-        return;
-      }
-
-      const btn = document.getElementById('btn-submit-upload');
-      btn.disabled = true;
-      btn.innerText = "Menyimpan Data...";
-
-      try {
-        let pdfUrl = githubUrlInput;
-
-        if (file) {
-          btn.innerText = "Mengunggah File ke Supabase...";
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-          const { data: storageData, error: storageError } = await supabaseClient.storage
-            .from('pdf-files')
-            .upload(fileName, file, { contentType: 'application/pdf' });
-
-          if (storageError) throw storageError;
-
-          const { data: urlData } = supabaseClient.storage
-            .from('pdf-files')
-            .getPublicUrl(fileName);
-
-          pdfUrl = urlData.publicUrl;
-        }
-
-        const { error: dbError } = await supabaseClient
-          .from('flipbooks')
-          .insert([{ 
-            title, 
-            category, 
-            description: desc, 
-            pdf_url: pdfUrl, 
-            reading_direction: normalizeReadingDirection(readingDirection) 
-          }]);
-
-        if (dbError) throw dbError;
-
-        alert("Flipbook Berhasil Disimpan!");
-        document.getElementById('upload-form').reset();
-        
-        pdfCache.clear();
-
-        await loadCatalogFromSupabase();
-        renderAdminTable();
-
-      } catch (err) {
-        alert("Gagal Menyimpan: " + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Simpan & Terbitkan";
-      }
-    }
-
-    function renderAdminTable() {
-      const tbody = document.getElementById('admin-table-body');
-      tbody.innerHTML = '';
-
-      if (catalogData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Belum ada data flipbook.</td></tr>`;
-        return;
-      }
-
-      catalogData.forEach((item, index) => {
-        const tr = document.createElement('tr');
-        tr.className = 'border-b border-white/5 hover:bg-white/[0.03] transition-colors draggable-row';
-        tr.dataset.bookId = item.id;
-        tr.dataset.index = index;
-
-        tr.innerHTML = `
-          <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono">
-            <button type="button" class="drag-handle rounded p-1 hover:text-indigo-200" aria-label="Ubah posisi ${escapeHtml(item.title)}" title="Ubah posisi buku"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>
-          </td>
-          <td class="p-3.5 font-medium text-white">${item.title}</td>
-          <td class="p-3.5"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">${item.category}</span></td>
-          <td class="p-3.5 text-xs text-indigo-200/70">${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'Kanan ke kiri' : 'Kiri ke kanan'}</td>
-          <td class="p-3.5 text-xs text-indigo-200/60">${item.description || '-'}</td>
-          <td class="p-3.5 text-right space-x-1">
-            <button onclick="editFlipbook('${item.id}')" class="text-indigo-300 hover:text-indigo-100 p-1.5 transition" title="Edit buku"><i class="fa-solid fa-pen"></i></button>
-            <button onclick="deleteFlipbook('${item.id}')" class="text-red-400 hover:text-red-300 p-1.5 transition" title="Hapus"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function startAdminPointerDrag(event) {
-      const row = event.target.closest('tr.draggable-row');
-      const handle = event.target.closest('.drag-handle');
-      if (!row || event.button !== 0 || (event.target.closest('button, input, select, textarea, a') && !handle)) return;
-
-      activeAdminDrag = {
-        pointerId: event.pointerId,
-        sourceIndex: Number(row.dataset.index),
-        targetIndex: Number(row.dataset.index),
-        captureTarget: handle || row,
-        row
-      };
-      row.classList.add('dragging');
-      activeAdminDrag.captureTarget.setPointerCapture(event.pointerId);
-      event.preventDefault();
-    }
-
-    function moveAdminPointerDrag(event) {
-      if (!activeAdminDrag || event.pointerId !== activeAdminDrag.pointerId) return;
-      const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('#admin-table-body tr.draggable-row');
-      document.querySelectorAll('#admin-table-body .drag-over').forEach(row => row.classList.remove('drag-over'));
-      if (targetRow) {
-        activeAdminDrag.targetIndex = Number(targetRow.dataset.index);
-        if (targetRow !== activeAdminDrag.row) targetRow.classList.add('drag-over');
-      }
-      event.preventDefault();
-    }
-
-    function finishAdminPointerDrag(event) {
-      if (!activeAdminDrag || event.pointerId !== activeAdminDrag.pointerId) return;
-      const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('#admin-table-body tr.draggable-row');
-      const sourceIndex = activeAdminDrag.sourceIndex;
-      const targetIndex = targetRow ? Number(targetRow.dataset.index) : activeAdminDrag.targetIndex;
-      const captureTarget = activeAdminDrag.captureTarget;
-      activeAdminDrag = null;
-      clearAdminDragClasses();
-      if (captureTarget.hasPointerCapture(event.pointerId)) captureTarget.releasePointerCapture(event.pointerId);
-      if (Number.isInteger(sourceIndex) && Number.isInteger(targetIndex) && sourceIndex !== targetIndex) {
-        moveBookToIndex(sourceIndex, targetIndex);
-      }
-    }
-
-    function cancelAdminPointerDrag(event) {
-      if (!activeAdminDrag || event.pointerId !== activeAdminDrag.pointerId) return;
-      const captureTarget = activeAdminDrag.captureTarget;
-      activeAdminDrag = null;
-      clearAdminDragClasses();
-      if (captureTarget.hasPointerCapture(event.pointerId)) captureTarget.releasePointerCapture(event.pointerId);
-    }
-
-    function handleAdminReorderKeydown(event) {
-      const handle = event.target.closest('.drag-handle');
-      if (!handle || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
-      event.preventDefault();
-      const row = handle.closest('tr');
-      const sourceIndex = Number(row.dataset.index);
-      const targetIndex = sourceIndex + (event.key === 'ArrowUp' ? -1 : 1);
-      if (targetIndex < 0 || targetIndex >= catalogData.length) return;
-      const bookId = row.dataset.bookId;
-      moveBookToIndex(sourceIndex, targetIndex);
-      requestAnimationFrame(() => {
-        [...document.querySelectorAll('#admin-table-body tr')]
-          .find(candidate => candidate.dataset.bookId === bookId)
-          ?.querySelector('.drag-handle')?.focus();
-      });
-    }
-
-    function moveBookToIndex(sourceIndex, targetIndex) {
-      if (sourceIndex < 0 || targetIndex < 0 || sourceIndex >= catalogData.length || targetIndex >= catalogData.length) return;
+      const previousOrder = [...catalogData];
       const previousOrder = catalogData.map(book => ({ ...book }));
-      const [movedBook] = catalogData.splice(sourceIndex, 1);
-      catalogData.splice(targetIndex, 0, movedBook);
-      catalogData.forEach((book, index) => { book.sort_order = index; });
-      renderAdminTable();
-      persistCatalogOrder(previousOrder);
-    }
+const movedItem = catalogData.splice(sourceIndex, 1)[0];
+catalogData.splice(droppedRowIndex, 0, movedItem);
+catalogData.forEach((book, index) => { book.sort_order = index; });
+draggedRowIndex = null;
 
-    function clearAdminDragClasses() {
+renderAdminTable();
+      clearAdminDragState();
+
+const updates = catalogData.map(book => supabaseClient
+.from('flipbooks')
+.update({ sort_order: book.sort_order })
+.eq('id', book.id));
+const results = await Promise.all(updates);
+const error = results.find(result => result.error)?.error;
+if (error) {
+catalogData = previousOrder;
+renderAdminTable();
+alert('Gagal menyimpan urutan baru ke database: ' + error.message);
+}
+}
+
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+      document.querySelectorAll('#admin-table-body tr').forEach(row => {
+        row.classList.remove('drag-over');
+      });
+    function clearAdminDragState() {
+draggedRowIndex = null;
       document.querySelectorAll('#admin-table-body .dragging, #admin-table-body .drag-over').forEach(row => {
         row.classList.remove('dragging', 'drag-over');
       });
     }
 
-    async function persistCatalogOrder(previousOrder) {
-      try {
-        const updates = catalogData.map(book => supabaseClient
-          .from('flipbooks')
-          .update({ sort_order: book.sort_order })
-          .eq('id', book.id));
-        const results = await Promise.all(updates);
-        const error = results.find(result => result.error)?.error;
-        if (error) throw error;
-      } catch (error) {
-        catalogData = previousOrder;
-        renderAdminTable();
-        alert('Gagal menyimpan urutan baru: ' + error.message);
-      }
-    }
+    function handleDragEnd(e) {
+      clearAdminDragState();
+}
 
-    function editFlipbook(id) {
-      const item = catalogData.find(book => String(book.id) === String(id));
-      const row = document.querySelector(`#admin-table-body tr[data-book-id="${id}"]`);
-      if (!item || !row) return;
+function editFlipbook(id) {
+const item = catalogData.find(book => String(book.id) === String(id));
+const row = document.querySelector(`#admin-table-body tr[data-book-id="${id}"]`);
+if (!item || !row) return;
 
-      row.innerHTML = `
-        <td class="p-3.5 text-center text-xs text-indigo-300/40"><i class="fa-solid fa-grip-vertical"></i></td>
-        <td class="p-3.5"><input id="edit-title-${id}" value="${escapeHtml(item.title || '')}" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm"></td>
-        <td class="p-3.5"><input id="edit-category-${id}" value="${escapeHtml(item.category || '')}" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm"></td>
-        <td class="p-3.5"><select id="edit-direction-${id}" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm bg-slate-900"><option value="ltr" ${normalizeReadingDirection(item.reading_direction) !== 'rtl' ? 'selected' : ''}>Kiri ke kanan</option><option value="rtl" ${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'selected' : ''}>Kanan ke kiri</option></select></td>
-        <td class="p-3.5"><input id="edit-description-${id}" value="${escapeHtml(item.description || '')}" placeholder="Deskripsi" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm"></td>
-        <td class="p-3.5 text-right whitespace-nowrap">
-          <button onclick="saveFlipbook('${id}')" class="text-emerald-300 hover:text-emerald-200 p-1.5 transition"><i class="fa-solid fa-check"></i> Simpan</button>
-          <button onclick="renderAdminTable()" class="text-slate-300 hover:text-white p-1.5 transition"><i class="fa-solid fa-xmark"></i> Batal</button>
-        </td>
-      `;
-    }
+row.innerHTML = `
+       <td class="p-3.5 text-center text-xs text-indigo-300/40"><i class="fa-solid fa-grip-vertical"></i></td>
+       <td class="p-3.5"><input id="edit-title-${id}" value="${escapeHtml(item.title || '')}" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm"></td>
+       <td class="p-3.5"><input id="edit-category-${id}" value="${escapeHtml(item.category || '')}" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm"></td>
+       <td class="p-3.5"><select id="edit-direction-${id}" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm bg-slate-900"><option value="ltr" ${normalizeReadingDirection(item.reading_direction) !== 'rtl' ? 'selected' : ''}>Kiri ke kanan</option><option value="rtl" ${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'selected' : ''}>Kanan ke kiri</option></select></td>
+       <td class="p-3.5"><input id="edit-description-${id}" value="${escapeHtml(item.description || '')}" placeholder="Deskripsi" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-sm"></td>
+       <td class="p-3.5 text-right whitespace-nowrap">
+         <button onclick="saveFlipbook('${id}')" class="text-emerald-300 hover:text-emerald-200 p-1.5 transition"><i class="fa-solid fa-check"></i> Simpan</button>
+         <button onclick="renderAdminTable()" class="text-slate-300 hover:text-white p-1.5 transition"><i class="fa-solid fa-xmark"></i> Batal</button>
+       </td>
+     `;
+}
 
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('"', '&quot;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;');
-    }
+function escapeHtml(value) {
+return String(value)
+.replaceAll('&', '&amp;')
+.replaceAll('"', '&quot;')
+.replaceAll('<', '&lt;')
+.replaceAll('>', '&gt;');
+}
 
-    async function saveFlipbook(id) {
-      const title = document.getElementById(`edit-title-${id}`)?.value.trim();
-      const category = document.getElementById(`edit-category-${id}`)?.value.trim();
-      const reading_direction = document.getElementById(`edit-direction-${id}`)?.value || 'ltr';
-      const description = document.getElementById(`edit-description-${id}`)?.value.trim();
+async function saveFlipbook(id) {
+const title = document.getElementById(`edit-title-${id}`)?.value.trim();
+const category = document.getElementById(`edit-category-${id}`)?.value.trim();
+const reading_direction = document.getElementById(`edit-direction-${id}`)?.value || 'ltr';
+const description = document.getElementById(`edit-description-${id}`)?.value.trim();
 
-      if (!title || !category) {
-        alert('Nama buku dan kategori wajib diisi.');
-        return;
-      }
+if (!title || !category) {
+alert('Nama buku dan kategori wajib diisi.');
+return;
+}
 
-      const { data: updatedRows, error } = await supabaseClient
-        .from('flipbooks')
-        .update({ title, category, description, reading_direction })
-        .eq('id', id)
-        .select('id, title, category, description, reading_direction');
+const { data: updatedRows, error } = await supabaseClient
+.from('flipbooks')
+.update({ title, category, description, reading_direction })
+.eq('id', id)
+.select('id, title, category, description, reading_direction');
 
-      if (error) {
-        alert('Gagal menyimpan perubahan: ' + error.message);
-        return;
-      }
+if (error) {
+alert('Gagal menyimpan perubahan: ' + error.message);
+return;
+}
 
-      if (!updatedRows || updatedRows.length === 0) {
-        alert('Tidak ada data yang diperbarui. Periksa policy UPDATE/SELECT RLS pada tabel flipbooks.');
-        return;
-      }
+if (!updatedRows || updatedRows.length === 0) {
+alert('Tidak ada data yang diperbarui. Periksa policy UPDATE/SELECT RLS pada tabel flipbooks.');
+return;
+}
 
-      const itemIndex = catalogData.findIndex(book => String(book.id) === String(id));
-      if (itemIndex >= 0) {
-        catalogData[itemIndex] = {
-          ...catalogData[itemIndex],
-          ...updatedRows[0]
-        };
-      }
-      renderAdminTable();
-      renderCatalogGrid(catalogData);
-      pdfCache.delete(id);
-      await loadCatalogFromSupabase();
-      renderAdminTable();
-    }
+const itemIndex = catalogData.findIndex(book => String(book.id) === String(id));
+if (itemIndex >= 0) {
+catalogData[itemIndex] = {
+...catalogData[itemIndex],
+...updatedRows[0]
+};
+}
+renderAdminTable();
+renderCatalogGrid(catalogData);
+pdfCache.delete(id);
+await loadCatalogFromSupabase();
+renderAdminTable();
+}
 
-    async function deleteFlipbook(id) {
-      if (!confirm("Apakah Anda yakin ingin menghapus flipbook ini?")) return;
+async function deleteFlipbook(id) {
+if (!confirm("Apakah Anda yakin ingin menghapus flipbook ini?")) return;
 
-      const { error } = await supabaseClient
-        .from('flipbooks')
-        .delete()
-        .eq('id', id);
+const { error } = await supabaseClient
+.from('flipbooks')
+.delete()
+.eq('id', id);
 
-      if (error) {
-        alert("Gagal menghapus: " + error.message);
-      } else {
-        pdfCache.delete(id);
-        loadCatalogFromSupabase();
-        renderAdminTable();
-      }
-    }
-  </script>
+if (error) {
+alert("Gagal menghapus: " + error.message);
+} else {
+pdfCache.delete(id);
+loadCatalogFromSupabase();
+renderAdminTable();
+}
+}
+</script>
 </body>
 </html>
