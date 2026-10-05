@@ -994,8 +994,7 @@
       const viewportContainer = document.getElementById('reader-viewport');
       const isPortrait = window.innerWidth < window.innerHeight;
       const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
-      const isFullscreen = document.fullscreenElement === document.getElementById('view-reader');
-      const useSinglePage = isPortrait || isMobile || isFullscreen;
+      const useSinglePage = isPortrait || isMobile;
 
       const viewportRect = viewportContainer.getBoundingClientRect();
       const availWidth = viewportRect.width || viewportContainer.clientWidth || (window.innerWidth - 200);
@@ -1026,7 +1025,7 @@
         minHeight: 120,
         maxHeight: 1200,
         maxShadowOpacity: 0.2,
-        showCover: true,
+        showCover: false,
         usePortrait: useSinglePage,
         useMouseEvents: false,
         mobileScrollSupport: false,
