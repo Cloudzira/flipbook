@@ -324,6 +324,13 @@
 
     <!-- VIEW 2: FLIPBOOK READER -->
     <section id="view-reader" class="hidden flex-col min-h-0 h-full w-full relative bg-slate-950 overflow-hidden">
+      <div class="flex justify-center flex-shrink-0 px-4 pt-2">
+        <div class="glass-panel max-w-full rounded-full px-4 py-2 flex items-center gap-2 pointer-events-none">
+          <i class="fa-solid fa-book-open text-indigo-300" aria-hidden="true"></i>
+          <span id="reader-book-title" class="text-sm font-semibold text-white truncate"></span>
+        </div>
+      </div>
+
       <div class="flex-1 min-h-0 flex w-full overflow-hidden relative">
         
         <!-- Sidebar Thumbnails -->
@@ -851,6 +858,7 @@
 
     async function openReader(book) {
       currentBook = { ...book, reading_direction: normalizeReadingDirection(book.reading_direction) };
+      document.getElementById('reader-book-title').textContent = book.title;
       switchView('reader');
       document.getElementById('loading-spinner').classList.remove('hidden');
       document.getElementById('flipbook-wrapper').classList.add('hidden');
