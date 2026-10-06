@@ -777,7 +777,38 @@ notify pgrst, 'reload schema';</pre>
       setupAdminRowSorting();
 
       setupReaderPanning();
+      setupKeyboardNavigation();
     });
+
+    // Navigasi keyboard (laptop/desktop): panah kiri/kanan membuka halaman di sisi tersebut,
+    // mengikuti arah baca buku. LTR: kanan = maju, kiri = mundur. RTL: kiri = maju, kanan = mundur.
+    function setupKeyboardNavigation() {
+      let lastKeyFlip = 0;
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+
+        const reader = document.getElementById('view-reader');
+        if (!reader || !reader.classList.contains('flex') || !pageFlipInstance) return;
+
+        // Jangan ganggu pengetikan (mis. kolom nomor halaman) atau dialog login
+        const target = event.target;
+        if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+        if (!document.getElementById('login-modal').classList.contains('hidden')) return;
+
+        // Saat di-zoom, panah dibiarkan untuk menggeser tampilan (sama seperti swipe yang nonaktif saat zoom)
+        if (currentZoom > 1) return;
+
+        event.preventDefault();
+        const now = performance.now();
+        if (now - lastKeyFlip < 250) return;   // cegah flip bertumpuk saat tombol ditahan
+        lastKeyFlip = now;
+
+        const isRtl = currentBook?.reading_direction === 'rtl';
+        const goForward = isRtl ? event.key === 'ArrowLeft' : event.key === 'ArrowRight';
+        goForward ? flipNextPage() : flipPreviousPage();
+      });
+    }
 
     function setupReaderPanning() {
       const viewport = document.getElementById('reader-viewport');
