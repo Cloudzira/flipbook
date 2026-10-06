@@ -478,7 +478,7 @@
           <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2.5">
             <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Koleksi Buku
           </h3>
-          <span class="text-[11px] text-indigo-300/70 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full"><i class="fa-solid fa-grip-vertical mr-1"></i> Drag & Drop baris tabel untuk mengatur urutan</span>
+          <span id="sort-order-hint" class="text-[11px] text-indigo-300/70 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full"><i class="fa-solid fa-grip-vertical mr-1"></i> Drag & Drop baris tabel untuk mengatur urutan</span>
         </div>
         <div class="overflow-x-auto rounded-xl border border-white/10">
           <table class="w-full text-left text-sm text-slate-300">
@@ -545,6 +545,7 @@
     let resizeTimer = null;
     let currentPageIndex = 1;
     let draggedRowIndex = null;
+    let sortOrderAvailable = true;
 
     const pdfCache = new Map();
 
@@ -750,10 +751,19 @@
       const grid = document.getElementById('catalog-grid');
       grid.innerHTML = `<div class="col-span-full text-center py-12 text-indigo-300/70"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400"></i><p class="mt-2 text-sm">Mengambil koleksi flipbook...</p></div>`;
 
-      const { data, error } = await supabaseClient
+      let { data, error } = await supabaseClient
         .from('flipbooks')
-        .select('*')
+        .select('*, sort_order')
         .order('created_at', { ascending: false });
+
+      sortOrderAvailable = !error;
+      if (error && /sort_order/i.test(error.message)) {
+        sortOrderAvailable = false;
+        ({ data, error } = await supabaseClient
+          .from('flipbooks')
+          .select('*')
+          .order('created_at', { ascending: false }));
+      }
 
       if (error) {
         grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-400 text-sm">Gagal memuat data: ${error.message}</div>`;
@@ -1347,6 +1357,10 @@
     function renderAdminTable() {
       const tbody = document.getElementById('admin-table-body');
       tbody.innerHTML = '';
+      const sortOrderHint = document.getElementById('sort-order-hint');
+      if (sortOrderHint && !sortOrderAvailable) {
+        sortOrderHint.textContent = 'Pengurutan manual nonaktif: kolom sort_order belum tersedia';
+      }
 
       if (catalogData.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Belum ada data flipbook.</td></tr>`;
@@ -1355,19 +1369,21 @@
 
       catalogData.forEach((item, index) => {
         const tr = document.createElement('tr');
-        tr.className = 'border-b border-white/5 hover:bg-white/[0.03] transition-colors draggable-row';
-        tr.draggable = true;
+        tr.className = `border-b border-white/5 hover:bg-white/[0.03] transition-colors ${sortOrderAvailable ? 'draggable-row' : ''}`;
+        tr.draggable = sortOrderAvailable;
         tr.dataset.bookId = item.id;
         tr.dataset.index = index;
 
-        tr.addEventListener('dragstart', handleDragStart);
-        tr.addEventListener('dragover', handleDragOver);
-        tr.addEventListener('dragleave', handleDragLeave);
-        tr.addEventListener('drop', handleDrop);
-        tr.addEventListener('dragend', handleDragEnd);
+        if (sortOrderAvailable) {
+          tr.addEventListener('dragstart', handleDragStart);
+          tr.addEventListener('dragover', handleDragOver);
+          tr.addEventListener('dragleave', handleDragLeave);
+          tr.addEventListener('drop', handleDrop);
+          tr.addEventListener('dragend', handleDragEnd);
+        }
 
         tr.innerHTML = `
-          <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono cursor-grab active:cursor-grabbing" title="Geser untuk memindahkan"><i class="fa-solid fa-grip-vertical"></i></td>
+          <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono ${sortOrderAvailable ? 'cursor-grab active:cursor-grabbing' : ''}" title="${sortOrderAvailable ? 'Geser untuk memindahkan' : ''}">${sortOrderAvailable ? '<i class="fa-solid fa-grip-vertical"></i>' : index + 1}</td>
           <td class="p-3.5 font-medium text-white">${item.title}</td>
           <td class="p-3.5"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">${item.category}</span></td>
           <td class="p-3.5 text-xs text-indigo-200/70">${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'Kanan ke kiri' : 'Kiri ke kanan'}</td>
