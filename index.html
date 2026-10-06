@@ -996,8 +996,7 @@
       const viewportContainer = document.getElementById('reader-viewport');
       const isPortrait = window.innerWidth < window.innerHeight;
       const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
-      const isFullscreen = document.fullscreenElement === document.getElementById('view-reader');
-      const useSinglePage = !isFullscreen && (isPortrait || isMobile);
+      const useSinglePage = isPortrait || isMobile;
 
       const viewportRect = viewportContainer.getBoundingClientRect();
       const availWidth = viewportRect.width || viewportContainer.clientWidth || (window.innerWidth - 200);
