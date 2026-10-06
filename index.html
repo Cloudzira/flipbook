@@ -487,6 +487,22 @@
           </h3>
           <span id="sort-order-hint" class="text-[11px] text-indigo-300/70 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full"><i class="fa-solid fa-grip-vertical mr-1"></i> Tahan &amp; geser ikon ⋮⋮ untuk mengatur urutan</span>
         </div>
+        <div id="sort-order-warning" class="hidden rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 text-xs text-amber-100 space-y-2">
+          <p class="font-semibold text-amber-300"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Urutan buku belum tersimpan ke database</p>
+          <p>Kolom <code>sort_order</code> belum ada di tabel <code>flipbooks</code>, sehingga urutan hanya tersimpan di browser ini dan <b>tidak terlihat oleh pengunjung/perangkat lain</b>. Jalankan SQL berikut di Supabase (SQL Editor), lalu muat ulang halaman ini:</p>
+          <pre id="sort-order-sql" class="bg-slate-950/70 border border-white/10 rounded-lg p-3 overflow-x-auto text-[11px] text-indigo-100 whitespace-pre">alter table public.flipbooks add column if not exists sort_order integer;
+
+update public.flipbooks f
+set sort_order = r.rn - 1
+from (
+  select id, row_number() over (order by created_at desc) as rn
+  from public.flipbooks
+) r
+where f.id = r.id;
+
+notify pgrst, 'reload schema';</pre>
+          <button type="button" onclick="copySortOrderSql(this)" class="text-amber-200 hover:text-white border border-amber-400/30 rounded-lg px-3 py-1.5 transition"><i class="fa-regular fa-copy mr-1"></i> Salin SQL</button>
+        </div>
         <div class="overflow-x-auto rounded-xl border border-white/10">
           <table class="w-full text-left text-sm text-slate-300">
             <thead class="bg-slate-900/80 text-xs uppercase text-indigo-300 tracking-wider border-b border-white/10">
@@ -546,7 +562,6 @@
     let pageFlipInstance = null;
     let pdfDocInstance = null;
     let currentBook = null;
-    let renderedPages = new Set();
     let currentZoom = 1;
     let currentUser = null;
     let resizeTimer = null;
@@ -985,7 +1000,38 @@
       }
     }
 
-    async function rebuildFlipbookDOM() {
+    // Rebuild dijalankan satu per satu. Fullscreen memicu beberapa event resize beruntun;
+    // tanpa antrean, beberapa rebuild saling menimpa DOM/canvas yang sama.
+    let rebuildLoop = null;
+    let rebuildQueued = false;
+    function rebuildFlipbookDOM() {
+      if (rebuildLoop) {
+        rebuildQueued = true;
+        return rebuildLoop;
+      }
+      rebuildLoop = (async () => {
+        try {
+          let runs = 0;
+          do {
+            rebuildQueued = false;
+            await rebuildFlipbookDOMOnce();
+            runs++;
+          } while (rebuildQueued && runs < 4);
+        } finally {
+          rebuildLoop = null;
+        }
+      })();
+      return rebuildLoop;
+    }
+
+    // Halaman yang mungkin tampil: kiri/kanan bergantung arah baca (RTL: halaman kanan = current-1)
+    async function renderPagesAround(pageNum) {
+      for (const n of [pageNum, pageNum - 1, pageNum + 1, pageNum + 2]) {
+        await renderPageIfNeeded(n);
+      }
+    }
+
+    async function rebuildFlipbookDOMOnce() {
       if (!pdfDocInstance) return;
 
       const flipWrapper = document.getElementById('flipbook-wrapper');
@@ -1001,8 +1047,6 @@
 
       flipWrapper.innerHTML = '<div id="flipbook-container"></div>';
       const flipContainer = document.getElementById('flipbook-container');
-
-      renderedPages.clear();
 
       const totalPages = pdfDocInstance.numPages;
       const isRtl = currentBook?.reading_direction === 'rtl';
@@ -1028,6 +1072,7 @@
       const useSinglePage = isPortrait || isMobile;
 
       const viewportRect = viewportContainer.getBoundingClientRect();
+      const startSize = { w: viewportRect.width, h: viewportRect.height };
       const availWidth = viewportRect.width || viewportContainer.clientWidth || (window.innerWidth - 200);
       const availHeight = viewportRect.height || viewportContainer.clientHeight || (window.innerHeight - 100);
       const pageCountInView = useSinglePage ? 1 : 2;
@@ -1067,8 +1112,7 @@
       const pageElements = Array.from(flipContainer.querySelectorAll('.page-canvas-wrapper'));
       pageFlipInstance.loadFromHTML(isRtl ? pageElements.reverse() : pageElements);
 
-      await renderPageIfNeeded(currentPageIndex);
-      await renderPageIfNeeded(currentPageIndex + 1);
+      await renderPagesAround(currentPageIndex);
 
       if (isRtl) {
         pageFlipInstance.turnToPage(totalPages - currentPageIndex);
@@ -1084,10 +1128,7 @@
           localStorage.setItem(`flipbuku_last_page_${currentBook.id}`, currentPageIndex);
         }
 
-        renderPageIfNeeded(currentPageIndex);
-        renderPageIfNeeded(currentPageIndex + 1);
-        renderPageIfNeeded(currentPageIndex + 2);
-        renderPageIfNeeded(currentPageIndex - 1);
+        renderPagesAround(currentPageIndex);
 
         document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('active'));
         const activeThumb = document.getElementById(`thumb-page-${currentPageIndex}`);
@@ -1098,22 +1139,42 @@
       });
 
       if (wasHidden) flipWrapper.classList.add('hidden');
+
+      // Ukuran viewport berubah saat proses (mis. transisi fullscreen belum selesai) -> ulangi dengan ukuran akhir
+      const endRect = viewportContainer.getBoundingClientRect();
+      if (Math.abs(endRect.width - startSize.w) > 2 || Math.abs(endRect.height - startSize.h) > 2) {
+        rebuildQueued = true;
+      }
     }
 
+    // Status render disimpan di elemen canvas itu sendiri (bukan Set global), jadi canvas baru
+    // hasil rebuild otomatis dianggap belum dirender. Gagal render tidak menandai halaman 'selesai'.
     async function renderPageIfNeeded(pageNum) {
-      if (!pdfDocInstance || pageNum < 1 || pageNum > pdfDocInstance.numPages || renderedPages.has(pageNum)) return;
-      renderedPages.add(pageNum);
+      const doc = pdfDocInstance;
+      if (!doc || pageNum < 1 || pageNum > doc.numPages) return;
 
-      const page = await pdfDocInstance.getPage(pageNum);
       const canvas = document.getElementById(`page-canvas-${pageNum}`);
-      if (!canvas) return;
+      if (!canvas || canvas.dataset.state === 'done' || canvas.dataset.state === 'rendering') return;
+      canvas.dataset.state = 'rendering';
 
-      const viewport = page.getViewport({ scale: 1.5 });
-      const context = canvas.getContext('2d', { willReadFrequently: true });
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+      try {
+        const page = await doc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 });
 
-      await page.render({ canvasContext: context, viewport: viewport }).promise;
+        // Render ke canvas sementara lalu salin sekaligus: tidak ada kondisi setengah jadi/putih di layar
+        const buffer = document.createElement('canvas');
+        buffer.width = viewport.width;
+        buffer.height = viewport.height;
+        await page.render({ canvasContext: buffer.getContext('2d', { willReadFrequently: true }), viewport }).promise;
+
+        canvas.width = buffer.width;
+        canvas.height = buffer.height;
+        canvas.getContext('2d').drawImage(buffer, 0, 0);
+        canvas.dataset.state = 'done';
+      } catch (err) {
+        delete canvas.dataset.state; // boleh dicoba lagi pada pemanggilan berikutnya
+        console.warn('Gagal render halaman', pageNum, err);
+      }
     }
 
     async function renderThumbnailsSequentially() {
@@ -1214,8 +1275,7 @@
     async function jumpToPage(val) {
       const target = parseInt(val, 10);
       if (pageFlipInstance && !isNaN(target) && target > 0 && target <= (pdfDocInstance?.numPages || 0)) {
-        await renderPageIfNeeded(target);
-        await renderPageIfNeeded(target + 1);
+        await renderPagesAround(target);
         const displayPage = currentBook?.reading_direction === 'rtl'
           ? pdfDocInstance.numPages - target
           : target - 1;
@@ -1373,7 +1433,15 @@
       }
     }
 
+    function copySortOrderSql(btn) {
+      const text = document.getElementById('sort-order-sql').innerText;
+      const done = () => { btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Tersalin'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => alert('Salin manual dari kotak SQL.'));
+      else alert('Salin manual dari kotak SQL.');
+    }
+
     function renderAdminTable() {
+      document.getElementById('sort-order-warning')?.classList.toggle('hidden', sortOrderAvailable);
       const tbody = document.getElementById('admin-table-body');
       tbody.innerHTML = '';
 
