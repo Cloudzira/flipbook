@@ -1369,10 +1369,6 @@
     function renderAdminTable() {
       const tbody = document.getElementById('admin-table-body');
       tbody.innerHTML = '';
-      const sortOrderHint = document.getElementById('sort-order-hint');
-      if (sortOrderHint && !sortOrderAvailable) {
-        sortOrderHint.textContent = 'Urutan disimpan di browser ini saja; tambahkan kolom sort_order agar tersimpan di database';
-      }
 
       if (catalogData.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Belum ada data flipbook.</td></tr>`;
