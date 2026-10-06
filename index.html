@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>FlipbuKu</title>
 
+  <!-- Buka koneksi ke CDN lebih awal -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" href="favicon.png">
@@ -12,14 +17,7 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- PDF.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  </script>
-
-  <!-- StPageFlip CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+  <!-- PDF.js & StPageFlip tidak dimuat di awal: keduanya di-load sesuai kebutuhan (lihat ensurePdfJs / ensurePageFlip) -->
 
   <!-- Supabase JS Client v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -571,6 +569,71 @@ notify pgrst, 'reload schema';</pre>
     let sortOrderAvailable = true;
 
     const pdfCache = new Map();
+
+    // ===== Pemuatan library sesuai kebutuhan =====
+    const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const PAGEFLIP_URL = 'https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js';
+    const scriptPromises = {};
+
+    function loadScriptOnce(src) {
+      if (!scriptPromises[src]) {
+        scriptPromises[src] = new Promise((resolve, reject) => {
+          const el = document.createElement('script');
+          el.src = src;
+          el.async = true;
+          el.onload = resolve;
+          el.onerror = () => { delete scriptPromises[src]; reject(new Error('Gagal memuat library: ' + src)); };
+          document.head.appendChild(el);
+        });
+      }
+      return scriptPromises[src];
+    }
+
+    async function ensurePdfJs() {
+      if (!window.pdfjsLib) await loadScriptOnce(PDFJS_URL);
+      pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+    }
+
+    async function ensurePageFlip() {
+      if (!window.St || !window.St.PageFlip) await loadScriptOnce(PAGEFLIP_URL);
+    }
+
+    // ===== Cache katalog & sampul (tampil instan pada kunjungan berikutnya) =====
+    const CATALOG_CACHE_KEY = 'flipbuku_catalog_cache_v1';
+    const COVER_CACHE_PREFIX = 'flipbuku_cover_v1:';
+    const COVER_CONCURRENCY = 3;
+    let lastCatalogSerialized = '';
+    let coverObserver = null;
+    const coverQueue = [];
+    const coverInFlight = new Set();
+    let coverActive = 0;
+
+    function hashString(str) {
+      let h = 5381;
+      for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+      return (h >>> 0).toString(36);
+    }
+
+    function coverCacheKey(book) {
+      return COVER_CACHE_PREFIX + book.id + ':' + hashString(book.pdf_url || '');
+    }
+
+    function readCoverCache(book) {
+      try { return localStorage.getItem(coverCacheKey(book)); } catch (e) { return null; }
+    }
+
+    function writeCoverCache(book, dataUrl) {
+      try {
+        localStorage.setItem(coverCacheKey(book), dataUrl);
+      } catch (e) {
+        // Kuota penuh: buang cache sampul lama lalu coba sekali lagi
+        try {
+          Object.keys(localStorage).filter(k => k.startsWith(COVER_CACHE_PREFIX)).forEach(k => localStorage.removeItem(k));
+          localStorage.setItem(coverCacheKey(book), dataUrl);
+        } catch (e2) {}
+      }
+    }
     const BOOK_ORDER_STORAGE_KEY = 'flipbuku_book_order';
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -579,6 +642,7 @@ notify pgrst, 'reload schema';</pre>
     });
 
     document.addEventListener("DOMContentLoaded", () => {
+      renderCatalogFromCache();
       loadCatalogFromSupabase();
 
       const sidebarEl = document.getElementById('thumbnail-sidebar');
@@ -771,30 +835,19 @@ notify pgrst, 'reload schema';</pre>
       }
     }
 
-    async function loadCatalogFromSupabase() {
-      const grid = document.getElementById('catalog-grid');
-      grid.innerHTML = `<div class="col-span-full text-center py-12 text-indigo-300/70"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400"></i><p class="mt-2 text-sm">Mengambil koleksi flipbook...</p></div>`;
+    // Menampilkan katalog dari cache lokal lebih dulu, data terbaru menyusul dari Supabase
+    function renderCatalogFromCache() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(CATALOG_CACHE_KEY) || 'null');
+        if (!cached || !Array.isArray(cached.data) || cached.data.length === 0) return;
+        sortOrderAvailable = cached.sortOrderAvailable !== false;
+        lastCatalogSerialized = JSON.stringify(cached.data);
+        applyCatalogData(cached.data);
+      } catch (e) {}
+    }
 
-      let { data, error } = await supabaseClient
-        .from('flipbooks')
-        .select('*, sort_order')
-        .order('created_at', { ascending: false });
-
-      sortOrderAvailable = !error;
-      if (error && /sort_order/i.test(error.message)) {
-        sortOrderAvailable = false;
-        ({ data, error } = await supabaseClient
-          .from('flipbooks')
-          .select('*')
-          .order('created_at', { ascending: false }));
-      }
-
-      if (error) {
-        grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-400 text-sm">Gagal memuat data: ${error.message}</div>`;
-        return;
-      }
-
-      catalogData = (data || []).sort((firstBook, secondBook) => {
+    function applyCatalogData(data) {
+      catalogData = (data || []).slice().sort((firstBook, secondBook) => {
         const firstOrder = firstBook.sort_order ?? Number.MAX_SAFE_INTEGER;
         const secondOrder = secondBook.sort_order ?? Number.MAX_SAFE_INTEGER;
         if (firstOrder !== secondOrder) return firstOrder - secondOrder;
@@ -815,13 +868,66 @@ notify pgrst, 'reload schema';</pre>
       renderCatalogGrid(catalogData);
     }
 
+    async function loadCatalogFromSupabase() {
+      const grid = document.getElementById('catalog-grid');
+      if (catalogData.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-indigo-300/70"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400"></i><p class="mt-2 text-sm">Mengambil koleksi flipbook...</p></div>`;
+      }
+
+      let { data, error } = await supabaseClient
+        .from('flipbooks')
+        .select('*, sort_order')
+        .order('created_at', { ascending: false });
+
+      sortOrderAvailable = !error;
+      if (error && /sort_order/i.test(error.message)) {
+        sortOrderAvailable = false;
+        ({ data, error } = await supabaseClient
+          .from('flipbooks')
+          .select('*')
+          .order('created_at', { ascending: false }));
+      }
+
+      if (error) {
+        // Bila katalog dari cache sudah tampil, biarkan tetap tampil (mis. koneksi sedang buruk)
+        if (catalogData.length === 0) {
+          grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-400 text-sm">Gagal memuat data: ${error.message}</div>`;
+        }
+        return;
+      }
+
+      const serialized = JSON.stringify(data || []);
+      try {
+        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({ data: data || [], sortOrderAvailable }));
+      } catch (e) {}
+
+      // Data sama dengan yang sudah tampil dari cache -> tidak perlu render ulang (tanpa kedip)
+      if (serialized === lastCatalogSerialized && catalogData.length > 0) return;
+      lastCatalogSerialized = serialized;
+      applyCatalogData(data);
+    }
+
     function renderCatalogGrid(items) {
       const grid = document.getElementById('catalog-grid');
       grid.innerHTML = '';
 
+      // Hentikan antrean/pengamat sampul dari render sebelumnya
+      if (coverObserver) coverObserver.disconnect();
+      coverQueue.length = 0;
+
       if (items.length === 0) {
         grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500 text-sm">Tidak ada flipbook ditemukan.</div>`;
         return;
+      }
+
+      if (!coverObserver && 'IntersectionObserver' in window) {
+        coverObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            coverObserver.unobserve(entry.target);
+            if (entry.target.__book) enqueueCover(entry.target.__book);
+          });
+        }, { rootMargin: '300px 0px' });
       }
 
       items.forEach(book => {
@@ -831,7 +937,7 @@ notify pgrst, 'reload schema';</pre>
 
         card.innerHTML = `
           <div class="h-44 sm:h-48 bg-slate-900/85 flex items-center justify-center relative overflow-hidden group-hover:scale-[1.02] transition-transform duration-300">
-            <canvas id="cover-canvas-${book.id}" class="w-full h-full object-cover"></canvas>
+            <img id="cover-img-${book.id}" class="w-full h-full object-cover hidden" alt="" decoding="async">
             <div id="cover-placeholder-${book.id}" class="absolute inset-0 flex items-center justify-center bg-slate-950/90">
               <i class="fa-solid fa-circle-notch fa-spin text-indigo-400 text-xl"></i>
             </div>
@@ -850,7 +956,15 @@ notify pgrst, 'reload schema';</pre>
         `;
         grid.appendChild(card);
 
-        loadBookCover(book.pdf_url, book.id);
+        const cachedCover = readCoverCache(book);
+        if (cachedCover) {
+          showCover(book.id, cachedCover);   // dari cache: tanpa mengunduh PDF sama sekali
+        } else if (coverObserver) {
+          card.__book = book;
+          coverObserver.observe(card);       // sampul baru dibuat saat kartu mendekati layar
+        } else {
+          enqueueCover(book);
+        }
       });
     }
 
@@ -860,28 +974,68 @@ notify pgrst, 'reload schema';</pre>
         : 'ltr';
     }
 
-    async function loadBookCover(pdfUrl, bookId) {
+    function showCover(bookId, dataUrl) {
+      const img = document.getElementById(`cover-img-${bookId}`);
+      const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
+      if (!img) return;
+      img.src = dataUrl;
+      img.classList.remove('hidden');
+      if (placeholder) placeholder.classList.add('hidden');
+    }
+
+    function showCoverFallback(bookId) {
+      const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
+      if (placeholder) {
+        placeholder.innerHTML = `<i class="fa-solid fa-file-pdf text-4xl text-indigo-400/40"></i>`;
+      }
+    }
+
+    // Antrean sampul: maksimal COVER_CONCURRENCY PDF dibuka bersamaan
+    function enqueueCover(book) {
+      if (coverInFlight.has(book.id) || coverQueue.some(b => b.id === book.id)) return;
+      coverQueue.push(book);
+      pumpCoverQueue();
+    }
+
+    function pumpCoverQueue() {
+      while (coverActive < COVER_CONCURRENCY && coverQueue.length > 0) {
+        const book = coverQueue.shift();
+        coverActive++;
+        coverInFlight.add(book.id);
+        generateCover(book).finally(() => {
+          coverActive--;
+          coverInFlight.delete(book.id);
+          pumpCoverQueue();
+        });
+      }
+    }
+
+    async function generateCover(book) {
       try {
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
-        const pdf = await loadingTask.promise;
-        const page = await pdf.getPage(1);
+        await ensurePdfJs();
+        // disableAutoFetch: ambil halaman 1 saja, jangan unduh sisa file PDF di latar belakang
+        const loadingTask = pdfjsLib.getDocument({ url: book.pdf_url, disableAutoFetch: true });
+        try {
+          const pdf = await loadingTask.promise;
+          const page = await pdf.getPage(1);
+          const viewport = page.getViewport({ scale: 0.35 });
 
-        const canvas = document.getElementById(`cover-canvas-${bookId}`);
-        const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
-        if (!canvas) return;
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.floor(viewport.width));
+          canvas.height = Math.max(1, Math.floor(viewport.height));
+          const context = canvas.getContext('2d');
+          context.fillStyle = '#ffffff';            // JPEG tidak punya transparansi
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          await page.render({ canvasContext: context, viewport }).promise;
 
-        const viewport = page.getViewport({ scale: 0.35 });
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        await page.render({ canvasContext: context, viewport: viewport }).promise;
-        if (placeholder) placeholder.classList.add('hidden');
-      } catch (e) {
-        const placeholder = document.getElementById(`cover-placeholder-${bookId}`);
-        if (placeholder) {
-          placeholder.innerHTML = `<i class="fa-solid fa-file-pdf text-4xl text-indigo-400/40"></i>`;
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          writeCoverCache(book, dataUrl);
+          showCover(book.id, dataUrl);
+        } finally {
+          loadingTask.destroy();                    // lepaskan memori & worker
         }
+      } catch (e) {
+        showCoverFallback(book.id);
       }
     }
 
@@ -939,6 +1093,8 @@ notify pgrst, 'reload schema';</pre>
       document.getElementById('flipbook-wrapper').classList.add('hidden');
 
       try {
+        await Promise.all([ensurePdfJs(), ensurePageFlip()]);
+
         if (pdfCache.has(book.id)) {
           pdfDocInstance = pdfCache.get(book.id);
         } else {
