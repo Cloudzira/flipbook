@@ -320,9 +320,8 @@
             <input type="text" id="search-input" oninput="filterCatalog()" placeholder="Cari judul atau deskripsi..." class="w-full pl-11 pr-4 py-2.5 rounded-xl glass-input text-sm">
           </div>
           <div class="flex items-center space-x-2.5">
-            <label class="text-xs text-sky-300 font-bold">KATEGORI</label>
-            <select id="category-filter" onchange="filterCatalog()" class="glass-input rounded-xl px-3 py-2.5 text-sm bg-slate-900/90">
-              <option value="ALL">Semua Kategori</option>
+              <select id="category-filter" onchange="filterCatalog()" class="glass-input rounded-xl px-3 py-2.5 text-sm bg-slate-900/90">
+              <option value="ALL">Semua Buku</option>
             </select>
           </div>
         </div>
@@ -1039,7 +1038,7 @@ notify pgrst, 'reload schema';</pre>
     function populateCategoryDropdown() {
       const select = document.getElementById('category-filter');
       const categories = ['ALL', ...new Set(catalogData.map(b => b.category).filter(Boolean))];
-      select.innerHTML = categories.map(c => `<option value="${c}">${c === 'ALL' ? 'Semua Kategori' : c}</option>`).join('');
+      select.innerHTML = categories.map(c => `<option value="${c}">${c === 'ALL' ? 'Semua Buku' : c}</option>`).join('');
     }
 
     function filterCatalog() {
