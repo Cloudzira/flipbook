@@ -238,19 +238,26 @@
     .kurnia-icon.wa:hover { color: #00ff87; border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 12px rgba(0,255,135,0.4); }
 
     /* Drag & Drop Styles for Admin Table */
-    .draggable-row {
+    .drag-handle {
       cursor: grab;
-      transition: background-color 0.2s ease;
+      touch-action: none; /* cegah scroll halaman saat handle ditarik di layar sentuh */
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .draggable-row:active {
-      cursor: grabbing;
+    .drag-handle:hover { color: #a5b4fc; }
+    .draggable-row {
+      transition: background-color 0.2s ease;
     }
     .draggable-row.dragging {
       opacity: 0.4;
       background: rgba(129, 140, 248, 0.15) !important;
     }
-    .drag-over {
-      border-top: 2px dashed #818cf8 !important;
+    .draggable-row.drop-before { box-shadow: inset 0 3px 0 0 #818cf8; }
+    .draggable-row.drop-after  { box-shadow: inset 0 -3px 0 0 #818cf8; }
+    body.admin-sorting, body.admin-sorting * {
+      cursor: grabbing !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
     }
 
     @media (max-width: 768px), (max-height: 500px) {
@@ -478,7 +485,7 @@
           <h3 class="font-semibold text-lg text-indigo-300 flex items-center gap-2.5">
             <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Koleksi Buku
           </h3>
-          <span id="sort-order-hint" class="text-[11px] text-indigo-300/70 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full"><i class="fa-solid fa-grip-vertical mr-1"></i> Drag & Drop baris tabel untuk mengatur urutan</span>
+          <span id="sort-order-hint" class="text-[11px] text-indigo-300/70 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full"><i class="fa-solid fa-grip-vertical mr-1"></i> Tahan &amp; geser ikon ⋮⋮ untuk mengatur urutan</span>
         </div>
         <div class="overflow-x-auto rounded-xl border border-white/10">
           <table class="w-full text-left text-sm text-slate-300">
@@ -544,7 +551,8 @@
     let currentUser = null;
     let resizeTimer = null;
     let currentPageIndex = 1;
-    let draggedRowIndex = null;
+    let adminDrag = null;
+    let isSavingOrder = false;
     let sortOrderAvailable = true;
 
     const pdfCache = new Map();
@@ -597,8 +605,7 @@
           handleResizeOrOrientation();
         }
       });
-      document.addEventListener('dragend', clearAdminDragState);
-      document.addEventListener('drop', () => requestAnimationFrame(clearAdminDragState));
+      setupAdminRowSorting();
 
       setupReaderPanning();
     });
@@ -1378,18 +1385,11 @@
       catalogData.forEach((item, index) => {
         const tr = document.createElement('tr');
         tr.className = 'border-b border-white/5 hover:bg-white/[0.03] transition-colors draggable-row';
-        tr.draggable = true;
         tr.dataset.bookId = item.id;
         tr.dataset.index = index;
 
-        tr.addEventListener('dragstart', handleDragStart);
-        tr.addEventListener('dragover', handleDragOver);
-        tr.addEventListener('dragleave', handleDragLeave);
-        tr.addEventListener('drop', handleDrop);
-        tr.addEventListener('dragend', handleDragEnd);
-
         tr.innerHTML = `
-          <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono cursor-grab active:cursor-grabbing" title="Geser untuk memindahkan"><i class="fa-solid fa-grip-vertical"></i></td>
+          <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono drag-handle" title="Tahan & geser untuk memindahkan"><i class="fa-solid fa-grip-vertical"></i></td>
           <td class="p-3.5 font-medium text-white">${item.title}</td>
           <td class="p-3.5"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">${item.category}</span></td>
           <td class="p-3.5 text-xs text-indigo-200/70">${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'Kanan ke kiri' : 'Kiri ke kanan'}</td>
@@ -1403,92 +1403,174 @@
       });
     }
 
-    function handleDragStart(e) {
-      draggedRowIndex = parseInt(this.dataset.index, 10);
-      if (e.dataTransfer) {
-        e.dataTransfer.setData('text/plain', this.dataset.bookId);
-        e.dataTransfer.effectAllowed = 'move';
-      }
-      this.classList.add('dragging');
+    // ===== Drag & drop urutan buku (Pointer Events: mouse, pen, dan layar sentuh) =====
+    function setupAdminRowSorting() {
+      const tbody = document.getElementById('admin-table-body');
+      tbody.addEventListener('pointerdown', startRowDrag);
     }
 
-    function handleDragOver(e) {
+    function getScrollParent(el) {
+      let node = el.parentElement;
+      while (node && node !== document.body) {
+        const overflowY = getComputedStyle(node).overflowY;
+        if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) return node;
+        node = node.parentElement;
+      }
+      return document.scrollingElement;
+    }
+
+    function startRowDrag(e) {
+      const handle = e.target.closest('.drag-handle');
+      if (!handle || adminDrag || isSavingOrder) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+      const row = handle.closest('tr[data-book-id]');
+      if (!row) return;
       e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      const targetRow = e.target.closest('tr');
-      if (targetRow && !targetRow.classList.contains('dragging')) {
-        targetRow.classList.add('drag-over');
-      }
+
+      adminDrag = {
+        row,
+        bookId: row.dataset.bookId,
+        fromIndex: parseInt(row.dataset.index, 10),
+        insertIndex: null,
+        pointerId: e.pointerId,
+        clientY: e.clientY,
+        scroller: getScrollParent(row),
+        rafId: null
+      };
+
+      row.classList.add('dragging');
+      document.body.classList.add('admin-sorting');
+      window.addEventListener('pointermove', onRowDragMove);
+      window.addEventListener('pointerup', onRowDragEnd);
+      window.addEventListener('pointercancel', onRowDragCancel);
+      window.addEventListener('keydown', onRowDragKey);
+      adminDrag.rafId = requestAnimationFrame(rowDragTick);
     }
 
-    function handleDragLeave(e) {
-      const targetRow = e.target.closest('tr');
-      if (targetRow) {
-        targetRow.classList.remove('drag-over');
-      }
-    }
-
-    async function handleDrop(e) {
+    function onRowDragMove(e) {
+      if (!adminDrag || e.pointerId !== adminDrag.pointerId) return;
       e.preventDefault();
-      const targetRow = e.target.closest('tr');
-      if (!targetRow) {
-        clearAdminDragState();
-        return;
-      }
-      targetRow.classList.remove('drag-over');
+      adminDrag.clientY = e.clientY;
+      updateRowDropTarget();
+    }
 
-      const sourceIndex = draggedRowIndex;
-      const droppedRowIndex = parseInt(targetRow.dataset.index, 10);
-      if (isNaN(sourceIndex) || isNaN(droppedRowIndex) || sourceIndex === droppedRowIndex) {
-        clearAdminDragState();
-        return;
+    // Auto-scroll saat pointer mendekati tepi area yang bisa di-scroll
+    function rowDragTick() {
+      if (!adminDrag) return;
+      const { scroller, clientY } = adminDrag;
+      const rect = scroller === document.scrollingElement
+        ? { top: 0, bottom: window.innerHeight }
+        : scroller.getBoundingClientRect();
+      const zone = 70;
+      let speed = 0;
+      if (clientY < rect.top + zone) speed = -Math.ceil((rect.top + zone - clientY) / 5);
+      else if (clientY > rect.bottom - zone) speed = Math.ceil((clientY - (rect.bottom - zone)) / 5);
+      if (speed) {
+        scroller.scrollTop += Math.max(-24, Math.min(24, speed));
+        updateRowDropTarget();
       }
+      adminDrag.rafId = requestAnimationFrame(rowDragTick);
+    }
 
-      const previousOrder = catalogData.map(book => ({ ...book }));
-      const movedItem = catalogData.splice(sourceIndex, 1)[0];
-      catalogData.splice(droppedRowIndex, 0, movedItem);
+    // insertIndex = posisi sisipan di antara baris (0..jumlah baris), ditentukan dari titik tengah tiap baris
+    function updateRowDropTarget() {
+      const rows = [...document.querySelectorAll('#admin-table-body tr[data-book-id]')];
+      rows.forEach(r => r.classList.remove('drop-before', 'drop-after'));
+
+      let insertIndex = rows.length;
+      for (let i = 0; i < rows.length; i++) {
+        const rect = rows[i].getBoundingClientRect();
+        if (adminDrag.clientY < rect.top + rect.height / 2) { insertIndex = i; break; }
+      }
+      adminDrag.insertIndex = insertIndex;
+
+      // Posisi yang sama dengan sekarang = tidak ada perubahan, jangan tampilkan garis
+      if (insertIndex === adminDrag.fromIndex || insertIndex === adminDrag.fromIndex + 1) return;
+      if (insertIndex < rows.length) rows[insertIndex].classList.add('drop-before');
+      else rows[rows.length - 1].classList.add('drop-after');
+    }
+
+    function finishRowDrag() {
+      if (!adminDrag) return null;
+      cancelAnimationFrame(adminDrag.rafId);
+      window.removeEventListener('pointermove', onRowDragMove);
+      window.removeEventListener('pointerup', onRowDragEnd);
+      window.removeEventListener('pointercancel', onRowDragCancel);
+      window.removeEventListener('keydown', onRowDragKey);
+      document.body.classList.remove('admin-sorting');
+      document.querySelectorAll('#admin-table-body .dragging, #admin-table-body .drop-before, #admin-table-body .drop-after')
+        .forEach(r => r.classList.remove('dragging', 'drop-before', 'drop-after'));
+      const state = adminDrag;
+      adminDrag = null;
+      return state;
+    }
+
+    function onRowDragEnd(e) {
+      if (!adminDrag || e.pointerId !== adminDrag.pointerId) return;
+      adminDrag.clientY = e.clientY;
+      updateRowDropTarget();
+      const { fromIndex, insertIndex } = finishRowDrag();
+      if (insertIndex === null || insertIndex === fromIndex || insertIndex === fromIndex + 1) return;
+      commitBookReorder(fromIndex, insertIndex > fromIndex ? insertIndex - 1 : insertIndex);
+    }
+
+    function onRowDragCancel(e) {
+      if (adminDrag && e.pointerId === adminDrag.pointerId) finishRowDrag();
+    }
+
+    function onRowDragKey(e) {
+      if (e.key === 'Escape') finishRowDrag();
+    }
+
+    async function commitBookReorder(fromIndex, toIndex) {
+      if (fromIndex === toIndex || isSavingOrder) return;
+      isSavingOrder = true;
+
+      const previousOrder = catalogData.slice();
+      const previousSortOrder = new Map(catalogData.map(book => [String(book.id), book.sort_order]));
+
+      const [movedItem] = catalogData.splice(fromIndex, 1);
+      catalogData.splice(toIndex, 0, movedItem);
       if (sortOrderAvailable) {
         catalogData.forEach((book, index) => { book.sort_order = index; });
       }
-      draggedRowIndex = null;
 
       renderAdminTable();
-      clearAdminDragState();
+      filterCatalog(); // segarkan katalog publik tanpa menghapus filter pencarian/kategori
 
-      if (!sortOrderAvailable) {
-        try {
+      try {
+        if (!sortOrderAvailable) {
           localStorage.setItem(BOOK_ORDER_STORAGE_KEY, JSON.stringify(catalogData.map(book => book.id)));
-          renderCatalogGrid(catalogData);
-        } catch (error) {
-          catalogData = previousOrder;
-          renderAdminTable();
-          alert('Gagal menyimpan urutan di browser ini: ' + error.message);
+          return;
         }
-        return;
-      }
 
-      const updates = catalogData.map(book => supabaseClient
-        .from('flipbooks')
-        .update({ sort_order: book.sort_order })
-        .eq('id', book.id));
-      const results = await Promise.all(updates);
-      const error = results.find(result => result.error)?.error;
-      if (error) {
+        // Hanya kirim baris yang nilai sort_order-nya berubah
+        const changed = catalogData.filter(book => previousSortOrder.get(String(book.id)) !== book.sort_order);
+        const results = await Promise.all(changed.map(book =>
+          supabaseClient
+            .from('flipbooks')
+            .update({ sort_order: book.sort_order })
+            .eq('id', book.id)
+            .select('id')
+        ));
+
+        const failed = results.find(r => r.error);
+        if (failed) throw new Error(failed.error.message);
+        if (results.some(r => !r.data || r.data.length === 0)) {
+          throw new Error('Tidak ada baris yang diperbarui. Periksa policy UPDATE/SELECT RLS pada tabel flipbooks.');
+        }
+      } catch (error) {
+        // Kembalikan tampilan, lalu muat ulang dari database supaya sinkron bila sebagian update sempat masuk
         catalogData = previousOrder;
         renderAdminTable();
-        alert('Gagal menyimpan urutan baru ke database: ' + error.message);
+        filterCatalog();
+        alert('Gagal menyimpan urutan baru: ' + error.message);
+        await loadCatalogFromSupabase();
+        renderAdminTable();
+      } finally {
+        isSavingOrder = false;
       }
-    }
-
-    function clearAdminDragState() {
-      draggedRowIndex = null;
-      document.querySelectorAll('#admin-table-body .dragging, #admin-table-body .drag-over').forEach(row => {
-        row.classList.remove('dragging', 'drag-over');
-      });
-    }
-
-    function handleDragEnd(e) {
-      clearAdminDragState();
     }
 
     function editFlipbook(id) {
