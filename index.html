@@ -548,6 +548,7 @@
     let sortOrderAvailable = true;
 
     const pdfCache = new Map();
+    const BOOK_ORDER_STORAGE_KEY = 'flipbuku_book_order';
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
       currentUser = session?.user || null;
@@ -776,6 +777,17 @@
         if (firstOrder !== secondOrder) return firstOrder - secondOrder;
         return new Date(secondBook.created_at || 0) - new Date(firstBook.created_at || 0);
       });
+      if (!sortOrderAvailable) {
+        let savedOrder = [];
+        try {
+          savedOrder = JSON.parse(localStorage.getItem(BOOK_ORDER_STORAGE_KEY) || '[]');
+        } catch (e) {}
+        const orderById = new Map(savedOrder.map((id, index) => [String(id), index]));
+        catalogData.sort((firstBook, secondBook) =>
+          (orderById.get(String(firstBook.id)) ?? Number.MAX_SAFE_INTEGER) -
+          (orderById.get(String(secondBook.id)) ?? Number.MAX_SAFE_INTEGER)
+        );
+      }
       populateCategoryDropdown();
       renderCatalogGrid(catalogData);
     }
@@ -1359,7 +1371,7 @@
       tbody.innerHTML = '';
       const sortOrderHint = document.getElementById('sort-order-hint');
       if (sortOrderHint && !sortOrderAvailable) {
-        sortOrderHint.textContent = 'Pengurutan manual nonaktif: kolom sort_order belum tersedia';
+        sortOrderHint.textContent = 'Urutan disimpan di browser ini saja; tambahkan kolom sort_order agar tersimpan di database';
       }
 
       if (catalogData.length === 0) {
@@ -1369,21 +1381,19 @@
 
       catalogData.forEach((item, index) => {
         const tr = document.createElement('tr');
-        tr.className = `border-b border-white/5 hover:bg-white/[0.03] transition-colors ${sortOrderAvailable ? 'draggable-row' : ''}`;
-        tr.draggable = sortOrderAvailable;
+        tr.className = 'border-b border-white/5 hover:bg-white/[0.03] transition-colors draggable-row';
+        tr.draggable = true;
         tr.dataset.bookId = item.id;
         tr.dataset.index = index;
 
-        if (sortOrderAvailable) {
-          tr.addEventListener('dragstart', handleDragStart);
-          tr.addEventListener('dragover', handleDragOver);
-          tr.addEventListener('dragleave', handleDragLeave);
-          tr.addEventListener('drop', handleDrop);
-          tr.addEventListener('dragend', handleDragEnd);
-        }
+        tr.addEventListener('dragstart', handleDragStart);
+        tr.addEventListener('dragover', handleDragOver);
+        tr.addEventListener('dragleave', handleDragLeave);
+        tr.addEventListener('drop', handleDrop);
+        tr.addEventListener('dragend', handleDragEnd);
 
         tr.innerHTML = `
-          <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono ${sortOrderAvailable ? 'cursor-grab active:cursor-grabbing' : ''}" title="${sortOrderAvailable ? 'Geser untuk memindahkan' : ''}">${sortOrderAvailable ? '<i class="fa-solid fa-grip-vertical"></i>' : index + 1}</td>
+          <td class="p-3.5 text-center text-xs text-indigo-300/60 font-mono cursor-grab active:cursor-grabbing" title="Geser untuk memindahkan"><i class="fa-solid fa-grip-vertical"></i></td>
           <td class="p-3.5 font-medium text-white">${item.title}</td>
           <td class="p-3.5"><span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">${item.category}</span></td>
           <td class="p-3.5 text-xs text-indigo-200/70">${normalizeReadingDirection(item.reading_direction) === 'rtl' ? 'Kanan ke kiri' : 'Kiri ke kanan'}</td>
@@ -1441,11 +1451,25 @@
       const previousOrder = catalogData.map(book => ({ ...book }));
       const movedItem = catalogData.splice(sourceIndex, 1)[0];
       catalogData.splice(droppedRowIndex, 0, movedItem);
-      catalogData.forEach((book, index) => { book.sort_order = index; });
+      if (sortOrderAvailable) {
+        catalogData.forEach((book, index) => { book.sort_order = index; });
+      }
       draggedRowIndex = null;
 
       renderAdminTable();
       clearAdminDragState();
+
+      if (!sortOrderAvailable) {
+        try {
+          localStorage.setItem(BOOK_ORDER_STORAGE_KEY, JSON.stringify(catalogData.map(book => book.id)));
+          renderCatalogGrid(catalogData);
+        } catch (error) {
+          catalogData = previousOrder;
+          renderAdminTable();
+          alert('Gagal menyimpan urutan di browser ini: ' + error.message);
+        }
+        return;
+      }
 
       const updates = catalogData.map(book => supabaseClient
         .from('flipbooks')
