@@ -129,7 +129,7 @@
 
     /* ===== Mode gambar (cadangan) ===== */
     #viewport { display: none; overflow: hidden; border-radius: 6px; }
-    #gambar { display: block; width: 100%; height: auto; pointer-events: none; -webkit-user-drag: none; }
+    #gambar { display: block; width: 100%; height: auto; pointer-events: none; -webkit-user-drag: none; transition: opacity .15s; }
 
     #info { text-align: center; margin: 14px 12px 0; font-size: .78rem; font-weight: 500; letter-spacing: .05em; color: var(--redup); }
     #petunjuk { text-align: center; margin: 4px 12px 0; font-size: .7rem; letter-spacing: .05em; color: var(--redup); opacity: .6; }
@@ -261,7 +261,7 @@
   const MIN_JARAK_BARIS = 2.0;  // tinggi satu baris (kelipatan ukuran huruf); naikkan jika ada tulisan menyentuh garis
   const JARAK_SWIPE = 60;
   const JUMLAH_BARIS = 15;          // jumlah baris per halaman
-  const HALAMAN_KALIBRASI = 3;      // halaman penuh 15 baris, dipakai mengukur geometri gambar
+  const HALAMAN_KALIBRASI = [3, 150, 300, 450];   // halaman penuh 15 baris, dipakai mengukur ukuran blok tulisan
 
   const IKON = {
     bulan: '<svg class="ik" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
@@ -285,7 +285,7 @@
   // Geometri halaman (diukur dari gambar): dipakai bersama oleh mode Teks & Gambar
   // supaya lebar blok tulisan dan jarak antar baris SAMA di kedua mode.
   let GEO = null;
-  try { GEO = JSON.parse(localStorage.getItem("quran_geo_v1")); } catch (e) { GEO = null; }
+  try { GEO = JSON.parse(localStorage.getItem("quran_geo_v2")); } catch (e) { GEO = null; }
   if (!GEO || !(GEO.cw > 0 && GEO.ch > 0 && GEO.p > 0 && GEO.iw > 0)) GEO = null;
 
   // Juz pada Mushaf Madinah: juz 1 = hal. 1-21, lalu tiap juz 20 halaman (juz 30 mulai hal. 582)
@@ -489,49 +489,73 @@
     return { W, H, s, atas, bawah: bawah + 1, kiri, kanan: kanan + 1 };
   }
 
-  function hitungGeo(a) {
-    const iw = (a.kanan - a.kiri) / a.s;                 // lebar blok tulisan (px asli)
-    const ih = (a.bawah - a.atas) / a.s;                 // tinggi blok tulisan (px asli)
-    const p = ih / JUMLAH_BARIS;                         // jarak antar baris (px asli)
-    const padV = p * 0.45, padH = iw * 0.03;
-    const cx = Math.max(0, a.kiri / a.s - padH);
-    const cy = Math.max(0, a.atas / a.s - padV);
-    const cw = Math.min(a.W, a.kanan / a.s + padH) - cx;
-    const ch = Math.min(a.H, a.bawah / a.s + padV) - cy;
-    return { W: a.W, H: a.H, cx, cy, cw, ch, iw, p };
+  async function muatHalamanContoh(no) {
+    try { return await muatGambarCors(urlGambar(no, "cdn", "light")); }
+    catch (e) { return await muatGambarCors(urlGambar(no, "raw", "light")); }
   }
 
+  // Ukur ukuran blok tulisan dari beberapa halaman contoh (sekali; hasilnya disimpan di browser).
+  // Jarak antar baris diambil dari nilai tengah; tinggi potongan dari halaman TERTINGGI + ruang aman,
+  // sehingga tidak ada baris yang terpotong.
   async function kalibrasiGeometri() {
-    let el;
-    try { el = await muatGambarCors(urlGambar(HALAMAN_KALIBRASI, "cdn", "light")); }
-    catch (e) { el = await muatGambarCors(urlGambar(HALAMAN_KALIBRASI, "raw", "light")); }
-    const a = ukurGeometri(el);
-    if (!a) return null;
-    const g = hitungGeo(a);
+    const hasil = (await Promise.all(HALAMAN_KALIBRASI.map(async no => {
+      try { return ukurGeometri(await muatHalamanContoh(no)); } catch (e) { return null; }
+    }))).filter(Boolean);
+    if (!hasil.length) return null;
+
+    const tengah = arr => [...arr].sort((x, y) => x - y)[Math.floor(arr.length / 2)];
+    const W = hasil[0].W, H = hasil[0].H;
+    const lebarInk = hasil.map(a => (a.kanan - a.kiri) / a.s);
+    const tinggiInk = hasil.map(a => (a.bawah - a.atas) / a.s);
+    const iw = tengah(lebarInk);
+    const p = tengah(tinggiInk) / JUMLAH_BARIS;                 // jarak antar baris (px asli)
+    const padV = p * 0.55, padH = Math.max(...lebarInk) * 0.03;
+    const g = {
+      W, H, iw, p,
+      cw: Math.min(W, Math.max(...lebarInk) + padH * 2),
+      ch: Math.min(H, Math.max(...tinggiInk) + padV * 2)
+    };
     const rasio = g.ch / g.cw;
     if (!(g.cw > 0 && g.p > 0 && rasio > 0.8 && rasio < 3)) return null;   // hasil tidak masuk akal: abaikan
     GEO = g;
-    try { localStorage.setItem("quran_geo_v1", JSON.stringify(g)); } catch (e) {}
+    try { localStorage.setItem("quran_geo_v2", JSON.stringify(g)); } catch (e) {}
     return g;
   }
 
-  // Mode gambar: pangkas ruang kosong, skala agar blok tulisan selebar bingkai
-  function terapkanGeoGambar() {
-    if (!GEO) {
-      viewport.style.aspectRatio = "";
-      img.style.width = ""; img.style.maxWidth = ""; img.style.marginLeft = ""; img.style.marginTop = "";
-      return;
-    }
-    viewport.style.aspectRatio = `${GEO.cw} / ${GEO.ch}`;
+  function resetGeoGambar() {
+    viewport.style.aspectRatio = "";
+    img.style.width = ""; img.style.maxWidth = ""; img.style.marginLeft = ""; img.style.marginTop = "";
+    img.style.opacity = "1";
+  }
+
+  // Mode gambar: pangkas ruang kosong. Posisi potongan dihitung dari isi gambar halaman itu sendiri
+  // (tengah blok tulisan), jadi tidak ada baris yang terpotong; ukuran potongan sama untuk semua halaman.
+  function aturGambar() {
+    if (!GEO || !img.naturalWidth) { resetGeoGambar(); return; }
+    let a = null;
+    try { a = ukurGeometri(img); } catch (e) { a = null; }
+    if (!a) { resetGeoGambar(); return; }
+
+    const W = img.naturalWidth, H = img.naturalHeight;
+    const cw = Math.min(GEO.cw, W);
+    const inkTinggi = (a.bawah - a.atas) / a.s;
+    const ch = Math.min(H, Math.max(GEO.ch, inkTinggi + GEO.p * 0.6));   // halaman yang lebih tinggi tetap utuh
+    const tengahX = (a.kiri + a.kanan) / 2 / a.s;
+    const tengahY = (a.atas + a.bawah) / 2 / a.s;
+    const cx = Math.min(Math.max(0, tengahX - cw / 2), W - cw);
+    const cy = Math.min(Math.max(0, tengahY - ch / 2), H - ch);
+
+    viewport.style.aspectRatio = `${cw} / ${ch}`;
     img.style.maxWidth = "none";
-    img.style.width = `${(GEO.W / GEO.cw) * 100}%`;
-    img.style.marginLeft = `${-(GEO.cx / GEO.cw) * 100}%`;
-    img.style.marginTop = `${-(GEO.cy / GEO.cw) * 100}%`;
+    img.style.width = `${(W / cw) * 100}%`;
+    img.style.marginLeft = `${-(cx / cw) * 100}%`;
+    img.style.marginTop = `${-(cy / cw) * 100}%`;
+    img.style.opacity = "1";
   }
 
   function terapkanGeometri() {
     if (mode === "teks") { if (teks.children.length) atur(); }
-    else terapkanGeoGambar();
+    else if (img.complete && img.naturalWidth) aturGambar();
   }
 
   function tampilGambar(no) {
@@ -539,12 +563,23 @@
     kepala.style.display = "none";
     kaki.style.display = "none";
     viewport.style.display = "block";
-    terapkanGeoGambar();
+    if (GEO) { viewport.style.aspectRatio = `${GEO.cw} / ${GEO.ch}`; img.style.opacity = "0"; }
+    else resetGeoGambar();
+
+    img.crossOrigin = "anonymous";
+    img.onload = () => { if (no === halaman) aturGambar(); };
+    let percobaan = 0;
     img.onerror = () => {
-      if (!img.dataset.cadangan) { img.dataset.cadangan = "1"; img.src = urlGambar(no, "raw"); }
-      else info.textContent = "Gagal memuat gambar. Periksa koneksi internet.";
+      percobaan++;
+      if (percobaan === 1) { img.src = urlGambar(no, "raw"); }
+      else if (percobaan === 2) {                       // tanpa CORS: gambar tetap tampil, tanpa pangkas
+        img.removeAttribute("crossorigin");
+        img.src = urlGambar(no, "cdn");
+      } else {
+        info.textContent = "Gagal memuat gambar. Periksa koneksi internet.";
+        img.style.opacity = "1";
+      }
     };
-    delete img.dataset.cadangan;
     img.src = urlGambar(no, "cdn");
     img.alt = "Mushaf halaman " + no;
   }
