@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mushaf Tajwid</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Sora:wght@300;400;600&family=Reem+Kufi:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --f-ui: "Sora", "Segoe UI", system-ui, sans-serif;
+      --f-judul: "Michroma", "Sora", system-ui, sans-serif;
+      --f-arab: "Reem Kufi", "Traditional Arabic", serif;
+      --hijau: #0f6b4f; --hijau-tua: #0a4a37; --emas: #b8913a; --emas-tua: #8a6a22;
+      --krem: #f6f0e1; --kertas: #fffdf7; --teks: #1f1f1f; --teks-lembut: #4a5a54;
+      --kaca: rgba(255,255,255,.6); --kaca-kuat: rgba(255,253,247,.88);
+      --tile-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' viewBox='0 0 16 10'%3E%3Cpath d='M8 1 13 5 8 9 3 5Z' fill='none' stroke='%23b8913a' stroke-width='1'/%3E%3C/svg%3E");
+      --tile-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='16' viewBox='0 0 10 16'%3E%3Cpath d='M1 8 5 3 9 8 5 13Z' fill='none' stroke='%23b8913a' stroke-width='1'/%3E%3C/svg%3E");
+      --pola: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23b8913a' stroke-opacity='.18' stroke-width='1'%3E%3Crect x='18' y='18' width='24' height='24'/%3E%3Crect x='18' y='18' width='24' height='24' transform='rotate(45 30 30)'/%3E%3C/g%3E%3C/svg%3E");
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; color: var(--teks); font-family: var(--f-ui); font-weight: 400;
+      background: var(--krem) var(--pola); padding-bottom: 110px;
+      transition: background-color .25s, color .25s;
+    }
+    body.gelap {
+      --krem: #0b0d10; --kertas: #0D0F12; --teks: #ece7da; --teks-lembut: #b9c4be; --emas-tua: #d4b25e;
+      --kaca: rgba(255,255,255,.07); --kaca-kuat: rgba(20,24,28,.88);
+    }
+    button { font-family: inherit; cursor: pointer; }
+    svg.ik { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    header {
+      text-align: center; color: #fff; padding: 22px 12px 18px;
+      background: linear-gradient(180deg, var(--hijau-tua), var(--hijau));
+      border-bottom: 3px solid var(--emas); box-shadow: 0 3px 12px rgba(0,0,0,.25);
+    }
+    header .arab-judul { font-family: var(--f-arab); font-weight: 600; font-size: 2rem; line-height: 1.4; color: #f3dfa2; }
+    header h1 { margin: 4px 0 0; font-family: var(--f-judul); font-size: .72rem; font-weight: 400; letter-spacing: .45em; text-transform: uppercase; padding-left: .45em; }
+
+    .toolbar { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 18px 12px 16px; }
+    .segmen { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--kaca); border: 1px solid rgba(184,145,58,.55); backdrop-filter: blur(6px); }
+    .segmen button { border: 0; background: transparent; color: var(--teks-lembut); padding: 7px 18px; border-radius: 999px; font-size: .78rem; letter-spacing: .08em; transition: background .2s, color .2s; }
+    .segmen button.aktif { background: var(--hijau); color: #fff; box-shadow: 0 2px 8px rgba(15,107,79,.4); }
+    .chip {
+      display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 999px;
+      border: 1px solid rgba(184,145,58,.55); background: var(--kaca); color: var(--teks-lembut);
+      font-size: .78rem; letter-spacing: .08em; backdrop-filter: blur(6px); transition: background .2s, color .2s, transform .1s;
+    }
+    .chip:hover { transform: translateY(-1px); }
+    .chip.aktif { background: var(--hijau); color: #fff; border-color: var(--hijau); }
+
+    /* ===== Bingkai ===== */
+    #wrap { padding: 0 12px; }
+    .frame {
+      position: relative; max-width: 760px; margin: 0 auto; padding: 32px 34px 30px;
+      background: var(--kertas); border: 3px solid var(--emas); border-radius: 6px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18), inset 0 0 0 1px rgba(184,145,58,.25);
+      touch-action: pan-y pinch-zoom; user-select: none; -webkit-user-select: none;
+    }
+    .frame::before { content: ""; position: absolute; inset: 6px; border: 1px solid var(--emas); pointer-events: none; }
+    .edge { position: absolute; }
+    .e-top    { top: 11px;    left: 34px; right: 34px;  height: 10px; background: var(--tile-h) repeat-x center; }
+    .e-bottom { bottom: 11px; left: 34px; right: 34px;  height: 10px; background: var(--tile-h) repeat-x center; }
+    .e-left   { left: 11px;   top: 34px;  bottom: 34px; width: 10px;  background: var(--tile-v) repeat-y center; }
+    .e-right  { right: 11px;  top: 34px;  bottom: 34px; width: 10px;  background: var(--tile-v) repeat-y center; }
+    .corner { position: absolute; width: 30px; height: 30px; color: var(--emas); }
+    .c1 { top: 4px; left: 4px; }
+    .c2 { top: 4px; right: 4px; transform: scaleX(-1); }
+    .c3 { bottom: 4px; left: 4px; transform: scaleY(-1); }
+    .c4 { bottom: 4px; right: 4px; transform: scale(-1, -1); }
+
+    .masuk-kiri  { animation: masukKiri .28s ease-out; }
+    .masuk-kanan { animation: masukKanan .28s ease-out; }
+    @keyframes masukKiri  { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+    @keyframes masukKanan { from { opacity: 0; transform: translateX(28px); }  to { opacity: 1; transform: none; } }
+
+    /* ===== Kepala & kaki halaman (mode teks) ===== */
+    #kepala { display: flex; justify-content: space-between; gap: 12px; margin: 0 4px 8px; font-size: .68rem; font-weight: 400; letter-spacing: .18em; text-transform: uppercase; color: var(--emas-tua); }
+    #kaki { text-align: center; margin-top: 12px; }
+    #kaki span {
+      display: inline-block; min-width: 46px; padding: 3px 14px; border: 1px solid var(--emas); border-radius: 999px;
+      font-size: .78rem; font-weight: 600; letter-spacing: .1em; color: var(--emas-tua);
+    }
+
+    /* ===== Mode teks (font QCF4) ===== */
+    #teks { --fs: 30px; --pitch: 2.2; display: flex; flex-direction: column; justify-content: center; min-height: calc(var(--fs) * var(--pitch) * 15); transition: opacity .15s; }
+    #teks.memuat { opacity: .35; }
+    .baris {
+      display: flex; direction: rtl; align-items: center; justify-content: space-between; gap: .12em;
+      height: calc(var(--fs) * var(--pitch)); font-size: var(--fs); color: var(--teks);
+      margin-inline: auto; white-space: nowrap;
+      background: linear-gradient(90deg, transparent, rgba(184,145,58,.6) 8%, rgba(184,145,58,.6) 92%, transparent) bottom / 100% 1px no-repeat;
+    }
+    .baris:last-child { background: none; }
+    #teks.tanpa-garis .baris { background: none; }
+    .baris.pendek { justify-content: center; gap: .3em; }
+    .kata { flex: none; line-height: normal; position: relative; z-index: 1; }
+    .baris.header { background: none; justify-content: center; }
+    .banner {
+      position: relative; width: 100%; height: 76%; display: grid; place-items: center; border-radius: 8px;
+      font-family: var(--f-arab); font-size: calc(var(--fs) * .8); font-weight: 600; color: #f3dfa2; line-height: 1.5;
+      background: linear-gradient(180deg, var(--hijau), var(--hijau-tua));
+      border: 2px solid var(--emas); box-shadow: inset 0 0 0 3px var(--hijau-tua), inset 0 0 0 4px rgba(243,223,162,.55);
+    }
+    .banner span { white-space: nowrap; padding: 0 4%; }
+    .banner::before, .banner::after {
+      content: ""; position: absolute; top: 50%; width: 10px; height: 10px; background: #f3dfa2; transform: translateY(-50%) rotate(45deg);
+    }
+    .banner::before { right: 14px; }
+    .banner::after  { left: 14px; }
+
+    /* ===== Mode gambar (cadangan) ===== */
+    #viewport { display: none; overflow: hidden; }
+    #gambar { display: block; width: 100%; height: auto; pointer-events: none; -webkit-user-drag: none; }
+
+    #info { text-align: center; margin: 14px 12px 0; font-size: .8rem; letter-spacing: .06em; opacity: .85; }
+    #petunjuk { text-align: center; margin: 4px 12px 0; font-size: .7rem; letter-spacing: .06em; opacity: .6; }
+
+    /* ===== Bar navigasi bawah ===== */
+    .dock {
+      position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+      display: flex; align-items: center; gap: 6px; padding: 6px; z-index: 20;
+      border-radius: 999px; background: var(--kaca-kuat); border: 1px solid var(--emas);
+      box-shadow: 0 8px 28px rgba(0,0,0,.28); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    }
+    .dock .bulat { width: 46px; height: 46px; border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--hijau); color: #fff; transition: transform .1s, background .2s; }
+    .dock .bulat:hover:not(:disabled) { background: var(--hijau-tua); }
+    .dock .bulat:active:not(:disabled) { transform: scale(.92); }
+    .dock .bulat:disabled { background: #8a8a8a; opacity: .5; cursor: not-allowed; }
+    .dock .bulat svg.ik { width: 22px; height: 22px; stroke-width: 2.4; }
+    .nomor { display: flex; align-items: baseline; gap: 5px; padding: 0 8px; color: var(--teks-lembut); font-size: .75rem; letter-spacing: .06em; }
+    .nomor input {
+      width: 56px; padding: 4px 2px; text-align: center; font-family: var(--f-judul); font-size: .9rem; font-weight: 400;
+      border: 0; border-bottom: 2px solid var(--emas); background: transparent; color: var(--teks); outline: none; -moz-appearance: textfield;
+    }
+    .nomor input::-webkit-outer-spin-button, .nomor input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    /* ===== Sumber & referensi ===== */
+    #kredit { max-width: 720px; margin: 40px auto 0; padding: 0 20px 8px; text-align: center; }
+    #kredit .hiasan { display: flex; align-items: center; gap: 12px; }
+    #kredit .hiasan i { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--emas)); }
+    #kredit .hiasan i:last-child { background: linear-gradient(270deg, transparent, var(--emas)); }
+    #kredit .hiasan b { width: 7px; height: 7px; background: var(--emas); transform: rotate(45deg); }
+    #kredit h2 {
+      margin: 16px 0 18px; font-family: var(--f-judul); font-size: .6rem; font-weight: 400;
+      letter-spacing: .38em; padding-left: .38em; text-transform: uppercase; color: var(--emas-tua);
+    }
+    #kredit dl { display: grid; gap: 14px; margin: 0; }
+    #kredit dt { font-size: .58rem; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; opacity: .55; }
+    #kredit dd { margin: 4px 0 0; font-size: .76rem; font-weight: 300; letter-spacing: .04em; line-height: 1.6; }
+    #kredit a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--emas); padding-bottom: 1px; transition: color .2s; }
+    #kredit a:hover { color: var(--hijau); }
+    body.gelap #kredit a:hover { color: #7fd1b0; }
+    @media (min-width: 640px) { #kredit dl { grid-template-columns: repeat(3, 1fr); gap: 24px; } }
+
+    @media (max-width: 520px) {
+      .frame { padding: 28px 22px 26px; }
+      .e-top, .e-bottom { left: 26px; right: 26px; }
+      .e-left, .e-right { top: 26px; bottom: 26px; }
+      .chip span.teks { display: none; }
+      .chip { padding: 9px 12px; }
+      #kepala { font-size: .6rem; letter-spacing: .12em; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="arab-judul">المصحف الشريف</div>
+    <h1>Mushaf Tajwid</h1>
+  </header>
+
+  <div class="toolbar">
+    <div class="segmen" role="group" aria-label="Mode tampilan">
+      <button id="sTeks" class="aktif">Teks</button>
+      <button id="sGambar">Gambar</button>
+    </div>
+    <button id="tema" class="chip" aria-label="Ganti tema"></button>
+    <button id="toggleGaris" class="chip aktif" aria-label="Garis antar baris">
+      <svg class="ik" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span class="teks">Garis Baris</span>
+    </button>
+  </div>
+
+  <div id="wrap">
+    <div class="frame" id="frame">
+      <div class="edge e-top"></div><div class="edge e-bottom"></div>
+      <div class="edge e-left"></div><div class="edge e-right"></div>
+      <svg class="corner c1" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 28 Q2 2 28 2"/><path d="M2 2 H12 M2 2 V12"/><circle cx="9" cy="9" r="2.6" fill="currentColor" stroke="none"/></svg>
+      <svg class="corner c2" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 28 Q2 2 28 2"/><path d="M2 2 H12 M2 2 V12"/><circle cx="9" cy="9" r="2.6" fill="currentColor" stroke="none"/></svg>
+      <svg class="corner c3" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 28 Q2 2 28 2"/><path d="M2 2 H12 M2 2 V12"/><circle cx="9" cy="9" r="2.6" fill="currentColor" stroke="none"/></svg>
+      <svg class="corner c4" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 28 Q2 2 28 2"/><path d="M2 2 H12 M2 2 V12"/><circle cx="9" cy="9" r="2.6" fill="currentColor" stroke="none"/></svg>
+
+      <div id="kepala"><span id="kSurah"></span><span id="kJuz"></span></div>
+      <div id="teks"></div>
+      <div id="kaki"><span id="kNo"></span></div>
+      <div id="viewport"><img id="gambar" alt="Halaman mushaf" draggable="false"></div>
+    </div>
+    <div id="info"></div>
+    <div id="petunjuk"></div>
+  </div>
+
+  <footer id="kredit">
+    <div class="hiasan"><i></i><b></b><i></i></div>
+    <h2>Sumber &amp; Referensi</h2>
+    <dl>
+      <div>
+        <dt>Mode Teks</dt>
+        <dd><a href="https://github.com/MohamadHajjRabee/quran-qcf4" target="_blank" rel="noopener">quran-qcf4</a><br>Mushaf Madinah · QCF4</dd>
+      </div>
+      <div>
+        <dt>Mode Gambar</dt>
+        <dd><a href="https://github.com/SakinaDevGroup/mushaf-tajweed-cdn" target="_blank" rel="noopener">mushaf-tajweed-cdn</a><br>SakinaDevGroup</dd>
+      </div>
+      <div>
+        <dt>Naskah &amp; Font</dt>
+        <dd>King Fahd Quran<br>Printing Complex</dd>
+      </div>
+    </dl>
+  </footer>
+
+  <nav class="dock" aria-label="Navigasi halaman">
+    <button id="next" class="bulat" aria-label="Halaman berikutnya"><svg class="ik" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="nomor">
+      <input type="number" id="halaman" min="1" max="604" value="1" inputmode="numeric" aria-label="Nomor halaman">
+      <span>/ 604</span>
+    </div>
+    <button id="prev" class="bulat" aria-label="Halaman sebelumnya"><svg class="ik" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+  </nav>
+
+<script>
+  // --- Sumber data ---
+  const JSON_URL = "https://raw.githubusercontent.com/MohamadHajjRabee/quran-qcf4/main/pages/";
+  const FONT_URL = "https://cdn.jsdelivr.net/gh/MohamadHajjRabee/quran-qcf4@main/fonts-woff2/";
+  const GAMBAR = {
+    cdn: "https://cdn.jsdelivr.net/gh/SakinaDevGroup/mushaf-tajweed-cdn@main",
+    raw: "https://raw.githubusercontent.com/SakinaDevGroup/mushaf-tajweed-cdn/main"
+  };
+
+  // --- Pengaturan tampilan (boleh diubah) ---
+  const JARAK_KATA_EM = 0.12;   // jarak minimal antar kata (harus sama dengan 'gap' di CSS .baris)
+  const MIN_JARAK_BARIS = 2.0;  // tinggi satu baris (kelipatan ukuran huruf); naikkan jika ada tulisan menyentuh garis
+  const JARAK_SWIPE = 60;
+
+  const IKON = {
+    bulan: '<svg class="ik" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+    matahari: '<svg class="ik" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'
+  };
+
+  const frame = document.getElementById("frame");
+  const teks = document.getElementById("teks");
+  const kepala = document.getElementById("kepala");
+  const kaki = document.getElementById("kaki");
+  const viewport = document.getElementById("viewport");
+  const img = document.getElementById("gambar");
+  const input = document.getElementById("halaman");
+  const info = document.getElementById("info");
+
+  let halaman = Number(localStorage.getItem("quran_halaman")) || 1;
+  let tema = localStorage.getItem("quran_tema") || "light";
+  let mode = localStorage.getItem("quran_mode") === "gambar" ? "gambar" : "teks";
+  let tampilGaris = localStorage.getItem("quran_tampilGaris") !== "tidak";
+  let token = 0;
+
+  // Juz pada Mushaf Madinah: juz 1 = hal. 1-21, lalu tiap juz 20 halaman (juz 30 mulai hal. 582)
+  function hitungJuz(no) { return no < 22 ? 1 : Math.min(30, Math.floor((no - 2) / 20) + 1); }
+
+  // Teks judul dari data kadang memuat bismillah di belakang nama surah; ambil nama surahnya saja
+  function judulSurah(teksJudul) {
+    const kata = (teksJudul || "").trim().split(/\s+/);
+    const polos = k => k.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, "");
+    const i = kata.findIndex(k => polos(k) === "بسم");
+    return (i > 0 ? kata.slice(0, i) : kata).join(" ");
+  }
+
+  /* =====================================================
+     Mode teks: ambil data halaman + muat font, lalu susun baris
+     ===================================================== */
+  const dataCache = {};
+  const fontCache = {};
+
+  function ambilData(no) {
+    if (!dataCache[no]) {
+      const nama = String(no).padStart(3, "0");
+      dataCache[no] = fetch(JSON_URL + nama + ".json").then(r => {
+        if (!r.ok) throw new Error("JSON halaman " + no + " status " + r.status);
+        return r.json();
+      });
+      dataCache[no].catch(() => { delete dataCache[no]; });
+    }
+    return dataCache[no];
+  }
+
+  function muatFont(nama) {
+    if (!fontCache[nama]) {
+      const file = nama === "QCF4_QBSML" ? "QCF4_QBSML.woff2" : nama + "_W.woff2";
+      const f = new FontFace(nama, `url(${FONT_URL}${file})`);
+      fontCache[nama] = f.load().then(ff => { document.fonts.add(ff); return ff; });
+      fontCache[nama].catch(() => { delete fontCache[nama]; });
+    }
+    return fontCache[nama];
+  }
+
+  function fontHalaman(data) {
+    const s = new Set();
+    data.lines.forEach(l => l.words.forEach(w => { if (w.type !== "surah_header") s.add(w.font); }));
+    return [...s];
+  }
+
+  async function renderTeks(no, my) {
+    teks.classList.add("memuat");
+    const data = await ambilData(no);
+    await Promise.all(fontHalaman(data).map(muatFont));
+    if (my !== token) return;
+
+    teks.innerHTML = "";
+    data.lines.forEach(line => {
+      const baris = document.createElement("div");
+      baris.className = "baris";
+      const header = line.words.find(w => w.type === "surah_header");
+      if (header) {
+        // judul surah dibuat sendiri (banner) agar rapi dan konsisten
+        baris.classList.add("header");
+        const b = document.createElement("div");
+        b.className = "banner";
+        const t = document.createElement("span");
+        t.textContent = judulSurah(header.text);
+        b.appendChild(t);
+        baris.appendChild(b);
+      } else {
+        baris.classList.add("isi");
+        line.words.forEach(w => {
+          const k = document.createElement("span");
+          k.className = "kata";
+          k.style.fontFamily = `"${w.font}"`;
+          k.textContent = w.char;
+          baris.appendChild(k);
+        });
+      }
+      teks.appendChild(baris);
+    });
+
+    const namaSurah = (data.surahs && data.surahs.length) ? data.surahs.map(s => s.name).join(" · ") : "";
+    document.getElementById("kSurah").textContent = namaSurah;
+    document.getElementById("kJuz").textContent = "Juz " + hitungJuz(no);
+    document.getElementById("kNo").textContent = no;
+    info.textContent = `Halaman ${no} dari 604` + (namaSurah ? "  •  " + namaSurah : "");
+
+    atur();
+    teks.classList.remove("memuat");
+  }
+
+  // lebar alami satu baris (jumlah lebar kata + jarak minimal), pada ukuran huruf fs (px)
+  function lebarAlami(baris, fs) {
+    let total = 0;
+    baris.querySelectorAll(".kata").forEach(k => { total += k.getBoundingClientRect().width; });
+    return total + Math.max(0, baris.children.length - 1) * JARAK_KATA_EM * fs;
+  }
+
+  // Atur ukuran huruf, tinggi baris, dan judul supaya semuanya pas dan tidak meluber
+  function atur() {
+    const lebar = teks.clientWidth;
+    if (!lebar) return;
+    const semua = [...teks.querySelectorAll(".baris")];
+    const isi = semua.filter(b => b.classList.contains("isi"));
+    const target = (halaman <= 2 ? 0.78 : 1) * lebar;     // halaman 1-2 lebih sempit seperti mushaf cetak
+    semua.forEach(b => { b.style.width = target + "px"; });
+    if (!isi.length) return;
+
+    // 1) ukur pada 100px, lalu skala agar baris terpanjang pas
+    teks.style.setProperty("--fs", "100px");
+    const alami = isi.map(b => lebarAlami(b, 100));
+    const maks = Math.max(...alami);
+    if (!maks) return;
+    let fs = (100 * target / maks) * 0.995;
+    teks.style.setProperty("--fs", fs + "px");
+
+    // 2) cek ulang pada ukuran sebenarnya; kecilkan sedikit jika ada baris yang melebihi lebar
+    for (let i = 0; i < 20; i++) {
+      const meluber = isi.some(b => lebarAlami(b, fs) > target - 0.5);
+      if (!meluber) break;
+      fs *= 0.985;
+      teks.style.setProperty("--fs", fs + "px");
+    }
+
+    // 3) tinggi baris mengikuti tinggi huruf terbesar, supaya tulisan tidak menyentuh garis pemisah
+    let hMaks = 0;
+    isi.forEach(b => b.querySelectorAll(".kata").forEach(k => { hMaks = Math.max(hMaks, k.getBoundingClientRect().height); }));
+    const jarak = Math.max(MIN_JARAK_BARIS, (hMaks / fs) * 1.1);
+    teks.style.setProperty("--pitch", jarak.toFixed(3));
+
+    // 4) baris pendek (akhir surah, halaman awal) di tengah, bukan direnggangkan
+    isi.forEach(b => b.classList.toggle("pendek", lebarAlami(b, fs) < target * 0.85));
+
+    // 5) judul surah: kecilkan teks jika lebih lebar dari banner
+    teks.querySelectorAll(".banner").forEach(b => {
+      const t = b.firstChild;
+      t.style.fontSize = "";
+      let ukuran = parseFloat(getComputedStyle(t).fontSize);
+      for (let i = 0; i < 15 && t.offsetWidth > b.clientWidth * 0.78; i++) {
+        ukuran *= 0.93;
+        t.style.fontSize = ukuran + "px";
+      }
+    });
+  }
+
+  let timerUkuran;
+  window.addEventListener("resize", () => {
+    clearTimeout(timerUkuran);
+    timerUkuran = setTimeout(() => { if (mode === "teks" && teks.children.length) atur(); }, 120);
+  });
+
+  /* =====================================================
+     Mode gambar (cadangan)
+     ===================================================== */
+  function urlGambar(no, jenis) { return `${GAMBAR[jenis]}/${tema}/p${no}.png`; }
+
+  function tampilGambar(no) {
+    teks.style.display = "none";
+    kepala.style.display = "none";
+    kaki.style.display = "none";
+    viewport.style.display = "block";
+    img.onerror = () => {
+      if (!img.dataset.cadangan) { img.dataset.cadangan = "1"; img.src = urlGambar(no, "raw"); }
+      else info.textContent = "Gagal memuat gambar. Periksa koneksi internet.";
+    };
+    delete img.dataset.cadangan;
+    img.src = urlGambar(no, "cdn");
+    img.alt = "Mushaf halaman " + no;
+  }
+
+  /* =====================================================
+     Tampilkan halaman
+     arah: +1 = berikutnya (masuk dari kiri), -1 = sebelumnya (masuk dari kanan)
+     ===================================================== */
+  function prefetch(n) {
+    if (n < 1 || n > 604) return;
+    if (mode === "teks") {
+      ambilData(n).then(d => Promise.all(fontHalaman(d).map(muatFont))).catch(() => {});
+    } else {
+      new Image().src = urlGambar(n, "cdn");
+    }
+  }
+
+  function animasiMasuk(arah) {
+    frame.classList.remove("masuk-kiri", "masuk-kanan");
+    if (!arah) return;
+    void frame.offsetWidth;
+    frame.classList.add(arah > 0 ? "masuk-kiri" : "masuk-kanan");
+  }
+
+  function tampil(no, arah) {
+    if (!(no >= 1 && no <= 604)) { input.value = halaman; return; }
+    halaman = no;
+    const my = ++token;
+
+    input.value = no;
+    info.textContent = `Halaman ${no} dari 604`;
+    document.getElementById("prev").disabled = no <= 1;
+    document.getElementById("next").disabled = no >= 604;
+    localStorage.setItem("quran_halaman", no);
+    window.scrollTo(0, 0);
+    animasiMasuk(arah);
+
+    if (mode === "teks") {
+      viewport.style.display = "none";
+      teks.style.display = "";
+      kepala.style.display = "";
+      kaki.style.display = "";
+      renderTeks(no, my).catch(e => {
+        if (my !== token) return;
+        console.warn("Mode teks gagal, memakai gambar:", e);
+        teks.classList.remove("memuat");
+        info.textContent = `Halaman ${no} dari 604  •  (mode teks gagal dimuat, memakai gambar)`;
+        tampilGambar(no);
+      });
+    } else {
+      tampilGambar(no);
+    }
+    prefetch(no + 1);
+    prefetch(no - 1);
+  }
+
+  /* =====================================================
+     Tampilan tombol
+     ===================================================== */
+  function terapkanTema() {
+    document.body.classList.toggle("gelap", tema === "dark");
+    document.getElementById("tema").innerHTML =
+      (tema === "dark" ? IKON.matahari : IKON.bulan) + `<span class="teks">${tema === "dark" ? "Terang" : "Gelap"}</span>`;
+  }
+  function terapkanMode() {
+    document.getElementById("sTeks").classList.toggle("aktif", mode === "teks");
+    document.getElementById("sGambar").classList.toggle("aktif", mode === "gambar");
+    document.getElementById("toggleGaris").style.display = mode === "teks" ? "" : "none";
+  }
+  function terapkanGaris() {
+    teks.classList.toggle("tanpa-garis", !tampilGaris);
+    document.getElementById("toggleGaris").classList.toggle("aktif", tampilGaris);
+  }
+
+  /* =====================================================
+     Tombol & keyboard
+     ===================================================== */
+  // Mushaf dibaca dari kanan ke kiri, jadi "Berikutnya" ada di sebelah kiri
+  document.getElementById("next").onclick = () => tampil(halaman + 1, 1);
+  document.getElementById("prev").onclick = () => tampil(halaman - 1, -1);
+  input.addEventListener("change", () => tampil(parseInt(input.value)));
+  input.addEventListener("keydown", e => { if (e.key === "Enter") input.blur(); });
+
+  document.getElementById("tema").onclick = () => {
+    tema = tema === "dark" ? "light" : "dark";
+    localStorage.setItem("quran_tema", tema);
+    terapkanTema();
+    if (mode === "gambar") tampil(halaman);
+  };
+  function pilihMode(m) {
+    if (mode === m) return;
+    mode = m;
+    localStorage.setItem("quran_mode", m);
+    terapkanMode();
+    tampil(halaman);
+  }
+  document.getElementById("sTeks").onclick = () => pilihMode("teks");
+  document.getElementById("sGambar").onclick = () => pilihMode("gambar");
+  document.getElementById("toggleGaris").onclick = () => {
+    tampilGaris = !tampilGaris;
+    localStorage.setItem("quran_tampilGaris", tampilGaris ? "ya" : "tidak");
+    terapkanGaris();
+  };
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.key === "ArrowLeft") tampil(halaman + 1, 1);
+    if (e.key === "ArrowRight") tampil(halaman - 1, -1);
+  });
+
+  /* =====================================================
+     Swipe di HP
+     Geser jari kiri -> kanan = halaman berikutnya (arah buku Arab)
+     ===================================================== */
+  let sx = 0, sy = 0, dx = 0, geser = false, arahPasti = false;
+  function kembali() {
+    frame.style.transition = "transform .2s ease, opacity .2s ease";
+    frame.style.transform = ""; frame.style.opacity = "";
+  }
+  frame.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1 || (window.visualViewport && window.visualViewport.scale > 1.05)) { geser = false; return; }
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; geser = true; arahPasti = false;
+    frame.style.transition = "none";
+  }, { passive: true });
+  frame.addEventListener("touchmove", e => {
+    if (!geser) return;
+    const t = e.touches[0];
+    dx = t.clientX - sx;
+    const dy = t.clientY - sy;
+    if (!arahPasti) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      arahPasti = true;
+      if (Math.abs(dy) > Math.abs(dx)) { geser = false; kembali(); return; }
+    }
+    frame.style.transform = `translateX(${dx * 0.35}px)`;
+    frame.style.opacity = 1 - Math.min(Math.abs(dx) / 600, 0.35);
+  }, { passive: true });
+  frame.addEventListener("touchend", () => {
+    if (!geser || !arahPasti) { geser = false; return; }
+    geser = false;
+    if (Math.abs(dx) >= JARAK_SWIPE) {
+      const arah = dx > 0 ? 1 : -1;
+      const target = halaman + arah;
+      if (target >= 1 && target <= 604) {
+        frame.style.transition = "none"; frame.style.transform = ""; frame.style.opacity = "";
+        tampil(target, arah);
+        return;
+      }
+    }
+    kembali();
+  });
+  frame.addEventListener("touchcancel", () => { geser = false; kembali(); });
+
+  /* ===== Mulai ===== */
+  if ("ontouchstart" in window) document.getElementById("petunjuk").textContent = "Geser ke kanan/kiri untuk pindah halaman";
+  terapkanTema();
+  terapkanMode();
+  terapkanGaris();
+  tampil(halaman);
+</script>
+</body>
+</html>
