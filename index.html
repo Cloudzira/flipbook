@@ -301,9 +301,9 @@
     </div>
 
     <div class="flex items-center space-x-2 sm:space-x-3">
-      <!-- TOMBOL AL-QURAN -->
-      <button id="nav-quran-btn" onclick="openQuran()" aria-label="Buka Al-Quran" class="px-3 py-1.5 rounded-xl text-xs font-medium glass-card text-slate-200 hover:text-white transition flex items-center gap-1.5 border border-emerald-400/30">
-        <i class="fa-solid fa-book-quran text-emerald-300"></i> <span class="hidden sm:inline">Al-Quran</span>
+      <!-- TOMBOL AL-QURAN (gaya sama dengan tombol Admin/Cloudzone) -->
+      <button id="nav-quran-btn" onclick="toggleQuran()" aria-label="Buka Al-Quran" aria-pressed="false" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30">
+        <i class="fa-solid fa-book-quran"></i> <span class="hidden min-[400px]:inline">Al-Quran</span>
       </button>
       <!-- PERBEDAAN 1: ICON KATALOG MENGGUNAKAN GRID/ICONS KHUSUS KATALOG -->
       <button id="nav-admin-btn" onclick="openAdminModalOrView()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30">
@@ -550,21 +550,11 @@ notify pgrst, 'reload schema';</pre>
     </div>
   </div>
 
-  <!-- PANEL AL-QURAN (layar penuh) -->
-  <div id="quran-overlay" class="fixed inset-0 z-[60] hidden flex-col bg-slate-950" role="dialog" aria-modal="true" aria-label="Mushaf Al-Quran">
-    <div class="glass-panel flex items-center justify-between px-3 sm:px-5 h-12 flex-shrink-0 border-b border-white/10">
-      <div class="flex items-center gap-2 text-sm font-semibold text-white">
-        <i class="fa-solid fa-book-quran text-emerald-300"></i><span>Mushaf Al-Quran</span>
-      </div>
-      <button onclick="closeQuran()" aria-label="Tutup Al-Quran" class="px-3 py-1.5 rounded-xl text-xs font-medium glass-card text-slate-200 hover:text-white transition flex items-center gap-1.5">
-        <i class="fa-solid fa-xmark"></i><span class="hidden sm:inline">Tutup</span>
-      </button>
-    </div>
-    <div id="quran-body" class="flex-1 min-h-0 relative">
-      <div id="quran-loading" class="absolute inset-0 flex flex-col items-center justify-center gap-3">
-        <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-300"></i>
-        <span class="text-xs text-indigo-200/80">Memuat Al-Quran..</span>
-      </div>
+  <!-- PANEL AL-QURAN: tampil di bawah navbar FlipbuKu (navbar tetap terlihat) -->
+  <div id="quran-overlay" class="fixed inset-x-0 bottom-0 top-14 z-[48] hidden bg-slate-950" role="region" aria-label="Mushaf Al-Quran">
+    <div id="quran-loading" class="absolute inset-0 flex flex-col items-center justify-center gap-3">
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-300"></i>
+      <span class="text-xs text-indigo-200/80">Memuat Al-Quran..</span>
     </div>
   </div>
 
@@ -1220,6 +1210,7 @@ notify pgrst, 'reload schema';</pre>
     }
 
     function switchView(viewName) {
+      closeQuran();
       if (viewName !== 'reader' && document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
       }
@@ -1728,12 +1719,20 @@ notify pgrst, 'reload schema';</pre>
       }
     }
 
-    // ===== AL-QURAN (panel layar penuh berisi quran.html) =====
+    // ===== AL-QURAN (panel di bawah navbar, berisi quran.html) =====
     const QURAN_URL = 'quran.html'; // lokasi halaman Al-Quran (satu folder dengan index.html)
 
     function isQuranOpen() {
       const el = document.getElementById('quran-overlay');
       return !!el && !el.classList.contains('hidden');
+    }
+
+    function setQuranButton(aktif) {
+      const btn = document.getElementById('nav-quran-btn');
+      if (!btn) return;
+      btn.setAttribute('aria-pressed', aktif ? 'true' : 'false');
+      btn.classList.toggle('ring-2', aktif);
+      btn.classList.toggle('ring-indigo-300/60', aktif);
     }
 
     function openQuran() {
@@ -1749,16 +1748,22 @@ notify pgrst, 'reload schema';</pre>
           const spinner = document.getElementById('quran-loading');
           if (spinner) spinner.classList.add('hidden');
         };
-        document.getElementById('quran-body').appendChild(frame);
+        overlay.appendChild(frame);
       }
       overlay.classList.remove('hidden');
-      overlay.classList.add('flex');
+      setQuranButton(true);
     }
 
     function closeQuran() {
       const overlay = document.getElementById('quran-overlay');
+      if (!overlay) return;
       overlay.classList.add('hidden');
-      overlay.classList.remove('flex');
+      setQuranButton(false);
+    }
+
+    // klik tombol Al-Quran lagi = tutup
+    function toggleQuran() {
+      if (isQuranOpen()) closeQuran(); else openQuran();
     }
 
     document.addEventListener('keydown', (event) => {
