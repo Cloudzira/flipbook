@@ -260,6 +260,8 @@
   const JARAK_KATA_EM = 0.12;   // jarak minimal antar kata (harus sama dengan 'gap' di CSS .baris)
   const MIN_JARAK_BARIS = 2.0;  // tinggi satu baris (kelipatan ukuran huruf); naikkan jika ada tulisan menyentuh garis
   const JARAK_SWIPE = 60;
+  const JUMLAH_BARIS = 15;          // jumlah baris per halaman
+  const HALAMAN_KALIBRASI = 3;      // halaman penuh 15 baris, dipakai mengukur geometri gambar
 
   const IKON = {
     bulan: '<svg class="ik" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
@@ -280,6 +282,11 @@
   let mode = localStorage.getItem("quran_mode") === "gambar" ? "gambar" : "teks";
   let tampilGaris = localStorage.getItem("quran_tampilGaris") !== "tidak";
   let token = 0;
+  // Geometri halaman (diukur dari gambar): dipakai bersama oleh mode Teks & Gambar
+  // supaya lebar blok tulisan dan jarak antar baris SAMA di kedua mode.
+  let GEO = null;
+  try { GEO = JSON.parse(localStorage.getItem("quran_geo_v1")); } catch (e) { GEO = null; }
+  if (!GEO || !(GEO.cw > 0 && GEO.ch > 0 && GEO.p > 0 && GEO.iw > 0)) GEO = null;
 
   // Juz pada Mushaf Madinah: juz 1 = hal. 1-21, lalu tiap juz 20 halaman (juz 30 mulai hal. 582)
   function hitungJuz(no) { return no < 22 ? 1 : Math.min(30, Math.floor((no - 2) / 20) + 1); }
@@ -376,14 +383,18 @@
     return total + Math.max(0, baris.children.length - 1) * JARAK_KATA_EM * fs;
   }
 
-  // Atur ukuran huruf, tinggi baris, dan judul supaya semuanya pas dan tidak meluber
+  // Atur ukuran huruf, tinggi baris, dan judul supaya semuanya pas dan tidak meluber.
+  // Jika geometri gambar sudah terukur (GEO), lebar blok tulisan dan jarak antar baris
+  // dibuat SAMA dengan mode Gambar.
   function atur() {
     const lebar = teks.clientWidth;
     if (!lebar) return;
     const semua = [...teks.querySelectorAll(".baris")];
     const isi = semua.filter(b => b.classList.contains("isi"));
-    const target = (halaman <= 2 ? 0.78 : 1) * lebar;     // halaman 1-2 lebih sempit seperti mushaf cetak
+    const faktor = halaman <= 2 ? 0.78 : 1;                 // halaman 1-2 lebih sempit seperti mushaf cetak
+    const target = (GEO ? lebar * (GEO.iw / GEO.cw) : lebar) * faktor;
     semua.forEach(b => { b.style.width = target + "px"; });
+    teks.style.minHeight = GEO ? (lebar * GEO.ch / GEO.cw) + "px" : "";
     if (!isi.length) return;
 
     // 1) ukur pada 100px, lalu skala agar baris terpanjang pas
@@ -402,11 +413,15 @@
       teks.style.setProperty("--fs", fs + "px");
     }
 
-    // 3) tinggi baris mengikuti tinggi huruf terbesar, supaya tulisan tidak menyentuh garis pemisah
-    let hMaks = 0;
-    isi.forEach(b => b.querySelectorAll(".kata").forEach(k => { hMaks = Math.max(hMaks, k.getBoundingClientRect().height); }));
-    const jarak = Math.max(MIN_JARAK_BARIS, (hMaks / fs) * 1.1);
-    teks.style.setProperty("--pitch", jarak.toFixed(3));
+    // 3) jarak antar baris
+    if (GEO) {
+      const px = lebar * GEO.p / GEO.cw;                    // sama persis dengan jarak baris pada gambar
+      teks.style.setProperty("--pitch", (px / fs).toFixed(4));
+    } else {
+      let hMaks = 0;
+      isi.forEach(b => b.querySelectorAll(".kata").forEach(k => { hMaks = Math.max(hMaks, k.getBoundingClientRect().height); }));
+      teks.style.setProperty("--pitch", Math.max(MIN_JARAK_BARIS, (hMaks / fs) * 1.1).toFixed(3));
+    }
 
     // 4) baris pendek (akhir surah, halaman awal) di tengah, bukan direnggangkan
     isi.forEach(b => b.classList.toggle("pendek", lebarAlami(b, fs) < target * 0.85));
@@ -432,13 +447,99 @@
   /* =====================================================
      Mode gambar (cadangan)
      ===================================================== */
-  function urlGambar(no, jenis) { return `${GAMBAR[jenis]}/${tema}/p${no}.png`; }
+  function urlGambar(no, jenis, t) { return `${GAMBAR[jenis]}/${t || tema}/p${no}.png`; }
+
+  function muatGambarCors(url) {
+    return new Promise((ok, gagal) => {
+      const el = new Image();
+      el.crossOrigin = "anonymous";
+      el.onload = () => ok(el);
+      el.onerror = gagal;
+      el.src = url;
+    });
+  }
+
+  // Ukur kotak tulisan pada gambar (batas kiri, kanan, atas, bawah tinta)
+  function ukurGeometri(el) {
+    const W = el.naturalWidth, H = el.naturalHeight;
+    const s = Math.min(1, 600 / W);
+    const w = Math.round(W * s), h = Math.round(H * s);
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(el, 0, 0, w, h);
+    const d = ctx.getImageData(0, 0, w, h).data;      // gagal jika gambar tidak mengizinkan CORS
+    const br = d[0], bg = d[1], bb = d[2], ba = d[3];  // warna latar = piksel pojok kiri atas
+    const baris = new Float32Array(h), kolom = new Float32Array(w);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        let tinta = Math.abs(d[i + 3] - ba) > 60;
+        if (!tinta && d[i + 3] > 60 && ba > 60) {
+          tinta = Math.abs(d[i] - br) + Math.abs(d[i + 1] - bg) + Math.abs(d[i + 2] - bb) > 120;
+        }
+        if (tinta) { baris[y]++; kolom[x]++; }
+      }
+    }
+    const ab = Math.max(2, w * 0.004), ak = Math.max(2, h * 0.004);
+    let atas = -1, bawah = -1, kiri = -1, kanan = -1;
+    for (let y = 0; y < h; y++) if (baris[y] > ab) { if (atas < 0) atas = y; bawah = y; }
+    for (let x = 0; x < w; x++) if (kolom[x] > ak) { if (kiri < 0) kiri = x; kanan = x; }
+    if (atas < 0 || kiri < 0) return null;
+    return { W, H, s, atas, bawah: bawah + 1, kiri, kanan: kanan + 1 };
+  }
+
+  function hitungGeo(a) {
+    const iw = (a.kanan - a.kiri) / a.s;                 // lebar blok tulisan (px asli)
+    const ih = (a.bawah - a.atas) / a.s;                 // tinggi blok tulisan (px asli)
+    const p = ih / JUMLAH_BARIS;                         // jarak antar baris (px asli)
+    const padV = p * 0.45, padH = iw * 0.03;
+    const cx = Math.max(0, a.kiri / a.s - padH);
+    const cy = Math.max(0, a.atas / a.s - padV);
+    const cw = Math.min(a.W, a.kanan / a.s + padH) - cx;
+    const ch = Math.min(a.H, a.bawah / a.s + padV) - cy;
+    return { W: a.W, H: a.H, cx, cy, cw, ch, iw, p };
+  }
+
+  async function kalibrasiGeometri() {
+    let el;
+    try { el = await muatGambarCors(urlGambar(HALAMAN_KALIBRASI, "cdn", "light")); }
+    catch (e) { el = await muatGambarCors(urlGambar(HALAMAN_KALIBRASI, "raw", "light")); }
+    const a = ukurGeometri(el);
+    if (!a) return null;
+    const g = hitungGeo(a);
+    const rasio = g.ch / g.cw;
+    if (!(g.cw > 0 && g.p > 0 && rasio > 0.8 && rasio < 3)) return null;   // hasil tidak masuk akal: abaikan
+    GEO = g;
+    try { localStorage.setItem("quran_geo_v1", JSON.stringify(g)); } catch (e) {}
+    return g;
+  }
+
+  // Mode gambar: pangkas ruang kosong, skala agar blok tulisan selebar bingkai
+  function terapkanGeoGambar() {
+    if (!GEO) {
+      viewport.style.aspectRatio = "";
+      img.style.width = ""; img.style.maxWidth = ""; img.style.marginLeft = ""; img.style.marginTop = "";
+      return;
+    }
+    viewport.style.aspectRatio = `${GEO.cw} / ${GEO.ch}`;
+    img.style.maxWidth = "none";
+    img.style.width = `${(GEO.W / GEO.cw) * 100}%`;
+    img.style.marginLeft = `${-(GEO.cx / GEO.cw) * 100}%`;
+    img.style.marginTop = `${-(GEO.cy / GEO.cw) * 100}%`;
+  }
+
+  function terapkanGeometri() {
+    if (mode === "teks") { if (teks.children.length) atur(); }
+    else terapkanGeoGambar();
+  }
 
   function tampilGambar(no) {
     teks.style.display = "none";
     kepala.style.display = "none";
     kaki.style.display = "none";
     viewport.style.display = "block";
+    terapkanGeoGambar();
     img.onerror = () => {
       if (!img.dataset.cadangan) { img.dataset.cadangan = "1"; img.src = urlGambar(no, "raw"); }
       else info.textContent = "Gagal memuat gambar. Periksa koneksi internet.";
@@ -602,6 +703,8 @@
   terapkanMode();
   terapkanGaris();
   tampil(halaman);
+  // ukur geometri gambar (sekali; hasilnya disimpan) lalu samakan kedua mode
+  if (!GEO) kalibrasiGeometri().then(g => { if (g) terapkanGeometri(); }).catch(e => console.warn("Kalibrasi geometri gagal:", e));
 </script>
 </body>
 </html>
