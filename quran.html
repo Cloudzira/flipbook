@@ -137,7 +137,7 @@
     /* ===== Bar navigasi bawah ===== */
     .dock {
       position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
-      display: flex; align-items: center; gap: 6px; padding: 6px; z-index: 20;
+      display: flex; align-items: center; gap: 22px; padding: 6px; z-index: 20;
       border-radius: 999px; background: var(--kaca-kuat); border: 1px solid var(--tepi-aksen);
       box-shadow: 0 10px 32px rgba(0,0,0,.45); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     }
@@ -150,12 +150,18 @@
     .dock .bulat:active:not(:disabled) { transform: scale(.92); }
     .dock .bulat:disabled { background: rgba(148,163,184,.25); border-color: transparent; box-shadow: none; opacity: .5; cursor: not-allowed; }
     .dock .bulat svg.ik { width: 22px; height: 22px; stroke-width: 2.4; }
-    .nomor { display: flex; align-items: baseline; gap: 5px; padding: 0 8px; color: var(--redup); font-size: .75rem; font-weight: 500; }
-    .nomor input {
-      width: 56px; padding: 4px 2px; text-align: center; font-family: inherit; font-size: 1rem; font-weight: 600;
+    .pilih {
+      display: inline-flex; align-items: center; gap: 8px; padding: 4px 14px; border-radius: 999px;
+      border: 1px solid var(--tepi); background: var(--kaca); color: var(--teks-lembut);
+      font-size: .78rem; font-weight: 500; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      transition: border-color .2s;
+    }
+    .pilih:focus-within { border-color: var(--tepi-aksen); }
+    .pilih input {
+      width: 52px; padding: 4px 2px; text-align: center; font-family: inherit; font-size: .95rem; font-weight: 600;
       border: 0; border-bottom: 2px solid var(--aksen); background: transparent; color: var(--teks); outline: none; -moz-appearance: textfield;
     }
-    .nomor input::-webkit-outer-spin-button, .nomor input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .pilih input::-webkit-outer-spin-button, .pilih input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
     /* ===== Sumber & referensi ===== */
     #kredit { max-width: 720px; margin: 40px auto 0; padding: 0 20px 8px; text-align: center; }
@@ -199,6 +205,11 @@
     <button id="toggleGaris" class="chip aktif" aria-label="Garis antar baris">
       <svg class="ik" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span class="teks">Garis Baris</span>
     </button>
+    <label class="pilih" for="halaman">
+      <span>Hal.</span>
+      <input type="number" id="halaman" min="1" max="604" value="1" inputmode="numeric" aria-label="Nomor halaman">
+      <span>/ 604</span>
+    </label>
   </div>
 
   <div id="wrap">
@@ -240,10 +251,6 @@
 
   <nav class="dock" aria-label="Navigasi halaman">
     <button id="next" class="bulat" aria-label="Halaman berikutnya"><svg class="ik" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <div class="nomor">
-      <input type="number" id="halaman" min="1" max="604" value="1" inputmode="numeric" aria-label="Nomor halaman">
-      <span>/604</span>
-    </div>
     <button id="prev" class="bulat" aria-label="Halaman sebelumnya"><svg class="ik" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
   </nav>
 
