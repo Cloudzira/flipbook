@@ -303,7 +303,7 @@
     <div class="flex items-center space-x-2 sm:space-x-3">
       <!-- TOMBOL AL-QURAN (gaya sama dengan tombol Admin/Cloudzone) -->
       <button id="nav-quran-btn" onclick="toggleQuran()" aria-label="Buka Al-Quran" aria-pressed="false" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30">
-        <i id="nav-quran-icon" class="fa-solid fa-book-quran"></i> <span id="nav-quran-text" class="hidden min-[400px]:inline">Al-Quran</span>
+        <i id="nav-quran-icon" class="fa-solid fa-book-quran"></i> <span id="nav-quran-text" class="hidden min-[400px]:inline">Al Quran</span>
       </button>
       <!-- PERBEDAAN 1: ICON KATALOG MENGGUNAKAN GRID/ICONS KHUSUS KATALOG -->
       <button id="nav-admin-btn" onclick="openAdminModalOrView()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30">
@@ -1734,9 +1734,9 @@ notify pgrst, 'reload schema';</pre>
       const ikon = document.getElementById('nav-quran-icon');
       const teks = document.getElementById('nav-quran-text');
       btn.setAttribute('aria-pressed', aktif ? 'true' : 'false');
-      btn.setAttribute('aria-label', aktif ? 'Kembali ke FlipBuku' : 'Buka Al-Quran');
+      btn.setAttribute('aria-label', aktif ? 'Kembali ke FlipbuKu' : 'Buka Al Quran');
       if (ikon) ikon.className = aktif ? 'fa-solid fa-book-open' : 'fa-solid fa-book-quran';
-      if (teks) teks.textContent = aktif ? 'FlipBuku' : 'Al-Quran';
+      if (teks) teks.textContent = aktif ? 'FlipbuKu' : 'Al Quran';
     }
 
     function openQuran() {
