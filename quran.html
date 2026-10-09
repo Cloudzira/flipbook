@@ -51,19 +51,62 @@
     }
     .judul small { display: block; margin-top: 2px; font-size: .62rem; font-weight: 500; letter-spacing: .28em; text-transform: uppercase; color: var(--redup); opacity: .8; padding-left: .28em; }
 
-    /* ===== Toolbar ===== */
+    /* ===== Toolbar & Keseragaman Tinggi Tombol (Standardized Height & Proportions) ===== */
     .toolbar { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 14px 12px 16px; }
-    .segmen { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--kaca); border: 1px solid var(--tepi); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
-    .segmen button { border: 0; background: transparent; color: var(--teks-lembut); padding: 7px 18px; border-radius: 999px; font-size: .78rem; font-weight: 500; transition: background .2s, color .2s; }
+    
+    /* Standarisasi tinggi kontrol toolbar */
+    .segmen, .chip, .navhal, .pilih-surah {
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: var(--kaca);
+      border: 1px solid var(--tepi);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .segmen { padding: 3px; }
+    .segmen button { border: 0; background: transparent; color: var(--teks-lembut); height: 100%; padding: 0 18px; border-radius: 999px; font-size: .78rem; font-weight: 500; transition: background .2s, color .2s; }
     .segmen button.aktif { color: #fff; background: linear-gradient(90deg, var(--g1), var(--g2)); box-shadow: 0 4px 14px rgba(99,102,241,.35); }
+    
     .chip {
-      display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 999px;
-      border: 1px solid var(--tepi); background: var(--kaca); color: var(--teks-lembut);
-      font-size: .78rem; font-weight: 500; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      padding: 0 16px; gap: 7px; color: var(--teks-lembut);
+      font-size: .78rem; font-weight: 500;
       transition: background .2s, color .2s, border-color .2s, transform .1s;
     }
     .chip:hover { border-color: var(--tepi-aksen); transform: translateY(-1px); }
     .chip.aktif { color: #fff; border-color: rgba(129,140,248,.35); background: linear-gradient(90deg, var(--g1), var(--g2)); box-shadow: 0 4px 14px rgba(99,102,241,.3); }
+
+    /* Dropdown Nama Surat */
+    .pilih-surah {
+      padding: 0 14px;
+      color: var(--teks-lembut);
+      font-size: .78rem;
+      font-weight: 500;
+      transition: border-color .2s;
+    }
+    .pilih-surah:focus-within { border-color: var(--tepi-aksen); }
+    .pilih-surah select {
+      background: transparent;
+      border: none;
+      color: var(--teks);
+      font-family: inherit;
+      font-size: .78rem;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .pilih-surah select option {
+      background: #0a0f1d;
+      color: #e2e8f0;
+    }
+    body.terang .pilih-surah select option {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
 
     /* ===== Bingkai ===== */
     #wrap { padding: 0 12px; }
@@ -136,9 +179,7 @@
 
     /* ===== Navigasi halaman (di toolbar atas) ===== */
     .navhal {
-      display: inline-flex; align-items: center; gap: 6px; padding: 4px; border-radius: 999px;
-      border: 1px solid var(--tepi); background: var(--kaca);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      padding: 3px;
     }
     .navhal .bulat {
       width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(129,140,248,.35); display: grid; place-items: center;
@@ -149,17 +190,14 @@
     .navhal .bulat:active:not(:disabled) { transform: scale(.92); }
     .navhal .bulat:disabled { background: rgba(148,163,184,.25); border-color: transparent; box-shadow: none; opacity: .5; cursor: not-allowed; }
     .navhal .bulat svg.ik { width: 18px; height: 18px; stroke-width: 2.4; }
-    .navhal .pilih { border: 0; background: transparent; padding: 0 6px; backdrop-filter: none; -webkit-backdrop-filter: none; }
 
     .pilih {
-      display: inline-flex; align-items: center; gap: 8px; padding: 4px 14px; border-radius: 999px;
-      border: 1px solid var(--tepi); background: var(--kaca); color: var(--teks-lembut);
-      font-size: .78rem; font-weight: 500; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      transition: border-color .2s;
+      display: inline-flex; align-items: center; gap: 8px; padding: 0 10px; height: 100%;
+      background: transparent; color: var(--teks-lembut);
+      font-size: .78rem; font-weight: 500;
     }
-    .pilih:focus-within { border-color: var(--tepi-aksen); }
     .pilih input {
-      width: 52px; padding: 4px 2px; text-align: center; font-family: inherit; font-size: .95rem; font-weight: 600;
+      width: 42px; padding: 2px; text-align: center; font-family: inherit; font-size: .9rem; font-weight: 600;
       border: 0; border-bottom: 2px solid var(--aksen); background: transparent; color: var(--teks); outline: none; -moz-appearance: textfield;
     }
     .pilih input::-webkit-outer-spin-button, .pilih input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -186,7 +224,7 @@
       .e-top, .e-bottom { left: 26px; right: 26px; }
       .e-left, .e-right { top: 26px; bottom: 26px; }
       .chip span.teks { display: none; }
-      .chip { padding: 9px 12px; }
+      .chip { padding: 0 12px; }
       #kepala { font-size: .58rem; letter-spacing: .12em; }
     }
   </style>
@@ -201,6 +239,11 @@
     <div class="segmen" role="group" aria-label="Mode tampilan">
       <button id="sTeks" class="aktif">Standar</button>
       <button id="sGambar">Tajwid</button>
+    </div>
+    <div class="pilih-surah" aria-label="Pilih nama surat">
+      <select id="pilihSurah" aria-label="Daftar Surah">
+        <option value="" disabled selected>Pilih Surat</option>
+      </select>
     </div>
     <button id="tema" class="chip" aria-label="Ganti tema"></button>
     <button id="toggleGaris" class="chip aktif" aria-label="Garis antar baris">
@@ -256,6 +299,76 @@
 
 
 <script>
+  // --- Daftar Surah Al-Quran (1-114) beserta halaman awal Mushaf Madinah ---
+  const DAFTAR_SURAH = [
+    { no: 1, nama: "Al-Fatihah", hal: 1 }, { no: 2, nama: "Al-Baqarah", hal: 2 },
+    { no: 3, nama: "Ali 'Imran", hal: 50 }, { no: 4, nama: "An-Nisa'", hal: 77 },
+    { no: 5, nama: "Al-Ma'idah", hal: 106 }, { no: 6, nama: "Al-An'am", hal: 128 },
+    { no: 7, nama: "Al-A'raf", hal: 151 }, { no: 8, nama: "Al-Anfal", hal: 177 },
+    { no: 9, nama: "At-Taubah", hal: 187 }, { no: 10, nama: "Yunus", hal: 208 },
+    { no: 11, nama: "Hud", hal: 221 }, { no: 12, nama: "Yusuf", hal: 235 },
+    { no: 13, nama: "Ar-Ra'd", hal: 249 }, { no: 14, nama: "Ibrahim", hal: 255 },
+    { no: 15, nama: "Al-Hijr", hal: 262 }, { no: 16, nama: "An-Nahl", hal: 267 },
+    { no: 17, nama: "Al-Isra'", hal: 282 }, { no: 18, nama: "Al-Kahf", hal: 293 },
+    { no: 19, nama: "Maryam", hal: 305 }, { no: 20, nama: "Ta-Ha", hal: 312 },
+    { no: 21, nama: "Al-Anbiya'", hal: 322 }, { no: 22, nama: "Al-Hajj", hal: 332 },
+    { no: 23, nama: "Al-Mu'minun", hal: 342 }, { no: 24, nama: "An-Nur", hal: 350 },
+    { no: 25, nama: "Al-Furqan", hal: 359 }, { no: 26, nama: "Asy-Syu'ara'", hal: 367 },
+    { no: 27, nama: "An-Naml", hal: 377 }, { no: 28, nama: "Al-Qasas", hal: 385 },
+    { no: 29, nama: "Al-Ankabut", hal: 396 }, { no: 30, nama: "Ar-Rum", hal: 404 },
+    { no: 31, nama: "Luqman", hal: 411 }, { no: 32, nama: "As-Sajdah", hal: 415 },
+    { no: 33, nama: "Al-Ahzab", hal: 418 }, { no: 34, nama: "Saba'", hal: 428 },
+    { no: 35, nama: "Fatir", hal: 434 }, { no: 36, nama: "Ya-Sin", hal: 440 },
+    { no: 37, nama: "Ash-Shaffat", hal: 446 }, { no: 38, nama: "Sad", hal: 453 },
+    { no: 39, nama: "Az-Zumar", hal: 458 }, { no: 40, nama: "Ghafir", hal: 467 },
+    { no: 41, nama: "Fussilat", hal: 477 }, { no: 42, nama: "Asy-Syura", hal: 483 },
+    { no: 43, nama: "Az-Zukhruf", hal: 489 }, { no: 44, nama: "Ad-Dukhan", hal: 496 },
+    { no: 45, nama: "Al-Jatsiyah", hal: 499 }, { no: 46, nama: "Al-Ahqaf", hal: 502 },
+    { no: 47, nama: "Muhammad", hal: 507 }, { no: 48, nama: "Al-Fath", hal: 511 },
+    { no: 49, nama: "Al-Hujurat", hal: 515 }, { no: 50, nama: "Qaf", hal: 518 },
+    { no: 51, nama: "Adz-Dzariyat", hal: 520 }, { no: 52, nama: "At-Tur", hal: 523 },
+    { no: 53, nama: "An-Najm", hal: 526 }, { no: 54, nama: "Al-Qamar", hal: 528 },
+    { no: 55, nama: "Ar-Rahman", hal: 531 }, { no: 56, nama: "Al-Waqi'ah", hal: 534 },
+    { no: 57, nama: "Al-Hadid", hal: 537 }, { no: 58, nama: "Al-Mujadilah", hal: 542 },
+    { no: 59, nama: "Al-Hasyr", hal: 545 }, { no: 60, nama: "Al-Mumtahanah", hal: 549 },
+    { no: 61, nama: "Ash-Shaff", hal: 551 }, { no: 62, nama: "Al-Jumu'ah", hal: 553 },
+    { no: 63, nama: "Al-Munafiqun", hal: 554 }, { no: 64, nama: "At-Taghabun", hal: 556 },
+    { no: 65, nama: "At-Talaq", hal: 558 }, { no: 66, nama: "At-Tahrim", hal: 560 },
+    { no: 67, nama: "Al-Mulk", hal: 562 }, { no: 68, nama: "Al-Qalam", hal: 564 },
+    { no: 69, nama: "Al-Haqqah", hal: 566 }, { no: 70, nama: "Al-Ma'arij", hal: 568 },
+    { no: 71, nama: "Nuh", hal: 570 }, { no: 72, nama: "Al-Jinn", hal: 572 },
+    { no: 73, nama: "Al-Muzzammil", hal: 574 }, { no: 74, nama: "Al-Muddatstsir", hal: 575 },
+    { no: 75, nama: "Al-Qiyamah", hal: 577 }, { no: 76, nama: "Al-Insan", hal: 578 },
+    { no: 77, nama: "Al-Mursalat", hal: 580 }, { no: 78, nama: "An-Naba'", hal: 582 },
+    { no: 79, nama: "An-Nazi'at", hal: 583 }, { no: 80, nama: "'Abasa", hal: 585 },
+    { no: 81, nama: "At-Takwir", hal: 586 }, { no: 82, nama: "Al-Infitar", hal: 587 },
+    { no: 83, nama: "Al-Muthaffifin", hal: 587 }, { no: 84, nama: "Al-Insiqaq", hal: 589 },
+    { no: 85, nama: "Al-Buruj", hal: 590 }, { no: 86, nama: "At-Tariq", hal: 591 },
+    { no: 87, nama: "Al-A'la", hal: 591 }, { no: 88, nama: "Al-Ghasyiyah", hal: 592 },
+    { no: 89, nama: "Al-Fajr", hal: 593 }, { no: 90, nama: "Al-Balad", hal: 594 },
+    { no: 91, nama: "Asy-Syams", hal: 595 }, { no: 92, nama: "Al-Lail", hal: 595 },
+    { no: 93, nama: "Ad-Duha", hal: 596 }, { no: 94, nama: "Asy-Syarh", hal: 596 },
+    { no: 95, nama: "At-Tin", hal: 597 }, { no: 96, nama: "Al-'Alaq", hal: 597 },
+    { no: 97, nama: "Al-Qadr", hal: 598 }, { no: 98, nama: "Al-Bayyinah", hal: 598 },
+    { no: 99, nama: "Az-Zalzalah", hal: 599 }, { no: 100, nama: "Al-'Adiyat", hal: 599 },
+    { no: 101, nama: "Al-Qari'ah", hal: 600 }, { no: 102, nama: "At-Takatsur", hal: 600 },
+    { no: 103, nama: "Al-'Asr", hal: 601 }, { no: 104, nama: "Al-Humazah", hal: 601 },
+    { no: 105, nama: "Al-Fiil", hal: 601 }, { no: 106, nama: "Quraisy", hal: 602 },
+    { no: 107, nama: "Al-Ma'un", hal: 602 }, { no: 108, nama: "Al-Kautsar", hal: 602 },
+    { no: 109, nama: "Al-Kafirun", hal: 603 }, { no: 110, nama: "An-Nasr", hal: 603 },
+    { no: 111, nama: "Al-Lahab", hal: 603 }, { no: 112, nama: "Al-Ikhlas", hal: 604 },
+    { no: 113, nama: "Al-Falaq", hal: 604 }, { no: 114, nama: "An-Nas", hal: 604 }
+  ];
+
+  // Inisialisasi dropdown nama surat
+  const selectSurah = document.getElementById("pilihSurah");
+  DAFTAR_SURAH.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s.hal;
+    opt.textContent = `${s.no}. ${s.nama}`;
+    selectSurah.appendChild(opt);
+  });
+
   // --- Sumber data ---
   const JSON_URL = "https://raw.githubusercontent.com/MohamadHajjRabee/quran-qcf4/main/pages/";
   const FONT_URL = "https://cdn.jsdelivr.net/gh/MohamadHajjRabee/quran-qcf4@main/fonts-woff2/";
@@ -265,11 +378,11 @@
   };
 
   // --- Pengaturan tampilan (boleh diubah) ---
-  const JARAK_KATA_EM = 0.12;   // jarak minimal antar kata (harus sama dengan 'gap' di CSS .baris)
-  const MIN_JARAK_BARIS = 2.0;  // tinggi satu baris (kelipatan ukuran huruf); naikkan jika ada tulisan menyentuh garis
+  const JARAK_KATA_EM = 0.12;  
+  const MIN_JARAK_BARIS = 2.0; 
   const JARAK_SWIPE = 60;
-  const JUMLAH_BARIS = 15;          // jumlah baris per halaman
-  const HALAMAN_KALIBRASI = [3, 150, 300, 450];   // halaman penuh 15 baris, dipakai mengukur ukuran blok tulisan
+  const JUMLAH_BARIS = 15;         
+  const HALAMAN_KALIBRASI = [3, 150, 300, 450];  
 
   const IKON = {
     bulan: '<svg class="ik" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
@@ -286,20 +399,16 @@
   const info = document.getElementById("info");
 
   let halaman = Number(localStorage.getItem("quran_halaman")) || 1;
-  let tema = localStorage.getItem("quran_tema") === "light" ? "light" : "dark";   // bawaan: gelap (sama seperti FlipbuKu)
+  let tema = localStorage.getItem("quran_tema") === "light" ? "light" : "dark";  
   let mode = localStorage.getItem("quran_mode") === "gambar" ? "gambar" : "teks";
   let tampilGaris = localStorage.getItem("quran_tampilGaris") !== "tidak";
   let token = 0;
-  // Geometri halaman (diukur dari gambar): dipakai bersama oleh mode Teks & Gambar
-  // supaya lebar blok tulisan dan jarak antar baris SAMA di kedua mode.
   let GEO = null;
   try { GEO = JSON.parse(localStorage.getItem("quran_geo_v2")); } catch (e) { GEO = null; }
   if (!GEO || !(GEO.cw > 0 && GEO.ch > 0 && GEO.p > 0 && GEO.iw > 0)) GEO = null;
 
-  // Juz pada Mushaf Madinah: juz 1 = hal. 1-21, lalu tiap juz 20 halaman (juz 30 mulai hal. 582)
   function hitungJuz(no) { return no < 22 ? 1 : Math.min(30, Math.floor((no - 2) / 20) + 1); }
 
-  // Teks judul dari data kadang memuat bismillah di belakang nama surah; ambil nama surahnya saja
   function judulSurah(teksJudul) {
     const kata = (teksJudul || "").trim().split(/\s+/);
     const polos = k => k.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, "");
@@ -307,9 +416,6 @@
     return (i > 0 ? kata.slice(0, i) : kata).join(" ");
   }
 
-  /* =====================================================
-     Mode teks: ambil data halaman + muat font, lalu susun baris
-     ===================================================== */
   const dataCache = {};
   const fontCache = {};
 
@@ -353,7 +459,6 @@
       baris.className = "baris";
       const header = line.words.find(w => w.type === "surah_header");
       if (header) {
-        // judul surah dibuat sendiri (banner) agar rapi dan konsisten
         baris.classList.add("header");
         const b = document.createElement("div");
         b.className = "banner";
@@ -380,32 +485,33 @@
     document.getElementById("kNo").textContent = no;
     info.textContent = `Halaman ${no} dari 604` + (namaSurah ? "  •  " + namaSurah : "");
 
+    // Sinkronkan nilai dropdown surat sesuai halaman aktif
+    if (data.surahs && data.surahs.length) {
+      const surahAktif = DAFTAR_SURAH.slice().reverse().find(s => s.hal <= no);
+      if (surahAktif) selectSurah.value = surahAktif.hal;
+    }
+
     atur();
     teks.classList.remove("memuat");
   }
 
-  // lebar alami satu baris (jumlah lebar kata + jarak minimal), pada ukuran huruf fs (px)
   function lebarAlami(baris, fs) {
     let total = 0;
     baris.querySelectorAll(".kata").forEach(k => { total += k.getBoundingClientRect().width; });
     return total + Math.max(0, baris.children.length - 1) * JARAK_KATA_EM * fs;
   }
 
-  // Atur ukuran huruf, tinggi baris, dan judul supaya semuanya pas dan tidak meluber.
-  // Jika geometri gambar sudah terukur (GEO), lebar blok tulisan dan jarak antar baris
-  // dibuat SAMA dengan mode Gambar.
   function atur() {
     const lebar = teks.clientWidth;
     if (!lebar) return;
     const semua = [...teks.querySelectorAll(".baris")];
     const isi = semua.filter(b => b.classList.contains("isi"));
-    const faktor = halaman <= 2 ? 0.78 : 1;                 // halaman 1-2 lebih sempit seperti mushaf cetak
+    const faktor = halaman <= 2 ? 0.78 : 1;                 
     const target = (GEO ? lebar * (GEO.iw / GEO.cw) : lebar) * faktor;
     semua.forEach(b => { b.style.width = target + "px"; });
     teks.style.minHeight = GEO ? (lebar * GEO.ch / GEO.cw) + "px" : "";
     if (!isi.length) return;
 
-    // 1) ukur pada 100px, lalu skala agar baris terpanjang pas
     teks.style.setProperty("--fs", "100px");
     const alami = isi.map(b => lebarAlami(b, 100));
     const maks = Math.max(...alami);
@@ -413,7 +519,6 @@
     let fs = (100 * target / maks) * 0.995;
     teks.style.setProperty("--fs", fs + "px");
 
-    // 2) cek ulang pada ukuran sebenarnya; kecilkan sedikit jika ada baris yang melebihi lebar
     for (let i = 0; i < 20; i++) {
       const meluber = isi.some(b => lebarAlami(b, fs) > target - 0.5);
       if (!meluber) break;
@@ -421,9 +526,8 @@
       teks.style.setProperty("--fs", fs + "px");
     }
 
-    // 3) jarak antar baris
     if (GEO) {
-      const px = lebar * GEO.p / GEO.cw;                    // sama persis dengan jarak baris pada gambar
+      const px = lebar * GEO.p / GEO.cw;                    
       teks.style.setProperty("--pitch", (px / fs).toFixed(4));
     } else {
       let hMaks = 0;
@@ -431,10 +535,8 @@
       teks.style.setProperty("--pitch", Math.max(MIN_JARAK_BARIS, (hMaks / fs) * 1.1).toFixed(3));
     }
 
-    // 4) baris pendek (akhir surah, halaman awal) di tengah, bukan direnggangkan
     isi.forEach(b => b.classList.toggle("pendek", lebarAlami(b, fs) < target * 0.85));
 
-    // 5) judul surah: kecilkan teks jika lebih lebar dari banner
     teks.querySelectorAll(".banner").forEach(b => {
       const t = b.firstChild;
       t.style.fontSize = "";
@@ -452,9 +554,6 @@
     timerUkuran = setTimeout(() => { if (mode === "teks" && teks.children.length) atur(); }, 120);
   });
 
-  /* =====================================================
-     Mode gambar (cadangan)
-     ===================================================== */
   function urlGambar(no, jenis, t) { return `${GAMBAR[jenis]}/${t || tema}/p${no}.png`; }
 
   function muatGambarCors(url) {
@@ -467,7 +566,6 @@
     });
   }
 
-  // Ukur kotak tulisan pada gambar (batas kiri, kanan, atas, bawah tinta)
   function ukurGeometri(el) {
     const W = el.naturalWidth, H = el.naturalHeight;
     const s = Math.min(1, 600 / W);
@@ -476,8 +574,8 @@
     c.width = w; c.height = h;
     const ctx = c.getContext("2d", { willReadFrequently: true });
     ctx.drawImage(el, 0, 0, w, h);
-    const d = ctx.getImageData(0, 0, w, h).data;      // gagal jika gambar tidak mengizinkan CORS
-    const br = d[0], bg = d[1], bb = d[2], ba = d[3];  // warna latar = piksel pojok kiri atas
+    const d = ctx.getImageData(0, 0, w, h).data;      
+    const br = d[0], bg = d[1], bb = d[2], ba = d[3];  
     const baris = new Float32Array(h), kolom = new Float32Array(w);
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
@@ -502,9 +600,6 @@
     catch (e) { return await muatGambarCors(urlGambar(no, "raw", "light")); }
   }
 
-  // Ukur ukuran blok tulisan dari beberapa halaman contoh (sekali; hasilnya disimpan di browser).
-  // Jarak antar baris diambil dari nilai tengah; tinggi potongan dari halaman TERTINGGI + ruang aman,
-  // sehingga tidak ada baris yang terpotong.
   async function kalibrasiGeometri() {
     const hasil = (await Promise.all(HALAMAN_KALIBRASI.map(async no => {
       try { return ukurGeometri(await muatHalamanContoh(no)); } catch (e) { return null; }
@@ -516,7 +611,7 @@
     const lebarInk = hasil.map(a => (a.kanan - a.kiri) / a.s);
     const tinggiInk = hasil.map(a => (a.bawah - a.atas) / a.s);
     const iw = tengah(lebarInk);
-    const p = tengah(tinggiInk) / JUMLAH_BARIS;                 // jarak antar baris (px asli)
+    const p = tengah(tinggiInk) / JUMLAH_BARIS;                 
     const padV = p * 0.55, padH = Math.max(...lebarInk) * 0.03;
     const g = {
       W, H, iw, p,
@@ -524,7 +619,7 @@
       ch: Math.min(H, Math.max(...tinggiInk) + padV * 2)
     };
     const rasio = g.ch / g.cw;
-    if (!(g.cw > 0 && g.p > 0 && rasio > 0.8 && rasio < 3)) return null;   // hasil tidak masuk akal: abaikan
+    if (!(g.cw > 0 && g.p > 0 && rasio > 0.8 && rasio < 3)) return null;   
     GEO = g;
     try { localStorage.setItem("quran_geo_v2", JSON.stringify(g)); } catch (e) {}
     return g;
@@ -536,8 +631,6 @@
     img.style.opacity = "1";
   }
 
-  // Mode gambar: pangkas ruang kosong. Posisi potongan dihitung dari isi gambar halaman itu sendiri
-  // (tengah blok tulisan), jadi tidak ada baris yang terpotong; ukuran potongan sama untuk semua halaman.
   function aturGambar() {
     if (!GEO || !img.naturalWidth) { resetGeoGambar(); return; }
     let a = null;
@@ -547,7 +640,7 @@
     const W = img.naturalWidth, H = img.naturalHeight;
     const cw = Math.min(GEO.cw, W);
     const inkTinggi = (a.bawah - a.atas) / a.s;
-    const ch = Math.min(H, Math.max(GEO.ch, inkTinggi + GEO.p * 0.6));   // halaman yang lebih tinggi tetap utuh
+    const ch = Math.min(H, Math.max(GEO.ch, inkTinggi + GEO.p * 0.6));   
     const tengahX = (a.kiri + a.kanan) / 2 / a.s;
     const tengahY = (a.atas + a.bawah) / 2 / a.s;
     const cx = Math.min(Math.max(0, tengahX - cw / 2), W - cw);
@@ -575,12 +668,18 @@
     else resetGeoGambar();
 
     img.crossOrigin = "anonymous";
-    img.onload = () => { if (no === halaman) aturGambar(); };
+    img.onload = () => { 
+      if (no === halaman) {
+        aturGambar();
+        const surahAktif = DAFTAR_SURAH.slice().reverse().find(s => s.hal <= no);
+        if (surahAktif) selectSurah.value = surahAktif.hal;
+      }
+    };
     let percobaan = 0;
     img.onerror = () => {
       percobaan++;
       if (percobaan === 1) { img.src = urlGambar(no, "raw"); }
-      else if (percobaan === 2) {                       // tanpa CORS: gambar tetap tampil, tanpa pangkas
+      else if (percobaan === 2) {                       
         img.removeAttribute("crossorigin");
         img.src = urlGambar(no, "cdn");
       } else {
@@ -592,10 +691,6 @@
     img.alt = "Mushaf halaman " + no;
   }
 
-  /* =====================================================
-     Tampilkan halaman
-     arah: +1 = berikutnya (masuk dari kiri), -1 = sebelumnya (masuk dari kanan)
-     ===================================================== */
   function prefetch(n) {
     if (n < 1 || n > 604) return;
     if (mode === "teks") {
@@ -644,9 +739,6 @@
     prefetch(no - 1);
   }
 
-  /* =====================================================
-     Tampilan tombol
-     ===================================================== */
   function terapkanTema() {
     document.body.classList.toggle("terang", tema === "light");
     document.getElementById("tema").innerHTML =
@@ -662,14 +754,19 @@
     document.getElementById("toggleGaris").classList.toggle("aktif", tampilGaris);
   }
 
-  /* =====================================================
-     Tombol & keyboard
-     ===================================================== */
-  // Mushaf dibaca dari kanan ke kiri, jadi "Berikutnya" ada di sebelah kiri
   document.getElementById("next").onclick = () => tampil(halaman + 1, 1);
   document.getElementById("prev").onclick = () => tampil(halaman - 1, -1);
   input.addEventListener("change", () => tampil(parseInt(input.value)));
   input.addEventListener("keydown", e => { if (e.key === "Enter") input.blur(); });
+
+  // Event listener untuk dropdown surat
+  selectSurah.addEventListener("change", () => {
+    const halTujuan = parseInt(selectSurah.value);
+    if (halTujuan) {
+      const arah = halTujuan > halaman ? 1 : -1;
+      tampil(halTujuan, arah);
+    }
+  });
 
   document.getElementById("tema").onclick = () => {
     tema = tema === "dark" ? "light" : "dark";
@@ -692,15 +789,11 @@
     terapkanGaris();
   };
   document.addEventListener("keydown", e => {
-    if (e.target.tagName === "INPUT") return;
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
     if (e.key === "ArrowLeft") tampil(halaman + 1, 1);
     if (e.key === "ArrowRight") tampil(halaman - 1, -1);
   });
 
-  /* =====================================================
-     Swipe di HP
-     Geser jari kiri -> kanan = halaman berikutnya (arah buku Arab)
-     ===================================================== */
   let sx = 0, sy = 0, dx = 0, geser = false, arahPasti = false;
   function kembali() {
     frame.style.transition = "transform .2s ease, opacity .2s ease";
@@ -740,13 +833,11 @@
   });
   frame.addEventListener("touchcancel", () => { geser = false; kembali(); });
 
-  /* ===== Mulai ===== */
   if ("ontouchstart" in window) document.getElementById("petunjuk").textContent = "Geser ke kanan/kiri untuk pindah halaman";
   terapkanTema();
   terapkanMode();
   terapkanGaris();
   tampil(halaman);
-  // ukur geometri gambar (sekali; hasilnya disimpan) lalu samakan kedua mode
   if (!GEO) kalibrasiGeometri().then(g => { if (g) terapkanGeometri(); }).catch(e => console.warn("Kalibrasi geometri gagal:", e));
 </script>
 </body>
