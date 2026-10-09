@@ -303,7 +303,7 @@
     <div class="flex items-center space-x-2 sm:space-x-3">
       <!-- TOMBOL AL-QURAN (gaya sama dengan tombol Admin/Cloudzone) -->
       <button id="nav-quran-btn" onclick="toggleQuran()" aria-label="Buka Al-Quran" aria-pressed="false" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30">
-        <i id="nav-quran-icon" class="fa-solid fa-book-quran"></i> <span id="nav-quran-text" class="hidden min-[400px]:inline">Al Quran</span>
+        <i id="nav-quran-icon" class="fa-solid fa-book-quran"></i> <span id="nav-quran-text" class="hidden min-[400px]:inline">Al-Quran</span>
       </button>
       <!-- PERBEDAAN 1: ICON KATALOG MENGGUNAKAN GRID/ICONS KHUSUS KATALOG -->
       <button id="nav-admin-btn" onclick="openAdminModalOrView()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30">
@@ -571,6 +571,8 @@ notify pgrst, 'reload schema';</pre>
     let currentBook = null;
     let currentZoom = 1;
     let currentUser = null;
+    let stateRestored = false;   // posisi halaman (dari URL #) sudah dipulihkan?
+    let pendingAdmin = false;    // menunggu sesi login untuk memulihkan tampilan Cloudzone
     let resizeTimer = null;
     let currentPageIndex = 1;
     let adminDrag = null;
@@ -732,11 +734,16 @@ notify pgrst, 'reload schema';</pre>
     supabaseClient.auth.onAuthStateChange((event, session) => {
       currentUser = session?.user || null;
       updateAdminNavUI();
+      if (pendingAdmin) {
+        pendingAdmin = false;
+        if (currentUser) restoreAdminView(); else syncHash();
+      }
     });
 
     document.addEventListener("DOMContentLoaded", () => {
       renderCatalogFromCache();
-      loadCatalogFromSupabase();
+      restoreFromHash(false);   // pulihkan posisi (baca buku / Al-Quran / Cloudzone) dari alamat halaman
+      loadCatalogFromSupabase().catch(() => {}).then(() => restoreFromHash(true));
 
       // Siapkan PDF.js & PageFlip saat browser idle agar klik buku pertama tidak menunggu unduhan library
       const connection = navigator.connection || {};
@@ -1229,11 +1236,13 @@ notify pgrst, 'reload schema';</pre>
         if (!currentUser) {
           openAdminModal();
           document.getElementById('view-catalog').classList.remove('hidden');
+          syncHash();
           return;
         }
         document.getElementById('view-admin').classList.remove('hidden');
         renderAdminTable();
       }
+      syncHash();
     }
 
     async function openReader(book) {
@@ -1722,6 +1731,66 @@ notify pgrst, 'reload schema';</pre>
     // ===== AL-QURAN (panel di bawah navbar, berisi quran.html) =====
     const QURAN_URL = 'quran.html'; // lokasi halaman Al-Quran (satu folder dengan index.html)
 
+    // ===== SIMPAN & PULIHKAN POSISI HALAMAN (agar refresh tidak kembali ke menu) =====
+    // Posisi disimpan di alamat halaman (#): "#baca=ID" (membaca buku), "#admin" (Cloudzone),
+    // ditambah "&quran" bila panel Al-Quran sedang terbuka. Katalog = tanpa #.
+    // Halaman terakhir tiap buku sudah disimpan terpisah (flipbuku_last_page_*), halaman Al-Quran
+    // disimpan oleh quran.html sendiri.
+    function parseHash() {
+      const hasil = { baca: null, admin: false, quran: false };
+      (location.hash || '').replace(/^#/, '').split('&').filter(Boolean).forEach(token => {
+        if (token === 'quran') hasil.quran = true;
+        else if (token === 'admin') hasil.admin = true;
+        else if (token.startsWith('baca=')) {
+          try { hasil.baca = decodeURIComponent(token.slice(5)); } catch (e) {}
+        }
+      });
+      return hasil;
+    }
+
+    function syncHash() {
+      try {
+        const bagian = [];
+        const reader = document.getElementById('view-reader');
+        const admin = document.getElementById('view-admin');
+        if (reader && !reader.classList.contains('hidden') && currentBook && currentBook.id != null) {
+          bagian.push('baca=' + encodeURIComponent(currentBook.id));
+        } else if (admin && !admin.classList.contains('hidden')) {
+          bagian.push('admin');
+        }
+        if (isQuranOpen()) bagian.push('quran');
+        const hash = bagian.length ? '#' + bagian.join('&') : '';
+        if ((location.hash || '') !== hash) {
+          history.replaceState(null, '', location.pathname + location.search + hash);
+        }
+      } catch (e) {}
+    }
+
+    function restoreAdminView() {
+      const quranTerbuka = isQuranOpen();
+      switchView('admin');
+      if (quranTerbuka) openQuran();
+    }
+
+    // force = true: dipanggil setelah katalog selesai dimuat (terakhir kali mencoba)
+    function restoreFromHash(force) {
+      if (stateRestored) return;
+      const s = parseHash();
+      if (!s.baca && !s.admin && !s.quran) { stateRestored = true; return; }
+
+      if (s.baca) {
+        const book = catalogData.find(b => String(b.id) === String(s.baca));
+        if (!book && !force) return;            // katalog belum siap: coba lagi setelah data termuat
+        if (book) openReader(book);
+      } else if (s.admin) {
+        if (currentUser) restoreAdminView(); else pendingAdmin = true;
+      }
+
+      stateRestored = true;
+      if (s.quran) openQuran();                 // dibuka terakhir agar tampil di atas
+      syncHash();
+    }
+
     function isQuranOpen() {
       const el = document.getElementById('quran-overlay');
       return !!el && !el.classList.contains('hidden');
@@ -1734,9 +1803,9 @@ notify pgrst, 'reload schema';</pre>
       const ikon = document.getElementById('nav-quran-icon');
       const teks = document.getElementById('nav-quran-text');
       btn.setAttribute('aria-pressed', aktif ? 'true' : 'false');
-      btn.setAttribute('aria-label', aktif ? 'Kembali ke FlipbuKu' : 'Buka Al Quran');
+      btn.setAttribute('aria-label', aktif ? 'Kembali ke FlipBuku' : 'Buka Al-Quran');
       if (ikon) ikon.className = aktif ? 'fa-solid fa-book-open' : 'fa-solid fa-book-quran';
-      if (teks) teks.textContent = aktif ? 'FlipbuKu' : 'Al Quran';
+      if (teks) teks.textContent = aktif ? 'FlipBuku' : 'Al-Quran';
     }
 
     function openQuran() {
@@ -1756,6 +1825,7 @@ notify pgrst, 'reload schema';</pre>
       }
       overlay.classList.remove('hidden');
       setQuranButton(true);
+      syncHash();
     }
 
     function closeQuran() {
@@ -1763,6 +1833,7 @@ notify pgrst, 'reload schema';</pre>
       if (!overlay) return;
       overlay.classList.add('hidden');
       setQuranButton(false);
+      syncHash();
     }
 
     // klik tombol Al-Quran lagi = tutup
