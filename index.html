@@ -10,7 +10,6 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://prsgmirandndqomvwzxv.supabase.co" crossorigin>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -458,16 +457,10 @@
             <textarea id="upload-desc" rows="2" placeholder="Tulis deskripsi singkat..." class="w-full glass-input rounded-xl px-4 py-3 text-sm"></textarea>
           </div>
 
-          <!-- Opsi 1: Upload File -->
-          <div class="md:col-span-2 p-5 rounded-xl border border-white/10 bg-white/[0.02] space-y-2.5">
-            <label class="block text-xs text-indigo-300 font-semibold flex items-center gap-2"><i class="fa-solid fa-file-arrow-up text-indigo-400"></i> Opsi A: Unggah File Dokumen PDF</label>
-            <input type="file" id="upload-file" accept="application/pdf" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gradient-to-r file:from-indigo-600 file:to-purple-600 file:text-white hover:file:opacity-90 cursor-pointer">
-          </div>
-
           <!-- Opsi 2: Link GitHub / URL Eksternal -->
           <div class="md:col-span-2 p-5 rounded-xl border border-white/10 bg-white/[0.02] space-y-2.5">
-            <label class="block text-xs text-indigo-300 font-semibold flex items-center gap-2"><i class="fa-brands fa-github text-indigo-400"></i> Opsi B: Atau Gunakan Direct Link GitHub / URL PDF Publik</label>
-            <input type="url" id="upload-github-url" placeholder="Contoh: https://raw.githubusercontent.com/username/repo/main/buku.pdf" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
+            <label class="block text-xs text-indigo-300 font-semibold flex items-center gap-2"><i class="fa-brands fa-github text-indigo-400"></i> Direct Link GitHub / URL PDF Publik</label>
+            <input type="url" id="upload-github-url" required placeholder="Contoh: https://raw.githubusercontent.com/username/repo/main/buku.pdf" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
             <p class="text-[11px] text-indigo-300/70">Tips: Gunakan link "Raw" dari file PDF di repository GitHub Anda agar bisa diakses langsung.</p>
           </div>
 
@@ -560,8 +553,8 @@ notify pgrst, 'reload schema';</pre>
 
   <!-- JAVASCRIPT ENGINE -->
   <script>
-    const SUPABASE_URL = 'https://prsgmirandndqomvwzxv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByc2dtaXJhbmRuZHFvbXZ3enh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMTE0MTEsImV4cCI6MjEwNTY4NzQxMX0.ox5Bt7Wc7yFDqzbWOLhSmCySEcJa2Ui2UljlVW2OpKA';
+    const SUPABASE_URL = 'https://pamvpcmkrdgdbyskwzcf.supabase.co'; // contoh: https://abcdxyz.supabase.co
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhbXZwY21rcmRnZGJ5c2t3emNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1MzEyNTksImV4cCI6MjEwNzEwNzI1OX0.x1yL91WU7UBzbcJH79dEW_xC1EkfCZwYQ-Ofx-do8Oo';
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1902,12 +1895,10 @@ notify pgrst, 'reload schema';</pre>
       const readingDirection = document.getElementById('upload-reading-direction').value;
       const desc = document.getElementById('upload-desc').value;
       
-      const fileInput = document.getElementById('upload-file');
       const githubUrlInput = document.getElementById('upload-github-url').value.trim();
-      const file = fileInput.files[0];
 
-      if (!file && !githubUrlInput) {
-        alert("Harap unggah file PDF atau masukkan Link GitHub / URL dokumen PDF!");
+      if (!githubUrlInput) {
+        alert("Harap masukkan Link GitHub / URL dokumen PDF!");
         return;
       }
 
@@ -1916,25 +1907,7 @@ notify pgrst, 'reload schema';</pre>
       btn.innerText = "Menyimpan Data...";
 
       try {
-        let pdfUrl = githubUrlInput;
-
-        if (file) {
-          btn.innerText = "Mengunggah File ke Supabase...";
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-          const { data: storageData, error: storageError } = await supabaseClient.storage
-            .from('pdf-files')
-            .upload(fileName, file, { contentType: 'application/pdf', cacheControl: '31536000' });
-
-          if (storageError) throw storageError;
-
-          const { data: urlData } = supabaseClient.storage
-            .from('pdf-files')
-            .getPublicUrl(fileName);
-
-          pdfUrl = urlData.publicUrl;
-        }
+        const pdfUrl = githubUrlInput;
 
         const { error: dbError } = await supabaseClient
           .from('flipbooks')
