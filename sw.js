@@ -4,7 +4,7 @@
  * - Data Supabase, file PDF, dan panel Al-Quran TIDAK di-cache (selalu langsung ke jaringan).
  * Ubah VERSION kalau Anda mengganti ikon/file shell supaya cache lama dibuang.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = 'flipbuku-shell-' + VERSION;
 const CDN_CACHE = 'flipbuku-cdn-' + VERSION;
 

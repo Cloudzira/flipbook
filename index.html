@@ -289,9 +289,143 @@
         pointer-events: auto;
       }
     }
+
+    /* ===== SPLASH SCREEN ===== */
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      background: radial-gradient(circle at 15% 15%, #2e1065 0%, #090d16 50%, #020617 100%);
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      opacity: 1;
+      transition: opacity 0.55s ease, visibility 0.55s ease;
+      touch-action: none;
+    }
+    #splash-screen.splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
+    #splash-screen .splash-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 24px;
+      text-align: center;
+    }
+    #splash-screen .splash-logo-wrap { position: relative; width: 112px; height: 112px; margin-bottom: 6px; }
+    #splash-screen .splash-logo-wrap::before {
+      content: "";
+      position: absolute;
+      inset: -14px;
+      border-radius: 36px;
+      background: radial-gradient(circle, rgba(129,140,248,0.55) 0%, rgba(168,85,247,0.25) 45%, transparent 70%);
+      filter: blur(8px);
+      animation: splashGlow 2.2s ease-in-out infinite;
+    }
+    #splash-screen .splash-logo {
+      position: relative;
+      width: 112px;
+      height: 112px;
+      border-radius: 28px;
+      box-shadow: 0 18px 50px rgba(99,102,241,0.5);
+      animation: splashIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both, splashFloat 3s ease-in-out 0.7s infinite;
+    }
+    #splash-screen .splash-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      background: linear-gradient(90deg, #ffffff, #c7d2fe, #d8b4fe);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: splashUp 0.7s ease 0.2s both;
+    }
+    #splash-screen .splash-sub {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(165,180,252,0.75);
+      animation: splashUp 0.7s ease 0.35s both;
+    }
+    #splash-screen .splash-bar {
+      width: 140px;
+      height: 3px;
+      margin-top: 18px;
+      border-radius: 9999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+      animation: splashUp 0.7s ease 0.5s both;
+    }
+    #splash-screen .splash-bar::after {
+      content: "";
+      display: block;
+      width: 45%;
+      height: 100%;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+      animation: splashBar 1.3s ease-in-out infinite;
+    }
+    #splash-screen .splash-footer {
+      padding: 0 16px max(22px, env(safe-area-inset-bottom, 0px));
+      animation: splashUp 0.7s ease 0.6s both;
+    }
+    @keyframes splashIn { from { opacity: 0; transform: scale(0.7) rotate(-6deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+    @keyframes splashFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+    @keyframes splashGlow { 0%, 100% { opacity: 0.6; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.08); } }
+    @keyframes splashUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes splashBar { 0% { transform: translateX(-110%); } 100% { transform: translateX(320%); } }
+    @media (prefers-reduced-motion: reduce) {
+      #splash-screen *, #splash-screen *::before { animation: none !important; }
+    }
   </style>
 </head>
 <body class="flex flex-col h-[100dvh] min-h-0 overflow-hidden">
+
+  <!-- SPLASH SCREEN -->
+  <div id="splash-screen" role="status" aria-label="Memuat FlipbuKu">
+    <div class="splash-center">
+      <div class="splash-logo-wrap">
+        <img class="splash-logo" src="icon-192.png" alt="Logo FlipbuKu" width="112" height="112">
+      </div>
+      <div class="splash-title">FLIPBUKU</div>
+      <div class="splash-sub">Bahan ajar Tartili</div>
+      <div class="splash-bar"></div>
+    </div>
+    <div class="splash-footer">
+      <footer style="text-align: center; font-size: 11px; color: #94a3b8; font-family: sans-serif;">
+        <p>Crafted with <span style="color: #ff007f;">♥</span> by <span style="color: #00f2fe; font-weight: 600; text-shadow: 0 0 10px rgba(0,242,254,0.4);">Kurniapedia</span> 2026</p>
+      </footer>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var el = document.getElementById('splash-screen');
+      if (!el) return;
+      // Tampil sekali per sesi (buka ulang aplikasi = muncul lagi, refresh halaman = langsung masuk)
+      try {
+        if (sessionStorage.getItem('flipbuku_splash_shown')) { el.parentNode.removeChild(el); return; }
+        sessionStorage.setItem('flipbuku_splash_shown', '1');
+      } catch (e) {}
+      var start = Date.now(), done = false, MIN_SHOW = 1600;
+      function hide() {
+        if (done) return; done = true;
+        var wait = Math.max(0, MIN_SHOW - (Date.now() - start));
+        setTimeout(function () {
+          el.classList.add('splash-hide');
+          setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 650);
+        }, wait);
+      }
+      if (document.readyState === 'complete') hide();
+      else window.addEventListener('load', hide);
+      setTimeout(hide, 6000); // pengaman: jangan tertahan lebih dari 6 detik
+    })();
+  </script>
 
   <!-- NAVBAR UTAMA -->
   <nav class="glass-panel sticky top-0 z-50 px-4 sm:px-6 py-2.5 flex items-center justify-between border-b border-white/10 flex-shrink-0 h-14">
